@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#0f172a"/>
+  <circle cx="256" cy="296" r="150" fill="#1e293b"/>
+  <!-- flag pole -->
+  <rect x="198" y="120" width="20" height="252" rx="8" fill="#e2e8f0"/>
+  <!-- red flag -->
+  <path d="M218 128 L372 160 L328 198 L372 236 L218 212 Z" fill="#e11d2a"/>
+  <!-- ground base -->
+  <ellipse cx="208" cy="382" rx="74" ry="22" fill="#334155"/>
+</svg>

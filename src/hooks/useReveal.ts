@@ -1,0 +1,40 @@
+import { useEffect, useRef, useState } from 'react'
+
+const prefersReduced =
+  typeof window !== 'undefined' &&
+  window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+
+/**
+ * Reveal an element once it scrolls into view. Returns a ref to attach and a
+ * `shown` flag that flips true (and stays true) on first intersection. Under
+ * reduced-motion it starts shown, so nothing is hidden from the user.
+ */
+export function useReveal<T extends HTMLElement = HTMLDivElement>(
+  rootMargin = '0px 0px -10% 0px',
+) {
+  const ref = useRef<T | null>(null)
+  const [shown, setShown] = useState(prefersReduced)
+
+  useEffect(() => {
+    if (prefersReduced || shown) return
+    const el = ref.current
+    if (!el) return
+    if (typeof IntersectionObserver === 'undefined') {
+      setShown(true)
+      return
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setShown(true)
+          io.disconnect()
+        }
+      },
+      { rootMargin, threshold: 0.15 },
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [rootMargin, shown])
+
+  return { ref, shown }
+}
