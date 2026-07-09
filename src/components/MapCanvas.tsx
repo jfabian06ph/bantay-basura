@@ -1,4 +1,4 @@
-import type { RefObject } from 'react'
+import { useEffect, useRef, useState, type RefObject } from 'react'
 import type { Map as LeafletMap } from 'leaflet'
 import MapView, { type FlyTarget, type MapViewport } from './MapView'
 import FloatingControls from './FloatingControls'
@@ -9,6 +9,75 @@ import type { Target } from './LocationSearch'
 import type { GeoStatus, UserLocation } from '../hooks/useUserLocation'
 import type { Report } from '../types'
 import type { StatusFilter } from '../PublicApp'
+
+interface CloudSprite {
+  tx: string
+  ty: string
+  size: number
+  op: number
+  s0: number
+  delay: number
+}
+
+/** Clouds that emanate from the center and rush outward past the "camera" as
+ * the map zooms — a fly-forward-through-clouds moment that veils briefly then
+ * clears as the map settles. Motion (not a static wash) keeps the map readable. */
+function makeClouds(): CloudSprite[] {
+  return Array.from({ length: 9 }, (_, i) => {
+    // Spread launch angles around the circle, with a little jitter.
+    const angle = (i / 9) * Math.PI * 2 + Math.random() * 0.7
+    const dist = 42 + Math.random() * 38 // how far it flies outward (vmin)
+    return {
+      tx: `${(Math.cos(angle) * dist).toFixed(1)}vmin`,
+      ty: `${(Math.sin(angle) * dist).toFixed(1)}vmin`,
+      size: 260 + Math.floor(Math.random() * 320), // 260–580px
+      op: 0.45 + Math.random() * 0.3,
+      s0: 0.3 + Math.random() * 0.25, // starting scale (small, near center)
+      delay: Math.round(Math.random() * 14) / 100,
+    }
+  })
+}
+
+/**
+ * A soft "flying through clouds" moment whenever a fly-to is triggered (search,
+ * locate, jump-to-address): several drifting cloud puffs. Skips the very first
+ * fly (initial auto-locate) so it doesn't play on load.
+ */
+function FlyClouds({ nonce }: { nonce?: number }) {
+  const prev = useRef<number | null>(null)
+  const [run, setRun] = useState<{ id: number; clouds: CloudSprite[] } | null>(null)
+
+  useEffect(() => {
+    if (nonce == null) return
+    if (prev.current === null) {
+      prev.current = nonce // first observed fly (initial locate) — don't animate
+      return
+    }
+    if (nonce === prev.current) return
+    prev.current = nonce
+    setRun((r) => ({ id: (r?.id ?? 0) + 1, clouds: makeClouds() }))
+  }, [nonce])
+
+  if (!run) return null
+  return (
+    <div key={run.id} className="bb-fly-clouds" aria-hidden>
+      {run.clouds.map((c, i) => (
+        <span
+          key={i}
+          className="bb-cloud-sprite"
+          style={{
+            width: `${c.size}px`,
+            animationDelay: `${c.delay}s`,
+            ['--tx' as string]: c.tx,
+            ['--ty' as string]: c.ty,
+            ['--op' as string]: c.op,
+            ['--s0' as string]: c.s0,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
 
 interface Props {
   reports: Report[]
@@ -91,6 +160,8 @@ export default function MapCanvas({
         onSelect={onSelectReport}
         onViewport={onViewport}
       />
+
+      <FlyClouds nonce={flyTarget?.nonce} />
 
       {placing ? (
         <PlacingOverlay onCancel={onCancelPlacing} onConfirm={onConfirmPlacement} />

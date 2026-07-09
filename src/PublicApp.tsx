@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Map as LeafletMap } from 'leaflet'
 import type { FlyTarget, MapViewport } from './components/MapView'
 import { nearestMunicipality } from './municipalities'
+import { reverseArea } from './lib/geocode'
 import Navigation from './components/Navigation'
 import MapCanvas from './components/MapCanvas'
 import MapDialogs from './components/MapDialogs'
@@ -57,6 +58,7 @@ export default function PublicApp({ onSignIn }: Props) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('pending')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [mapView, setMapView] = useState<MapViewport | null>(null)
+  const [areaLabel, setAreaLabel] = useState<string | null>(null)
   const flyNonce = useRef(0)
   const mapRef = useRef<LeafletMap | null>(null)
 
@@ -102,7 +104,27 @@ export default function PublicApp({ onSignIn }: Props) {
     )
   }, [reports, mapView])
 
-  const contextLabel = useMemo(() => labelForView(mapView), [mapView])
+  // Name the current map area anywhere in PH via reverse geocoding (debounced,
+  // so we stay light on Nominatim). Falls back to the Zambales heuristic while
+  // the lookup is in flight or if it fails.
+  useEffect(() => {
+    if (!mapView) return
+    const ctrl = new AbortController()
+    const t = setTimeout(() => {
+      reverseArea(mapView.lat, mapView.lng, mapView.zoom, ctrl.signal)
+        .then((name) => name && setAreaLabel(name))
+        .catch(() => {})
+    }, 700)
+    return () => {
+      clearTimeout(t)
+      ctrl.abort()
+    }
+  }, [mapView])
+
+  const contextLabel = useMemo(
+    () => areaLabel ?? labelForView(mapView),
+    [areaLabel, mapView],
+  )
 
   const stats = useMemo(() => {
     let pending = 0

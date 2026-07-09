@@ -65,9 +65,9 @@ export default function FloatingControls({
       </div>
 
       <div className="bb-cta">
-        <span className="bb-cta-label">See waste?</span>
+        <span className="bb-cta-label">See something that needs cleaning?</span>
         <Button size="lg" className="bb-cta-btn" onClick={onReport}>
-          🚩 Report It
+          Report Waste
         </Button>
       </div>
     </>

@@ -39,7 +39,7 @@ export default function Footer({ onNavigate }: Props) {
       <div className="bb-footer-top">
         <div className="bb-footer-brand">
           <div className="bb-footer-logo">
-            <img src="/logo-mark-512.png" alt="" />
+            <img src="/logo-mark.svg" alt="" />
             <span>Bantay Basura</span>
           </div>
           <p className="bb-footer-blurb">

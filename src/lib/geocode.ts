@@ -64,6 +64,43 @@ export interface ReverseResult {
   sub: string
 }
 
+/**
+ * Name the area currently centered in the map, at a granularity that matches
+ * the zoom: street/barangay isn't useful as a headline, so we favor
+ * city/municipality when zoomed in and province/region when zoomed out.
+ * Returns null on failure so callers can fall back to a generic label.
+ */
+export async function reverseArea(
+  lat: number,
+  lng: number,
+  mapZoom: number,
+  signal?: AbortSignal,
+): Promise<string | null> {
+  // Nominatim reverse `zoom`: ~10 = city, 8 = county, 5 = state, 3 = country.
+  // When the map is zoomed way out the viewport spans the whole country, so
+  // naming the single province under the center point would be misleading —
+  // fall back to the country instead.
+  const z = mapZoom >= 13 ? 12 : mapZoom >= 11 ? 10 : mapZoom >= 8 ? 8 : 4
+  const url =
+    'https://nominatim.openstreetmap.org/reverse' +
+    `?format=jsonv2&addressdetails=1&zoom=${z}&lat=${lat}&lon=${lng}`
+  const res = await fetch(url, { signal, headers: { Accept: 'application/json' } })
+  if (!res.ok) return null
+  const d: { address?: Record<string, string> } = await res.json()
+  const a = d.address ?? {}
+  if (mapZoom >= 11) {
+    return (
+      a.city || a.town || a.municipality || a.village || a.suburb ||
+      a.county || a.province || a.state || null
+    )
+  }
+  if (mapZoom >= 8) {
+    return a.province || a.state || a.region || a.country || null
+  }
+  // Country-scale view.
+  return a.country || null
+}
+
 /** Turn a coordinate into a human place name (barangay/area, city, province). */
 export async function reverseGeocode(
   lat: number,

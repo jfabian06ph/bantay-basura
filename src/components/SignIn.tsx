@@ -29,7 +29,7 @@ export default function SignIn({ onClose }: Props) {
           <X className="size-4" />
         </button>
 
-        <img className="bb-signin-logo" src="/logo-mark-512.png" alt="" />
+        <img className="bb-signin-logo" src="/logo-mark.svg" alt="" />
         <h2 className="bb-signin-title">Operations Center</h2>
         <p className="bb-signin-sub">
           Secure access for LGU officers and authorized responders.

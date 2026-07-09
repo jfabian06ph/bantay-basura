@@ -94,7 +94,7 @@ export default function OperationsCenter() {
     <div className="ops">
       <aside className="ops-sidebar">
         <div className="ops-brand">
-          <img src="/logo-mark-512.png" alt="" />
+          <img src="/logo-mark.svg" alt="" />
           <div>
             <div className="ops-brand-name">Bantay Basura</div>
             <div className="ops-brand-sub">Operations Center</div>

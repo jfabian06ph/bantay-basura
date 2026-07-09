@@ -17,7 +17,7 @@ export default function Navigation({ view, onNavigate, onSignIn }: Props) {
     <header className="bb-header">
       <div className="bb-brand">
         <div className="bb-brand-mark">
-          <img src="/logo-mark-512.png" alt="Bantay Basura" />
+          <img src="/logo-mark.svg" alt="Bantay Basura" />
         </div>
         <div className="bb-brand-text">
           <h1 className="bb-title">Bantay Basura</h1>

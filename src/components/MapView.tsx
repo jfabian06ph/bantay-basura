@@ -345,12 +345,21 @@ function MapControls({
   mapRef,
   basemap,
   onBasemap,
+  userPos,
 }: {
   mapRef: React.RefObject<LeafletMap | null>
   basemap: BasemapKey
   onBasemap: (key: BasemapKey) => void
+  userPos: UserLocation | null
 }) {
   const [layersOpen, setLayersOpen] = useState(false)
+
+  // Re-center on the current (real or spoofed) location; otherwise show the
+  // whole coverage area. Prevents the "jumps back to the overview" surprise.
+  const recenter = () => {
+    if (userPos) mapRef.current?.flyTo([userPos.lat, userPos.lng], 16, { duration: 0.9 })
+    else mapRef.current?.flyTo(ZAMBALES_CENTER, 9, { duration: 0.9 })
+  }
   return (
     <div className="bb-map-ctrls">
       <div className="bb-layers">
@@ -384,9 +393,9 @@ function MapControls({
 
       <button
         className="bb-control bb-control-round"
-        onClick={() => mapRef.current?.flyTo(ZAMBALES_CENTER, 9, { duration: 0.9 })}
+        onClick={recenter}
         aria-label="Re-center map"
-        title="Re-center to full view"
+        title={userPos ? 'Re-center on my location' : 'Re-center to full view'}
       >
         <Maximize className="size-5" />
       </button>
@@ -483,7 +492,12 @@ export default function MapView({
       </MapContainer>
 
       {!placing && (
-        <MapControls mapRef={mapRef} basemap={basemap} onBasemap={setBasemap} />
+        <MapControls
+          mapRef={mapRef}
+          basemap={basemap}
+          onBasemap={setBasemap}
+          userPos={userPos}
+        />
       )}
     </>
   )

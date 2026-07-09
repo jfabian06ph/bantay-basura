@@ -291,6 +291,46 @@
   background: var(--map-bg);
 }
 
+/* Fly-forward-through-clouds moment during a fly-to (search / locate / jump). */
+.bb-fly-clouds {
+  position: absolute;
+  inset: 0;
+  z-index: 500;
+  pointer-events: none;
+  overflow: hidden;
+}
+/* Each puff starts small at the center and rushes outward past the camera. */
+.bb-cloud-sprite {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  aspect-ratio: 1800 / 1010;
+  background: url(/cloud.png) center / contain no-repeat;
+  filter: blur(6px);
+  opacity: 0;
+  will-change: transform, opacity;
+  transform: translate(-50%, -50%) scale(var(--s0, 0.4));
+  animation: bb-cloud-zoom 1.4s var(--ease) forwards;
+}
+@keyframes bb-cloud-zoom {
+  0% {
+    transform: translate(-50%, -50%) scale(var(--s0, 0.4));
+    opacity: 0;
+  }
+  22% { opacity: var(--op, 0.6); }
+  70% { opacity: var(--op, 0.6); }
+  100% {
+    transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(2.6);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bb-fly-clouds {
+    display: none;
+  }
+}
+
 /* ---- Placement crosshair ---- */
 .bb-crosshair {
   position: absolute;
