@@ -29,6 +29,7 @@ import {
   CATEGORY_EMOJI,
   CATEGORY_LABELS,
   STATUS_COLORS,
+  STATUS_LABELS,
   type Report,
 } from '../types'
 import type { UserLocation } from '../hooks/useUserLocation'
@@ -212,28 +213,6 @@ export default function ReportPanel({ report, now, userPos, onConfirm, onClose }
     <>
       <aside className={`bb-panel ${collapsed ? 'is-collapsed' : ''}`}>
         <div className="bb-panel-scroll">
-          {/* Meta reads above the hero so the photo stays clean and dominant. */}
-          <div className="bb-panel-topmeta">
-            <span className="bb-topmeta-place">
-              <MapPin className="size-4" /> {area}
-              {dist && <span className="bb-topmeta-dist"> · {dist}</span>}
-            </span>
-            <span className="bb-topmeta-right">
-              <span className="bb-topmeta-status">
-                <i className="bb-topmeta-dot" style={{ background: color }} />
-                {PANEL_STATUS[report.status]}
-              </span>
-              {hasPhoto && (
-                <span className="bb-topmeta-photos">
-                  <Camera className="size-3.5" /> {photos.length}
-                </span>
-              )}
-            </span>
-            <button className="bb-topmeta-close" onClick={onClose} aria-label="Close">
-              <X className="size-4" />
-            </button>
-          </div>
-
           <div className="bb-panel-photo-wrap">
             {hasPhoto ? (
               <button
@@ -249,6 +228,27 @@ export default function ReportPanel({ report, now, userPos, onConfirm, onClose }
                 <span className="bb-panel-noimg-label">No photo provided</span>
               </div>
             )}
+
+            <button className="bb-panel-close" onClick={onClose} aria-label="Close">
+              <X className="size-4" />
+            </button>
+
+            <div className="bb-panel-photo-scrim" />
+            <div className="bb-photo-overlay">
+              <span className="bb-photo-place">
+                <MapPin className="size-3.5" /> {area}
+                {dist && <span className="bb-photo-dist"> · {dist}</span>}
+              </span>
+              <span className="bb-photo-status" style={{ background: `${color}e6` }}>
+                {STATUS_LABELS[report.status]}
+              </span>
+            </div>
+            <div className="bb-photo-chip">
+              <Camera className="size-3.5" />
+              {hasPhoto
+                ? `${photos.length} ${photos.length === 1 ? 'Photo' : 'Photos'} · ${relativeTime(new Date(report.createdAt).getTime(), now)}`
+                : `Reported ${relativeTime(new Date(report.createdAt).getTime(), now)}`}
+            </div>
           </div>
 
           {photos.length > 1 && (
@@ -307,12 +307,6 @@ export default function ReportPanel({ report, now, userPos, onConfirm, onClose }
                   <span className="bb-cat-badge">
                     {CATEGORY_EMOJI[report.category]} {CATEGORY_LABELS[report.category]}
                   </span>
-                )}
-                {!hasPhoto && (
-                  <p className="bb-rsheet-area">
-                    {area}
-                    {dist && <span className="bb-rsheet-dist"> · {dist}</span>}
-                  </p>
                 )}
               </div>
 

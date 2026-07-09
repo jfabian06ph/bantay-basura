@@ -2347,10 +2347,6 @@
 }
 .bb-panel-photo-wrap {
   position: relative;
-  /* Align the hero to the same side margins as the meta bar + thumbnails. */
-  margin: 0 16px;
-  border-radius: 14px;
-  overflow: hidden;
 }
 .bb-panel-photo {
   width: 100%;
@@ -2619,6 +2615,10 @@
   letter-spacing: -0.01em;
   text-shadow: 0 1px 6px rgba(2, 8, 23, 0.7);
 }
+.bb-photo-dist {
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 600;
+}
 .bb-photo-status {
   padding: 2px 9px;
   border-radius: var(--radius-pill);
@@ -2629,81 +2629,6 @@
   letter-spacing: 0.04em;
   backdrop-filter: blur(4px);
 }
-/* Meta bar above the hero — keeps labels off the photo */
-.bb-panel-topmeta {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 14px 16px 12px;
-}
-.bb-topmeta-place {
-  flex: 1;
-  min-width: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 15px;
-  font-weight: 800;
-  color: var(--text-strong);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.bb-topmeta-place svg {
-  color: var(--text-dim);
-  flex: none;
-}
-.bb-topmeta-dist {
-  color: var(--text-dim);
-  font-weight: 600;
-}
-.bb-topmeta-right {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  flex: none;
-}
-.bb-topmeta-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 800;
-  color: var(--text-dim);
-  white-space: nowrap;
-}
-.bb-topmeta-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex: none;
-}
-.bb-topmeta-photos {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-dim);
-}
-.bb-topmeta-close {
-  width: 30px;
-  height: 30px;
-  display: grid;
-  place-items: center;
-  border: none;
-  border-radius: 50%;
-  background: var(--glass-bg-soft);
-  color: var(--text-dim);
-  cursor: pointer;
-  flex: none;
-  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
-}
-.bb-topmeta-close:hover {
-  background: rgba(255, 255, 255, 0.14);
-  color: #fff;
-}
-
 /* Prominent, two-line verification badge */
 .bb-verif2 {
   display: flex;
@@ -2910,8 +2835,8 @@
 .bb-panel-thumbs {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  padding: 8px 16px 0;
+  gap: 6px;
+  padding: 8px 8px 0;
 }
 .bb-panel-thumb {
   position: relative;
