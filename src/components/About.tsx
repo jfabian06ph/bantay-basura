@@ -28,17 +28,7 @@ const STEPS = [
 export default function About({ onClose, activeCount, onNavigate }: Props) {
   return (
     <div className="bb-about">
-      <header className="bb-about-nav">
-        <img
-          className="bb-about-wordmark"
-          src="/logo-wordmark.png"
-          alt="Bantay Basura"
-        />
-        <button className="bb-about-back" onClick={onClose}>
-          ✕ Close
-        </button>
-      </header>
-
+      <div className="bb-page">
       <section className="bb-about-hero">
         <h1 className="bb-about-title">
           Tingnan.
@@ -102,6 +92,7 @@ export default function About({ onClose, activeCount, onNavigate }: Props) {
           Simulan ang pag-flag →
         </button>
       </section>
+      </div>
 
       <Footer onNavigate={onNavigate} />
     </div>

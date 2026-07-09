@@ -20,17 +20,7 @@ export default function InfoPage({
 }: Props) {
   return (
     <div className="bb-about">
-      <header className="bb-about-nav">
-        <img
-          className="bb-about-wordmark"
-          src="/logo-wordmark.png"
-          alt="Bantay Basura"
-        />
-        <button className="bb-about-back" onClick={onClose}>
-          ✕ Close
-        </button>
-      </header>
-
+      <div className="bb-page">
       <section className="bb-about-hero">
         <div className="bb-trust-eyebrow" style={{ color: '#8a847c' }}>
           {eyebrow}
@@ -65,6 +55,7 @@ export default function InfoPage({
           Back to the map →
         </button>
       </section>
+      </div>
 
       <Footer onNavigate={onNavigate} />
     </div>

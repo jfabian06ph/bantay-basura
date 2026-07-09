@@ -36,6 +36,7 @@ const PARTNERS = ['🏛️ DENR', '🏛️ DILG', '🏛️ LGUs', '🌱 NGOs', '
 export default function Footer({ onNavigate }: Props) {
   return (
     <footer className="bb-footer">
+      <div className="bb-page">
       <div className="bb-footer-top">
         <div className="bb-footer-brand">
           <div className="bb-footer-logo">
@@ -79,6 +80,7 @@ export default function Footer({ onNavigate }: Props) {
         <span className="bb-footer-values">
           Community-led · Privacy-first · Open data
         </span>
+      </div>
       </div>
     </footer>
   )

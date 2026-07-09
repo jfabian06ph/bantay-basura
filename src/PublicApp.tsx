@@ -186,6 +186,7 @@ export default function PublicApp({ onSignIn }: Props) {
     <div className="bb-app">
       <Navigation view={view} onNavigate={setView} onSignIn={onSignIn} />
 
+      <div className="bb-app-body">
       <MapCanvas
         reports={viewReports}
         mapReports={mapReports}
@@ -259,6 +260,7 @@ export default function PublicApp({ onSignIn }: Props) {
         now={NOW}
         live={isBackendConnected}
       />
+      </div>
 
       {devMode && (
         <DevPanel

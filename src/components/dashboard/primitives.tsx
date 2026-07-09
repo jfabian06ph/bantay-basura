@@ -1,17 +1,19 @@
 import Reveal from '../Reveal'
 import type { HeadlineStat } from '../../lib/stats'
 
-/** A single headline number with a label (and optional sub-line). */
+/** A single headline number with a label (and optional sub-line / footer link). */
 export function Metric({
   value,
   label,
   sub,
+  foot,
   big,
   accent,
 }: {
   value: React.ReactNode
   label: string
-  sub?: string
+  sub?: React.ReactNode
+  foot?: React.ReactNode
   big?: boolean
   accent?: boolean
 }) {
@@ -20,15 +22,27 @@ export function Metric({
       <div className={`bb-dash-metric-val ${accent ? 'bb-dash-accent' : ''}`}>{value}</div>
       <div className="bb-dash-metric-label">{label}</div>
       {sub && <div className="bb-dash-metric-sub">{sub}</div>}
+      {foot && <div className="bb-dash-metric-foot">{foot}</div>}
     </div>
   )
 }
 
 /** A named headline (e.g. "Fastest LGU") resolving to a place + value. */
-export function Headline({ title, stat }: { title: string; stat: HeadlineStat | null }) {
+export function Headline({
+  title,
+  stat,
+  icon,
+  emptyLabel = 'Not enough data yet',
+}: {
+  title: string
+  stat: HeadlineStat | null
+  icon?: React.ReactNode
+  emptyLabel?: string
+}) {
   return (
     <div className="bb-dash-metric">
-      <div className="bb-dash-metric-label" style={{ marginBottom: 4 }}>
+      <div className="bb-dash-metric-title">
+        {icon && <span className="bb-dash-metric-icon">{icon}</span>}
         {title}
       </div>
       {stat ? (
@@ -36,11 +50,14 @@ export function Headline({ title, stat }: { title: string; stat: HeadlineStat | 
           <div className="bb-dash-metric-name">{stat.name}</div>
           <div className="bb-dash-metric-sub">
             {stat.value}
-            {stat.sub ? ` · ${stat.sub}` : ''}
+            {stat.sub ? ` ${stat.sub}` : ''}
           </div>
         </>
       ) : (
-        <div className="bb-dash-metric-name bb-dash-dim">—</div>
+        <>
+          <div className="bb-dash-metric-name bb-dash-dim">—</div>
+          <div className="bb-dash-metric-sub">{emptyLabel}</div>
+        </>
       )}
     </div>
   )

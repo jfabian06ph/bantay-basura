@@ -74,7 +74,9 @@ export interface DashboardStats {
   // Public Dashboard — "This Month"
   reportsThisMonth: number
   resolvedRate: number // all-time, 0–100
+  resolvedRateDelta: number | null // pts change vs last month (+ = better)
   avgResponseDays: number | null
+  avgResponseDelta: number | null // days change vs last month (− = faster)
   fastestLgu: HeadlineStat | null
   mostImproved: HeadlineStat | null
   latestCleanup: RecentCleanup | null
@@ -165,6 +167,17 @@ export function computeDashboard(reports: Report[], now: number): DashboardStats
 
   const resolvedRate = pct(resolvedAll.length, total)
 
+  // Month-over-month deltas for the "vs last month" sub-lines. Null unless
+  // both months have data, so we never imply a trend we can't back up.
+  const resolvedRateDelta = monthDelta(
+    monthResolvedRate(reports, thisMonth),
+    monthResolvedRate(reports, lastMonth),
+  )
+  const avgResponseDelta = monthDelta(
+    monthAvgResponse(reports, thisMonth),
+    monthAvgResponse(reports, lastMonth),
+  )
+
   const responseDays = resolvedAll
     .filter((r) => r.resolvedAt)
     .map((r) => (resolvedTime(r) - new Date(r.createdAt).getTime()) / DAY_MS)
@@ -254,7 +267,9 @@ export function computeDashboard(reports: Report[], now: number): DashboardStats
   return {
     reportsThisMonth,
     resolvedRate,
+    resolvedRateDelta,
     avgResponseDays,
+    avgResponseDelta,
     fastestLgu,
     mostImproved,
     latestCleanup,
@@ -300,6 +315,33 @@ function computeMostImproved(
     }
   }
   return best
+}
+
+/** Resolution rate (0–100) among reports created in a given month, or null. */
+function monthResolvedRate(reports: Report[], mk: string): number | null {
+  const inMonth = reports.filter(
+    (r) => monthKey(new Date(r.createdAt).getTime()) === mk,
+  )
+  return inMonth.length ? pct(inMonth.filter(isResolved).length, inMonth.length) : null
+}
+
+/** Avg. response time (days) for reports created & resolved in a month, or null. */
+function monthAvgResponse(reports: Report[], mk: string): number | null {
+  const days = reports
+    .filter(
+      (r) =>
+        monthKey(new Date(r.createdAt).getTime()) === mk &&
+        isResolved(r) &&
+        r.resolvedAt,
+    )
+    .map((r) => (resolvedTime(r) - new Date(r.createdAt).getTime()) / DAY_MS)
+    .filter((d) => d >= 0)
+  return days.length ? days.reduce((a, b) => a + b, 0) / days.length : null
+}
+
+/** This-month minus last-month, only when both are present. */
+function monthDelta(cur: number | null, prev: number | null): number | null {
+  return cur !== null && prev !== null ? cur - prev : null
 }
 
 function computeWasteTrends(reports: Report[], total: number): CategoryShare[] {
