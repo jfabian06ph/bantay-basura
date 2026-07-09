@@ -33,14 +33,16 @@ export function Headline({
   stat,
   icon,
   emptyLabel = 'Not enough data yet',
+  className = '',
 }: {
   title: string
   stat: HeadlineStat | null
   icon?: React.ReactNode
   emptyLabel?: string
+  className?: string
 }) {
   return (
-    <div className="bb-dash-metric">
+    <div className={`bb-dash-metric ${className}`}>
       <div className="bb-dash-metric-title">
         {icon && <span className="bb-dash-metric-icon">{icon}</span>}
         {title}

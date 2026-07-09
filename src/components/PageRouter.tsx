@@ -12,6 +12,7 @@ interface Props {
   reports: Report[]
   now: number
   live: boolean
+  onViewOnMap?: (lat: number, lng: number, zoom: number) => void
 }
 
 /**
@@ -27,6 +28,7 @@ export default function PageRouter({
   reports,
   now,
   live,
+  onViewOnMap,
 }: Props) {
   // Child pages type their nav callback as (string) => void; bridge to View.
   const navigate = (v: string) => onNavigate(v as View)
@@ -43,6 +45,7 @@ export default function PageRouter({
         live={live}
         onClose={onClose}
         onNavigate={navigate}
+        onViewOnMap={onViewOnMap}
       />
     )
   }

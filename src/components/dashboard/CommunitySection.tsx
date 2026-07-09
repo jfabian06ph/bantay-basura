@@ -1,9 +1,19 @@
+import { Trophy } from 'lucide-react'
 import { Card, Empty } from './primitives'
 import type { LguStat } from '../../lib/stats'
 
 interface Props {
   cleanest: LguStat[]
   active: LguStat[]
+}
+
+/** Rank badge — a trophy for #1, the number otherwise. */
+function Rank({ i }: { i: number }) {
+  return (
+    <span className="bb-dash-rank-n">
+      {i === 0 ? <Trophy size={13} aria-label="Leader" /> : i + 1}
+    </span>
+  )
 }
 
 /** Side-by-side leaderboards: cleanest areas and most active areas. */
@@ -15,7 +25,7 @@ export default function CommunitySection({ cleanest, active }: Props) {
           <ol className="bb-dash-rank">
             {cleanest.map((l, i) => (
               <li key={l.name}>
-                <span className="bb-dash-rank-n">{i + 1}</span>
+                <Rank i={i} />
                 <span className="bb-dash-rank-name">{l.name}</span>
                 <span className="bb-dash-rank-val">{l.resolutionRate}%</span>
               </li>
@@ -31,7 +41,7 @@ export default function CommunitySection({ cleanest, active }: Props) {
           <ol className="bb-dash-rank">
             {active.map((l, i) => (
               <li key={l.name}>
-                <span className="bb-dash-rank-n">{i + 1}</span>
+                <Rank i={i} />
                 <span className="bb-dash-rank-name">{l.name}</span>
                 <span className="bb-dash-rank-val">{l.confirmations}</span>
               </li>

@@ -1,10 +1,13 @@
-import { nearestMunicipality } from '../municipalities'
+import { nearestMunicipality, type Place } from '../municipalities'
 import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
   DONE_STATUSES,
+  OPEN_STATUSES,
+  SOURCE_ORDER,
   type Category,
   type Report,
+  type ReportSource,
   type ReportStatus,
 } from '../types'
 
@@ -54,6 +57,7 @@ export interface HeadlineStat {
 export interface TrendPoint {
   label: string // short month label, e.g. "Jul"
   count: number
+  bySource: Record<ReportSource, number> // stacked breakdown by reporter role
 }
 
 export interface CategoryShare {
@@ -67,7 +71,26 @@ export interface RecentCleanup {
   id: string
   lgu: string
   category: Category
-  when: number // ms timestamp
+  when: number // ms timestamp (resolved time)
+  photo?: string // thumbnail — prefers the "after" (resolved) photo
+  title?: string
+  note?: string
+  reportedAt?: number // createdAt ms
+  beforePhotos?: string[]
+  afterPhotos?: string[]
+}
+
+/** An area accumulating open (uncleared) reports — the "where to focus" list. */
+export interface Hotspot {
+  name: string
+  lat: number
+  lng: number
+  zoom: number
+  open: number // pending + in_review
+  inReview: number
+  topCategory: Category | null
+  topCategoryLabel: string | null
+  lastReported: number | null // ms timestamp of the most recent open report
 }
 
 export interface DashboardStats {
@@ -91,6 +114,7 @@ export interface DashboardStats {
   wasteTrends: CategoryShare[]
   monthlySeries: TrendPoint[]
   recentCleanups: RecentCleanup[]
+  hotspots: Hotspot[]
 }
 
 const MONTH_LABELS = [
@@ -253,16 +277,27 @@ export function computeDashboard(reports: Report[], now: number): DashboardStats
 
   const wasteTrends = computeWasteTrends(reports, total)
   const monthlySeries = computeMonthlySeries(reports, now)
+  const hotspots = computeHotspots(reports)
 
   const recentCleanups = [...resolvedAll]
     .sort((a, b) => resolvedTime(b) - resolvedTime(a))
-    .slice(0, 6)
-    .map((r) => ({
-      id: r.id,
-      lgu: lguOf(r),
-      category: r.category,
-      when: resolvedTime(r),
-    }))
+    .slice(0, 12)
+    .map((r) => {
+      const beforePhotos = r.photoUrls ?? (r.photoUrl ? [r.photoUrl] : [])
+      const afterPhotos = r.resolvedPhotoUrls ?? []
+      return {
+        id: r.id,
+        lgu: lguOf(r),
+        category: r.category,
+        when: resolvedTime(r),
+        photo: afterPhotos[0] ?? beforePhotos[0],
+        title: r.title,
+        note: r.note,
+        reportedAt: new Date(r.createdAt).getTime(),
+        beforePhotos,
+        afterPhotos,
+      }
+    })
 
   return {
     reportsThisMonth,
@@ -279,7 +314,63 @@ export function computeDashboard(reports: Report[], now: number): DashboardStats
     wasteTrends,
     monthlySeries,
     recentCleanups,
+    hotspots,
   }
+}
+
+/**
+ * Rank areas by how many open (uncleared) reports they carry — the public
+ * "where should attention go?" list. Each hotspot also surfaces its most
+ * common waste type and the most recent report, so the row is self-explaining.
+ */
+function computeHotspots(reports: Report[]): Hotspot[] {
+  interface Acc {
+    place: Place
+    open: number
+    inReview: number
+    cats: Map<Category, number>
+    lastReported: number
+  }
+  const map = new Map<string, Acc>()
+
+  for (const r of reports) {
+    if (!OPEN_STATUSES.includes(r.status)) continue
+    const place = nearestMunicipality({ lat: r.lat, lng: r.lng }).place
+    let e = map.get(place.name)
+    if (!e) {
+      e = { place, open: 0, inReview: 0, cats: new Map(), lastReported: 0 }
+      map.set(place.name, e)
+    }
+    e.open++
+    if (r.status === 'in_review') e.inReview++
+    e.cats.set(r.category, (e.cats.get(r.category) ?? 0) + 1)
+    const t = new Date(r.createdAt).getTime()
+    if (t > e.lastReported) e.lastReported = t
+  }
+
+  return [...map.values()]
+    .map((e) => {
+      let topCategory: Category | null = null
+      let topN = 0
+      for (const [c, n] of e.cats) {
+        if (n > topN) {
+          topN = n
+          topCategory = c
+        }
+      }
+      return {
+        name: e.place.name,
+        lat: e.place.lat,
+        lng: e.place.lng,
+        zoom: e.place.zoom,
+        open: e.open,
+        inReview: e.inReview,
+        topCategory,
+        topCategoryLabel: topCategory ? CATEGORY_LABELS[topCategory] : null,
+        lastReported: e.lastReported || null,
+      }
+    })
+    .sort((a, b) => b.open - a.open || (b.lastReported ?? 0) - (a.lastReported ?? 0))
 }
 
 function computeMostImproved(
@@ -360,6 +451,13 @@ function computeWasteTrends(reports: Report[], total: number): CategoryShare[] {
     .sort((a, b) => b.count - a.count)
 }
 
+function emptyBySource(): Record<ReportSource, number> {
+  return SOURCE_ORDER.reduce(
+    (acc, s) => ((acc[s] = 0), acc),
+    {} as Record<ReportSource, number>,
+  )
+}
+
 function computeMonthlySeries(reports: Report[], now: number): TrendPoint[] {
   const nowDate = new Date(now)
   const buckets: TrendPoint[] = []
@@ -368,12 +466,15 @@ function computeMonthlySeries(reports: Report[], now: number): TrendPoint[] {
     const d = new Date(nowDate.getFullYear(), nowDate.getMonth() - i, 1)
     const key = `${d.getFullYear()}-${d.getMonth()}`
     index.set(key, buckets.length)
-    buckets.push({ label: MONTH_LABELS[d.getMonth()], count: 0 })
+    buckets.push({ label: MONTH_LABELS[d.getMonth()], count: 0, bySource: emptyBySource() })
   }
   for (const r of reports) {
     const key = monthKey(new Date(r.createdAt).getTime())
     const i = index.get(key)
-    if (i !== undefined) buckets[i].count++
+    if (i !== undefined) {
+      buckets[i].count++
+      buckets[i].bySource[r.source ?? 'resident']++
+    }
   }
   return buckets
 }

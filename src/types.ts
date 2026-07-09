@@ -6,6 +6,9 @@ export interface LatLng {
 
 export type ReportStatus = 'pending' | 'in_review' | 'resolved'
 
+/** Who submitted a report — surfaced only as an aggregate role, never a person. */
+export type ReportSource = 'resident' | 'lgu' | 'volunteer'
+
 /** Statuses that count as "not yet cleaned". */
 export const OPEN_STATUSES: ReportStatus[] = ['pending', 'in_review']
 export const DONE_STATUSES: ReportStatus[] = ['resolved']
@@ -35,6 +38,8 @@ export interface Report {
   /** "After" photos added when the report is resolved — powers the before/after view. */
   resolvedPhotoUrls?: string[]
   status: ReportStatus
+  /** Aggregate reporter role (defaults to resident). */
+  source?: ReportSource
   stillHere: number
   cleared: number
   /** ISO timestamp */
@@ -94,3 +99,11 @@ export const STATUS_COLORS: Record<ReportStatus, string> = {
 
 /** Ordered list for the legend. */
 export const STATUS_ORDER: ReportStatus[] = ['pending', 'in_review', 'resolved']
+
+export const SOURCE_LABELS: Record<ReportSource, string> = {
+  resident: 'Residents',
+  lgu: 'LGU / Officials',
+  volunteer: 'Volunteers',
+}
+
+export const SOURCE_ORDER: ReportSource[] = ['resident', 'lgu', 'volunteer']

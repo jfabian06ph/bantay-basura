@@ -23,7 +23,7 @@ export default function Navigation({ view, onNavigate, onSignIn }: Props) {
           <h1 className="bb-title">Bantay Basura</h1>
           <div className="bb-tagrow">
             <span className="bb-subtitle">Making waste visible. Together.</span>
-            <span className="bb-volunteer">🌱 Community Powered</span>
+            <span className="bb-volunteer">🌱 Powered by Volunteers</span>
           </div>
         </div>
       </div>

@@ -91,8 +91,6 @@ export default function HeadlineStats({ s, now, onViewDetails }: Props) {
               ) : undefined
             }
           />
-          <Headline title="Fastest LGU" stat={s.fastestLgu} icon={<Leaf size={15} />} />
-          <Headline title="Most Improved" stat={s.mostImproved} icon={<Leaf size={15} />} />
           <Metric
             value={s.latestCleanup ? relativeTime(s.latestCleanup.when, now) : '—'}
             label={
@@ -107,6 +105,18 @@ export default function HeadlineStats({ s, now, onViewDetails }: Props) {
                 </button>
               ) : undefined
             }
+          />
+          <Headline
+            title="Fastest LGU"
+            stat={s.fastestLgu}
+            icon={<Leaf size={15} />}
+            className="bb-dash-metric-wide"
+          />
+          <Headline
+            title="Most Improved"
+            stat={s.mostImproved}
+            icon={<Leaf size={15} />}
+            className="bb-dash-metric-wide"
           />
         </div>
       </Reveal>

@@ -259,6 +259,10 @@ export default function PublicApp({ onSignIn }: Props) {
         reports={reports}
         now={NOW}
         live={isBackendConnected}
+        onViewOnMap={(lat, lng, zoom) => {
+          flyTo(lat, lng, zoom)
+          setView('map')
+        }}
       />
       </div>
 

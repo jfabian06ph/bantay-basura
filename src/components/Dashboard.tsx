@@ -2,11 +2,12 @@ import { useMemo } from 'react'
 import Footer from './Footer'
 import Reveal from './Reveal'
 import HeadlineStats from './dashboard/HeadlineStats'
+import HotspotsSection from './dashboard/HotspotsSection'
 import CommunitySection from './dashboard/CommunitySection'
 import WasteTrend from './dashboard/WasteTrend'
 import RecentCleanup from './dashboard/RecentCleanup'
 import { Card } from './dashboard/primitives'
-import { Sparkline } from './dashboard/Charts'
+import { StackedBars } from './dashboard/Charts'
 import { computeDashboard, relativeTime } from '../lib/stats'
 import type { Report } from '../types'
 
@@ -16,6 +17,7 @@ interface Props {
   live: boolean
   onClose: () => void
   onNavigate: (view: string) => void
+  onViewOnMap?: (lat: number, lng: number, zoom: number) => void
 }
 
 /**
@@ -23,7 +25,14 @@ interface Props {
  * live reports (or seeded demo data), aggregated by LGU — no personal
  * information is ever shown. Renders below the persistent site header.
  */
-export default function Dashboard({ reports, now, live, onClose, onNavigate }: Props) {
+export default function Dashboard({
+  reports,
+  now,
+  live,
+  onClose,
+  onNavigate,
+  onViewOnMap,
+}: Props) {
   const s = useMemo(() => computeDashboard(reports, now), [reports, now])
 
   const updated = useMemo(() => {
@@ -63,14 +72,29 @@ export default function Dashboard({ reports, now, live, onClose, onNavigate }: P
       <div className="bb-page bb-page-wide">
         <HeadlineStats s={s} now={now} onViewDetails={onClose} />
 
+        <HotspotsSection hotspots={s.hotspots} now={now} onViewOnMap={onViewOnMap} />
+
         <section className="bb-dash-section">
           <div className="bb-dash-eyebrow">Community Highlights</div>
+          <p className="bb-dash-section-lede">
+            We celebrate the barangays and communities leading the way in keeping
+            their areas clean.
+          </p>
+
           <CommunitySection cleanest={s.cleanestLgus} active={s.activeAreas} />
+        </section>
+
+        <section className="bb-dash-section bb-dash-section-tight">
+          <div className="bb-dash-eyebrow">Waste Profile</div>
+          <p className="bb-dash-section-lede">
+            How reports break down by waste type, how volume has trended over the
+            last six months, and which areas were most recently cleaned up.
+          </p>
 
           <div className="bb-dash-grid3">
             <WasteTrend trends={s.wasteTrends} />
             <Card title="Reports Over Time" hint="Last 6 months">
-              <Sparkline points={s.monthlySeries} />
+              <StackedBars points={s.monthlySeries} />
             </Card>
             <RecentCleanup cleanups={s.recentCleanups} now={now} />
           </div>
