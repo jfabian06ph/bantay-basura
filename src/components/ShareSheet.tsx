@@ -74,7 +74,7 @@ export default function ShareSheet({ report, onClose }: Props) {
           <X className="size-4" />
         </button>
         <h2 className="bb-qr-title">Share Report</h2>
-        <p className="bb-qr-sub">Scan, copy, or share this report — ref {ref}.</p>
+        <p className="bb-qr-sub">Scan, copy, or share this report. Ref {ref}.</p>
         <div className="bb-qr-code">
           {dataUrl ? (
             <img src={dataUrl} alt={`QR code for ${ref}`} />

@@ -126,7 +126,7 @@ export const MOCK_REPORTS: Report[] = [
   {
     id: 'seed-8',
     source: 'resident',
-    title: 'Scattered Garbage',
+    title: 'Neighborhood Cleanup',
     lat: 14.9331,
     lng: 120.1522,
     category: 'household',
@@ -277,7 +277,7 @@ export const MOCK_REPORTS: Report[] = [
     lng: 120.232,
     category: 'water',
     severity: 3,
-    note: 'Nalinis na ang creek sa Subic — natanggal ang bumabarang basura.',
+    note: 'Nalinis na ang creek sa Subic, natanggal ang bumabarang basura.',
     status: 'resolved',
     stillHere: 4,
     cleared: 18,
@@ -306,7 +306,7 @@ export const MOCK_REPORTS: Report[] = [
   {
     id: 'seed-20',
     source: 'lgu',
-    title: 'Dumpsite Cleared',
+    title: 'Roadside Dumpsite Removed',
     lat: 15.536,
     lng: 119.9455,
     category: 'dumping',

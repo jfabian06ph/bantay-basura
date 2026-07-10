@@ -146,7 +146,9 @@ export function StackedBars({ points }: { points: TrendPoint[] }) {
       <div className="bb-dash-spark" ref={ref}>
         {points.map((m, i) => (
           <div
-            className="bb-dash-spark-col"
+            className={`bb-dash-spark-col ${
+              active !== null && active !== i ? 'is-dim' : ''
+            }`}
             key={i}
             onMouseEnter={() => setActive(i)}
             onMouseLeave={() => setActive(null)}

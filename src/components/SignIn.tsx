@@ -68,7 +68,7 @@ export default function SignIn({ onClose }: Props) {
 
         {isDemo && (
           <p className="bb-signin-demo">
-            Demo mode — no backend connected. Enter anything (or leave blank) to
+            Demo mode. No backend connected. Enter anything (or leave blank) to
             explore the Operations Center.
           </p>
         )}

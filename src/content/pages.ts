@@ -28,7 +28,7 @@ export interface NavItem {
 export const NAV: NavItem[] = [
   { key: 'map', label: 'Map' },
   { key: 'transparency', label: 'Transparency' },
-  { key: 'reports', label: 'Community' },
+  { key: 'reports', label: 'Impact' },
   { key: 'how', label: 'How It Works' },
   { key: 'about', label: 'About' },
 ]
@@ -48,7 +48,7 @@ export const PAGES: Record<InfoView, PageContent> = {
     eyebrow: 'Every flag, in one list',
     title: 'Community Reports',
     intro:
-      'A searchable, filterable feed of every waste report — beyond the map pins.',
+      'A searchable, filterable feed of every waste report, beyond the map pins.',
     points: [
       { title: 'Filter & sort', body: 'By status, area, waste type, severity, and recency.' },
       { title: 'Hotspots', body: 'See which barangays and roads accumulate the most flags.' },
@@ -70,11 +70,11 @@ export const PAGES: Record<InfoView, PageContent> = {
     eyebrow: 'Cleaner communities, together',
     title: 'Partners',
     intro:
-      'The LGUs, barangays, schools, and volunteer groups making clean-ups happen — and how to join.',
+      'The LGUs, barangays, schools, and volunteer groups making clean-ups happen, and how to join.',
     points: [
       { title: 'Local governments', body: 'Claim your area, acknowledge reports, and post clean-up updates.' },
       { title: 'Volunteer groups', body: 'Adopt hotspots and organize community clean-up drives.' },
-      { title: 'Become a partner', body: 'Bring Bantay Basura to your town — reach out to collaborate.' },
+      { title: 'Become a partner', body: 'Bring Bantay Basura to your town. Reach out to collaborate.' },
     ],
   },
 }

@@ -4,6 +4,7 @@ import Reveal from './Reveal'
 import HeadlineStats from './dashboard/HeadlineStats'
 import HotspotsSection from './dashboard/HotspotsSection'
 import CommunitySection from './dashboard/CommunitySection'
+import CommunitySpotlight from './dashboard/CommunitySpotlight'
 import WasteTrend from './dashboard/WasteTrend'
 import RecentCleanup from './dashboard/RecentCleanup'
 import { Card } from './dashboard/primitives'
@@ -28,7 +29,6 @@ interface Props {
 export default function Dashboard({
   reports,
   now,
-  live,
   onClose,
   onNavigate,
   onViewOnMap,
@@ -72,24 +72,21 @@ export default function Dashboard({
       <div className="bb-page bb-page-wide">
         <HeadlineStats s={s} now={now} onViewDetails={onClose} />
 
-        <HotspotsSection hotspots={s.hotspots} now={now} onViewOnMap={onViewOnMap} />
+        <HotspotsSection
+          hotspots={s.hotspots}
+          reports={reports}
+          now={now}
+          onViewOnMap={onViewOnMap}
+        />
 
         <section className="bb-dash-section">
           <div className="bb-dash-eyebrow">Community Highlights</div>
-          <p className="bb-dash-section-lede">
-            We celebrate the barangays and communities leading the way in keeping
-            their areas clean.
-          </p>
 
           <CommunitySection cleanest={s.cleanestLgus} active={s.activeAreas} />
         </section>
 
         <section className="bb-dash-section bb-dash-section-tight">
           <div className="bb-dash-eyebrow">Waste Profile</div>
-          <p className="bb-dash-section-lede">
-            How reports break down by waste type, how volume has trended over the
-            last six months, and which areas were most recently cleaned up.
-          </p>
 
           <div className="bb-dash-grid3">
             <WasteTrend trends={s.wasteTrends} />
@@ -102,31 +99,16 @@ export default function Dashboard({
           <Reveal>
             <p className="bb-dash-privacy">
               🔒 All figures are aggregated by area. No names, contacts, or personal
-              information are ever shown — accountability without exposure.
+              information are ever shown. Accountability without exposure.
             </p>
           </Reveal>
         </section>
+
+        <CommunitySpotlight
+          cleanups={s.recentCleanups}
+          onReadMore={() => onNavigate('reports')}
+        />
       </div>
-
-      {/* Full-bleed coastal CTA */}
-      <section
-        className="bb-dash-cta"
-        style={{ backgroundImage: 'url(/zambales-coast.jpg)' }}
-      >
-        <div className="bb-dash-cta-inner">
-          <h2 className="bb-dash-cta-title">Cleaner communities begin with one report.</h2>
-          <p className="bb-dash-cta-lede">
-            Thank you to every resident, volunteer, and LGU working together.
-          </p>
-          <button className="bb-dash-cta-btn" onClick={onClose}>
-            Back to the map →
-          </button>
-        </div>
-      </section>
-
-      {!live && (
-        <p className="bb-dash-demo-note">Showing demo data until the backend is connected.</p>
-      )}
 
       <Footer onNavigate={onNavigate} />
     </div>

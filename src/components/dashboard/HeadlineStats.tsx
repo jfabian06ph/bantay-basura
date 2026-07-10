@@ -1,8 +1,8 @@
-import { useState } from 'react'
-import { ChevronDown, Leaf } from 'lucide-react'
+import { useState, type ReactNode } from 'react'
+import { ChevronDown, Trophy, Flame, Zap, MapPin } from 'lucide-react'
 import Reveal from '../Reveal'
 import CountUp from '../CountUp'
-import { Metric, Headline } from './primitives'
+import { Metric } from './primitives'
 import { relativeTime, type DashboardStats } from '../../lib/stats'
 
 interface Props {
@@ -18,32 +18,60 @@ const PERIODS = [
   { value: 'all', label: 'All Time' },
 ]
 
-/** A signed "vs last month" delta with a directional arrow. */
-function Delta({
-  value,
-  unit = '',
-  decimals = 0,
-  goodWhen,
+/** A data-backed "award" tucked under each KPI. */
+function Highlight({
+  icon,
+  iconColor,
+  label,
+  place,
+  stat,
+  onAction,
+  actionLabel,
 }: {
-  value: number
-  unit?: string
-  decimals?: number
-  goodWhen: 'up' | 'down'
+  icon: ReactNode
+  iconColor: string
+  label?: string
+  place: string
+  stat?: string
+  onAction?: () => void
+  actionLabel?: string
 }) {
-  const up = value > 0
-  const magnitude = Math.abs(value).toFixed(decimals)
-  const good = (up && goodWhen === 'up') || (!up && goodWhen === 'down')
   return (
-    <span className={`bb-dash-delta ${good ? 'bb-dash-delta-good' : 'bb-dash-delta-bad'}`}>
-      {up ? '↑' : '↓'} {magnitude}
-      {unit} vs last month
-    </span>
+    <div className="bb-dash-hl">
+      {label && (
+        <div className="bb-dash-hl-label">
+          <span className="bb-dash-hl-icon" style={{ color: iconColor }}>
+            {icon}
+          </span>
+          {label}
+        </div>
+      )}
+      <div className="bb-dash-hl-place">
+        {!label && (
+          <span className="bb-dash-hl-icon" style={{ color: iconColor }}>
+            {icon}
+          </span>
+        )}
+        {place}
+        {stat && <span className="bb-dash-hl-stat"> · {stat}</span>}
+      </div>
+      {onAction && (
+        <button className="bb-dash-link" onClick={onAction}>
+          {actionLabel ?? 'View details →'}
+        </button>
+      )}
+    </div>
   )
 }
 
 /** The "This Month" headline grid — the accountability numbers up top. */
 export default function HeadlineStats({ s, now, onViewDetails }: Props) {
   const [period, setPeriod] = useState('month')
+
+  const leader = s.cleanestLgus[0]
+  const active = s.activeAreas[0]
+  const fastest = s.fastestLgu
+  const fastestStat = fastest?.value.replace(' days', '-day average')
 
   return (
     <section className="bb-dash-section bb-dash-section-lead">
@@ -64,16 +92,33 @@ export default function HeadlineStats({ s, now, onViewDetails }: Props) {
       </div>
       <Reveal>
         <div className="bb-dash-grid">
-          <Metric big value={<CountUp value={s.reportsThisMonth} />} label="Reports submitted" />
+          <Metric
+            big
+            value={<CountUp value={s.reportsThisMonth} />}
+            label="Reports submitted"
+            foot={
+              <Highlight
+                icon={<Trophy size={14} />}
+                iconColor="#d1a017"
+                label="Community Leader"
+                place={leader?.name ?? '—'}
+                stat={leader ? `${leader.resolutionRate}% resolved` : undefined}
+              />
+            }
+          />
           <Metric
             big
             value={<CountUp value={s.resolvedRate} suffix="%" />}
             label="Resolved"
             accent
-            sub={
-              s.resolvedRateDelta !== null ? (
-                <Delta value={s.resolvedRateDelta} unit="%" goodWhen="up" />
-              ) : undefined
+            foot={
+              <Highlight
+                icon={<Flame size={14} />}
+                iconColor="#e0662a"
+                label="Most Reported Area"
+                place={active?.name ?? '—'}
+                stat={active ? `${active.confirmations} community confirmations` : undefined}
+              />
             }
           />
           <Metric
@@ -84,39 +129,31 @@ export default function HeadlineStats({ s, now, onViewDetails }: Props) {
                 '—'
               )
             }
-            label="Average response time"
-            sub={
-              s.avgResponseDelta !== null ? (
-                <Delta value={s.avgResponseDelta} decimals={1} goodWhen="down" />
-              ) : undefined
+            label="Average response"
+            foot={
+              <Highlight
+                icon={<Zap size={14} />}
+                iconColor="#2563eb"
+                label="Fastest Cleanup"
+                place={fastest?.name ?? '—'}
+                stat={fastestStat}
+              />
             }
           />
           <Metric
             value={s.latestCleanup ? relativeTime(s.latestCleanup.when, now) : '—'}
-            label={
-              s.latestCleanup
-                ? `Latest cleanup in ${s.latestCleanup.lgu}, Zambales`
-                : 'Latest cleanup'
-            }
+            label="Latest cleanup"
             foot={
-              s.latestCleanup && onViewDetails ? (
-                <button className="bb-dash-link" onClick={onViewDetails}>
-                  View details →
-                </button>
+              s.latestCleanup ? (
+                <Highlight
+                  icon={<MapPin size={14} />}
+                  iconColor="#009336"
+                  place={s.latestCleanup.lgu}
+                  onAction={onViewDetails}
+                  actionLabel="See before & after →"
+                />
               ) : undefined
             }
-          />
-          <Headline
-            title="Fastest LGU"
-            stat={s.fastestLgu}
-            icon={<Leaf size={15} />}
-            className="bb-dash-metric-wide"
-          />
-          <Headline
-            title="Most Improved"
-            stat={s.mostImproved}
-            icon={<Leaf size={15} />}
-            className="bb-dash-metric-wide"
           />
         </div>
       </Reveal>

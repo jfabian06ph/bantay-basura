@@ -172,7 +172,7 @@ export function useReportFlow({
     }
     setDuplicate(null)
     setPendingCoords(null)
-    setCelebrateMsg('Thanks for confirming — it counts toward this spot 🙌')
+    setCelebrateMsg('Thanks for confirming, it counts toward this spot 🙌')
   }
 
   return {

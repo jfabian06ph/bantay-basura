@@ -10,7 +10,7 @@ const STEPS = [
   {
     n: '01',
     title: 'Tingnan',
-    body: 'May nakita kang nakakalat na basura? Buksan ang app — awtomatikong makukuha ang lokasyon mo.',
+    body: 'May nakita kang nakakalat na basura? Buksan ang app, awtomatikong makukuha ang lokasyon mo.',
   },
   {
     n: '02',
@@ -20,12 +20,12 @@ const STEPS = [
   {
     n: '03',
     title: 'Linisin',
-    body: 'Makikita ng lahat — at ng LGU — kung saan ang problema. Kapag nalinis na, i-tap ang “Nalinis na”.',
+    body: 'Makikita ng lahat, at ng LGU, kung saan ang problema. Kapag nalinis na, i-tap ang “Nalinis na”.',
   },
 ]
 
 /** Minimal, editorial About page — airy, quiet, whitespace-forward. */
-export default function About({ onClose, activeCount, onNavigate }: Props) {
+export default function About({ activeCount, onNavigate }: Props) {
   return (
     <div className="bb-about">
       <div className="bb-page">
@@ -62,7 +62,7 @@ export default function About({ onClose, activeCount, onNavigate }: Props) {
         </p>
         <p className="bb-about-para">
           Mula sa simpleng obserbasyong iyon isinilang ang{' '}
-          <strong>Bantay Basura</strong> — isang community-powered platform na
+          <strong>Bantay Basura</strong>, isang community-powered platform na
           nagbibigay sa bawat mamamayan ng kakayahang mag-report ng mga waste
           hotspot, makita ang progreso ng paglilinis, at makatulong sa pagbuo ng
           mas malinis na Pilipinas.
@@ -87,11 +87,6 @@ export default function About({ onClose, activeCount, onNavigate }: Props) {
         <div className="bb-about-stat-label">aktibong flag ngayon</div>
       </section>
 
-      <section className="bb-about-cta">
-        <button className="bb-about-cta-btn" onClick={onClose}>
-          Simulan ang pag-flag →
-        </button>
-      </section>
       </div>
 
       <Footer onNavigate={onNavigate} />

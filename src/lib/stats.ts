@@ -78,6 +78,7 @@ export interface RecentCleanup {
   reportedAt?: number // createdAt ms
   beforePhotos?: string[]
   afterPhotos?: string[]
+  confirmations?: number // stillHere + cleared on this report
 }
 
 /** An area accumulating open (uncleared) reports — the "where to focus" list. */
@@ -91,6 +92,7 @@ export interface Hotspot {
   topCategory: Category | null
   topCategoryLabel: string | null
   lastReported: number | null // ms timestamp of the most recent open report
+  confirmations: number // community confirmations (stillHere + cleared) on open reports
 }
 
 export interface DashboardStats {
@@ -296,6 +298,7 @@ export function computeDashboard(reports: Report[], now: number): DashboardStats
         reportedAt: new Date(r.createdAt).getTime(),
         beforePhotos,
         afterPhotos,
+        confirmations: r.stillHere + r.cleared,
       }
     })
 
@@ -330,6 +333,7 @@ function computeHotspots(reports: Report[]): Hotspot[] {
     inReview: number
     cats: Map<Category, number>
     lastReported: number
+    confirmations: number
   }
   const map = new Map<string, Acc>()
 
@@ -338,11 +342,12 @@ function computeHotspots(reports: Report[]): Hotspot[] {
     const place = nearestMunicipality({ lat: r.lat, lng: r.lng }).place
     let e = map.get(place.name)
     if (!e) {
-      e = { place, open: 0, inReview: 0, cats: new Map(), lastReported: 0 }
+      e = { place, open: 0, inReview: 0, cats: new Map(), lastReported: 0, confirmations: 0 }
       map.set(place.name, e)
     }
     e.open++
     if (r.status === 'in_review') e.inReview++
+    e.confirmations += r.stillHere + r.cleared
     e.cats.set(r.category, (e.cats.get(r.category) ?? 0) + 1)
     const t = new Date(r.createdAt).getTime()
     if (t > e.lastReported) e.lastReported = t
@@ -368,6 +373,7 @@ function computeHotspots(reports: Report[]): Hotspot[] {
         topCategory,
         topCategoryLabel: topCategory ? CATEGORY_LABELS[topCategory] : null,
         lastReported: e.lastReported || null,
+        confirmations: e.confirmations,
       }
     })
     .sort((a, b) => b.open - a.open || (b.lastReported ?? 0) - (a.lastReported ?? 0))
@@ -580,6 +586,72 @@ export function municipalitySnapshot(
   }
 }
 
+export interface AreaCategoryCount {
+  category: Category
+  label: string
+  count: number
+}
+
+/** Everything the "Areas Needing Attention" drawer shows for one area. */
+export interface AreaDetail {
+  name: string
+  open: number
+  inReview: number
+  resolved: number
+  total: number
+  resolutionRate: number
+  byCategory: AreaCategoryCount[] // among open reports, most common first
+  latestReport: number | null // most recent open report (ms)
+  oldestOpenDays: number | null // age of the oldest unresolved report
+  avgOpenDays: number | null // average age of open reports
+  confirmations: number // community confirmations (stillHere + cleared) area-wide
+  watching: number // residents confirming open reports are "still here"
+  lastCleanup: number | null // most recent resolved report (ms)
+}
+
+/** Detailed rollup for a single area's open reports — powers the drawer. */
+export function computeAreaDetail(
+  reports: Report[],
+  placeName: string,
+  now: number,
+): AreaDetail {
+  const local = reportsInPlace(reports, placeName)
+  const open = local.filter((r) => OPEN_STATUSES.includes(r.status))
+  const resolved = local.filter(isResolved)
+
+  const cats = new Map<Category, number>()
+  for (const r of open) cats.set(r.category, (cats.get(r.category) ?? 0) + 1)
+  const byCategory = [...cats.entries()]
+    .map(([category, count]) => ({ category, label: CATEGORY_LABELS[category], count }))
+    .sort((a, b) => b.count - a.count)
+
+  const openTimes = open.map((r) => new Date(r.createdAt).getTime())
+  const latestReport = openTimes.length ? Math.max(...openTimes) : null
+  const oldest = openTimes.length ? Math.min(...openTimes) : null
+  const ageDays = (t: number) => Math.max(0, (now - t) / DAY_MS)
+  const lastCleanup = resolved.length
+    ? Math.max(...resolved.map((r) => resolvedTime(r)))
+    : null
+
+  return {
+    name: placeName,
+    open: open.length,
+    inReview: open.filter((r) => r.status === 'in_review').length,
+    resolved: resolved.length,
+    total: local.length,
+    resolutionRate: pct(resolved.length, local.length),
+    byCategory,
+    latestReport,
+    oldestOpenDays: oldest != null ? ageDays(oldest) : null,
+    avgOpenDays: openTimes.length
+      ? openTimes.reduce((s, t) => s + ageDays(t), 0) / openTimes.length
+      : null,
+    confirmations: local.reduce((n, r) => n + r.stillHere + r.cleared, 0),
+    watching: open.reduce((n, r) => n + r.stillHere, 0),
+    lastCleanup,
+  }
+}
+
 /** Friendly relative-time label, Filipino-flavored for the civic audience. */
 export function relativeTime(ms: number, now: number): string {
   const diff = now - ms
@@ -588,9 +660,8 @@ export function relativeTime(ms: number, now: number): string {
   if (mins < 1) return 'just now'
   if (mins < 60) return `${mins}m ago`
   const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours}h ago`
+  if (hours < 48) return `${hours}h ago`
   const days = Math.floor(hours / 24)
-  if (days === 1) return 'yesterday'
   if (days < 30) return `${days}d ago`
   const months = Math.floor(days / 30)
   return `${months}mo ago`

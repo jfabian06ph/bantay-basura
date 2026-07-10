@@ -41,7 +41,7 @@ export default function DuplicateModal({ report, onStillHere, onClose }: Props) 
                 A {CATEGORY_EMOJI[report.category]}{' '}
                 <b className="text-foreground">{CATEGORY_LABELS[report.category]}</b>{' '}
                 report was already made on this spot {ago(report.createdAt)}. Instead
-                of a duplicate, confirm it's still there — that helps prioritize
+                of a duplicate, confirm it's still there. That helps prioritize
                 clean-up more than a new pin.
               </>
             )}

@@ -42,7 +42,7 @@ export default function Navigation({ view, onNavigate, onSignIn }: Props) {
 
       <div className="bb-nav-end">
         <button className="bb-lgu-btn" onClick={onSignIn}>
-          <Shield className="size-4" /> LGU Operations
+          <Shield className="size-4" /> Operations Center
         </button>
 
         <Popover open={menuOpen} onOpenChange={setMenuOpen}>
@@ -72,7 +72,7 @@ export default function Navigation({ view, onNavigate, onSignIn }: Props) {
               }}
               className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-bold text-muted-foreground hover:bg-white/5"
             >
-              <Shield className="size-4" /> LGU Operations
+              <Shield className="size-4" /> Operations Center
             </button>
           </PopoverContent>
         </Popover>

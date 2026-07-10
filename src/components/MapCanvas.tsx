@@ -201,7 +201,7 @@ export default function MapCanvas({
         />
       )}
 
-      {devMode && !live && <div className="bb-demo-badge">Demo mode — mock data</div>}
+      {devMode && !live && <div className="bb-demo-badge">Demo mode · mock data</div>}
     </div>
   )
 }

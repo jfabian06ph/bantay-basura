@@ -15,7 +15,6 @@ export default function InfoPage({
   title,
   intro,
   points,
-  onClose,
   onNavigate,
 }: Props) {
   return (
@@ -50,11 +49,6 @@ export default function InfoPage({
         ))}
       </section>
 
-      <section className="bb-about-cta">
-        <button className="bb-about-cta-btn" onClick={onClose}>
-          Back to the map →
-        </button>
-      </section>
       </div>
 
       <Footer onNavigate={onNavigate} />

@@ -1,12 +1,15 @@
 import { useMemo, useState } from 'react'
 import { MapPin, ArrowRight, X, Search, ChevronDown } from 'lucide-react'
 import Reveal from '../Reveal'
+import AreaDrawer from './AreaDrawer'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '../ui/dialog'
+import { CATEGORY_COLORS } from './Charts'
 import { relativeTime, type Hotspot } from '../../lib/stats'
-import { CATEGORY_LABELS, CATEGORY_ORDER, type Category } from '../../types'
+import { CATEGORY_LABELS, CATEGORY_ORDER, type Category, type Report } from '../../types'
 
 interface Props {
   hotspots: Hotspot[]
+  reports: Report[]
   now: number
   onViewOnMap?: (lat: number, lng: number, zoom: number) => void
 }
@@ -14,72 +17,79 @@ interface Props {
 /** How many areas to show before the "See all" modal. */
 const PREVIEW_COUNT = 5
 
-/** Compact count text: "3 open" or "1 in review" when nothing's past triage. */
-function countText(h: Hotspot): string {
-  if (h.open > 0 && h.open === h.inReview) return 'in review'
-  return 'open'
-}
-
-/** One area row — shared by the inline preview and the full-list modal. */
+/** One tappable area row — opens the detail drawer. */
 function HotspotRow({
   h,
-  rank,
   now,
-  onViewOnMap,
+  onSelect,
 }: {
   h: Hotspot
-  rank: number
   now: number
-  onViewOnMap?: (lat: number, lng: number, zoom: number) => void
+  onSelect: (h: Hotspot) => void
 }) {
-  const inReview = h.open > 0 && h.open === h.inReview
+  const pending = h.open - h.inReview
+  const meta: string[] = []
+  if (h.lastReported) meta.push(`Reported ${relativeTime(h.lastReported, now)}`)
+  if (h.confirmations > 0) meta.push(`Confirmed by ${h.confirmations} residents`)
   return (
-    <li className="bb-hotspot">
-      <span className="bb-hotspot-rank">{rank}</span>
-
-      <div className="bb-hotspot-main">
-        <div className="bb-hotspot-area">
-          <MapPin size={15} className="bb-hotspot-pin" />
-          {h.name}
+    <li>
+      <button className="bb-hotspot" onClick={() => onSelect(h)}>
+        <div className="bb-hotspot-main">
+          <div className="bb-hotspot-area">
+            <MapPin size={16} className="bb-hotspot-pin" />
+            {h.name}
+          </div>
+          {h.topCategoryLabel && (
+            <div className="bb-hotspot-cat">
+              {h.topCategory && (
+                <span
+                  className="bb-hotspot-cat-dot"
+                  style={{ background: CATEGORY_COLORS[h.topCategory] }}
+                />
+              )}
+              {h.topCategoryLabel}
+            </div>
+          )}
+          {meta.length > 0 && <div className="bb-hotspot-meta">{meta.join(' • ')}</div>}
         </div>
-        <div className="bb-hotspot-meta">
-          {h.topCategoryLabel && <span>{h.topCategoryLabel}</span>}
-          {h.lastReported && <span>{relativeTime(h.lastReported, now)}</span>}
+
+        <div className="bb-hotspot-status">
+          {pending > 0 && (
+            <span className="bb-hotspot-stat is-open">
+              <i />
+              <b>{pending}</b> Open
+            </span>
+          )}
+          {h.inReview > 0 && (
+            <span className="bb-hotspot-stat is-review">
+              <i />
+              <b>{h.inReview}</b> In Review
+            </span>
+          )}
         </div>
-      </div>
 
-      <span className={`bb-hotspot-badge ${inReview ? 'is-review' : ''}`}>
-        <b>{h.open}</b> {countText(h)}
-      </span>
-
-      {onViewOnMap && (
-        <button
-          className="bb-hotspot-map"
-          title="View on map"
-          aria-label={`View ${h.name} on map`}
-          onClick={() => onViewOnMap(h.lat, h.lng, h.zoom)}
-        >
-          <MapPin size={16} />
-        </button>
-      )}
+        <span className="bb-hotspot-cta">
+          View area <ArrowRight size={14} />
+        </span>
+      </button>
     </li>
   )
 }
 
 /**
- * "Areas Needing Attention" — areas with the most open reports, so residents
- * and LGUs can see where attention is needed. Shows the top few inline; the
- * full ranked list opens in a scrollable, filterable modal.
+ * "Areas Needing Attention" — areas with the most open reports. Shows the top
+ * few inline; the full ranked list opens in a filterable modal. Clicking any
+ * row opens a detail drawer that can fly the map to that area.
  */
-export default function HotspotsSection({ hotspots, now, onViewOnMap }: Props) {
-  const [open, setOpen] = useState(false)
+export default function HotspotsSection({ hotspots, reports, now, onViewOnMap }: Props) {
+  const [listOpen, setListOpen] = useState(false)
+  const [selected, setSelected] = useState<Hotspot | null>(null)
   const [query, setQuery] = useState('')
   const [type, setType] = useState<'all' | Category>('all')
 
   const hasMore = hotspots.length > PREVIEW_COUNT
   const preview = hotspots.slice(0, PREVIEW_COUNT)
 
-  // Waste types actually present, so the dropdown never offers empty filters.
   const availableTypes = useMemo(() => {
     const set = new Set<Category>()
     for (const h of hotspots) if (h.topCategory) set.add(h.topCategory)
@@ -95,13 +105,11 @@ export default function HotspotsSection({ hotspots, now, onViewOnMap }: Props) {
     })
   }, [hotspots, query, type])
 
-  // Close the modal before flying the map so the map isn't hidden behind it.
-  const viewOnMap = onViewOnMap
-    ? (lat: number, lng: number, zoom: number) => {
-        setOpen(false)
-        onViewOnMap(lat, lng, zoom)
-      }
-    : undefined
+  // From the full-list modal, jump straight into the drawer.
+  const selectFromList = (h: Hotspot) => {
+    setListOpen(false)
+    setSelected(h)
+  }
 
   return (
     <section className="bb-dash-section">
@@ -113,13 +121,13 @@ export default function HotspotsSection({ hotspots, now, onViewOnMap }: Props) {
       {hotspots.length ? (
         <Reveal>
           <ol className="bb-hotspots">
-            {preview.map((h, i) => (
-              <HotspotRow key={h.name} h={h} rank={i + 1} now={now} onViewOnMap={onViewOnMap} />
+            {preview.map((h) => (
+              <HotspotRow key={h.name} h={h} now={now} onSelect={setSelected} />
             ))}
           </ol>
 
           {hasMore && (
-            <button className="bb-hotspots-more" onClick={() => setOpen(true)}>
+            <button className="bb-hotspots-more" onClick={() => setListOpen(true)}>
               See all {hotspots.length} areas
               <ArrowRight size={16} className="bb-hotspots-more-chev" aria-hidden />
             </button>
@@ -127,11 +135,12 @@ export default function HotspotsSection({ hotspots, now, onViewOnMap }: Props) {
         </Reveal>
       ) : (
         <p className="bb-dash-empty">
-          No open reports right now — every flagged area has been cleared. 🎉
+          No open reports right now. Every flagged area has been cleared. 🎉
         </p>
       )}
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      {/* Full, filterable list */}
+      <Dialog open={listOpen} onOpenChange={setListOpen}>
         <DialogContent className="max-w-[620px] w-[calc(100%-2.5rem)] gap-0 overflow-hidden border-[#eceae5] bg-white p-0 text-[#14110f]">
           <div className="bb-hotspots-modal-head">
             <div>
@@ -142,7 +151,7 @@ export default function HotspotsSection({ hotspots, now, onViewOnMap }: Props) {
             </div>
             <button
               className="bb-hotspots-modal-close"
-              onClick={() => setOpen(false)}
+              onClick={() => setListOpen(false)}
               aria-label="Close"
             >
               <X size={18} />
@@ -181,8 +190,8 @@ export default function HotspotsSection({ hotspots, now, onViewOnMap }: Props) {
           <div className="bb-hotspots-modal-body">
             {filtered.length ? (
               <ol className="bb-hotspots bb-hotspots--flush">
-                {filtered.map((h, i) => (
-                  <HotspotRow key={h.name} h={h} rank={i + 1} now={now} onViewOnMap={viewOnMap} />
+                {filtered.map((h) => (
+                  <HotspotRow key={h.name} h={h} now={now} onSelect={selectFromList} />
                 ))}
               </ol>
             ) : (
@@ -191,6 +200,14 @@ export default function HotspotsSection({ hotspots, now, onViewOnMap }: Props) {
           </div>
         </DialogContent>
       </Dialog>
+
+      <AreaDrawer
+        area={selected}
+        reports={reports}
+        now={now}
+        onClose={() => setSelected(null)}
+        onViewOnMap={onViewOnMap}
+      />
     </section>
   )
 }

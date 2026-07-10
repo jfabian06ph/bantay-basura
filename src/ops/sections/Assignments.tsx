@@ -65,7 +65,7 @@ export default function AssignmentsSection({ data }: { data: OpsData }) {
             <option value="">Choose incident…</option>
             {unassignedReports.map((r) => (
               <option key={r.id} value={r.id}>
-                {CATEGORY_LABELS[r.category]} — {r.note?.slice(0, 30) ?? r.id}
+                {CATEGORY_LABELS[r.category]} · {r.note?.slice(0, 30) ?? r.id}
               </option>
             ))}
           </select>

@@ -163,7 +163,7 @@ export default function ReportPanel({ report, now, userPos, onConfirm, onClose }
 
   async function share() {
     const url = window.location.href
-    const text = `${CATEGORY_LABELS[report.category]} reported in ${area} — Bantay Basura`
+    const text = `${CATEGORY_LABELS[report.category]} reported in ${area} · Bantay Basura`
     if (navigator.share) {
       try {
         await navigator.share({ title: 'Bantay Basura', text, url })
@@ -188,7 +188,7 @@ export default function ReportPanel({ report, now, userPos, onConfirm, onClose }
     setTracked(nowTracking)
     showToast(
       nowTracking
-        ? "Tracking — we'll notify you when this report is updated"
+        ? "Tracking. We'll notify you when this report is updated"
         : 'Stopped tracking this report',
     )
   }
@@ -326,7 +326,7 @@ export default function ReportPanel({ report, now, userPos, onConfirm, onClose }
                   className={`bb-head-icon ${tracked ? 'bb-head-icon-on' : ''}`}
                   onClick={toggleTrack}
                   aria-label={tracked ? 'Stop tracking' : 'Track this report'}
-                  title={tracked ? 'Tracking — tap to stop' : 'Track for updates'}
+                  title={tracked ? 'Tracking. Tap to stop' : 'Track for updates'}
                 >
                   {tracked ? <BellRing className="size-4" /> : <Bell className="size-4" />}
                 </button>

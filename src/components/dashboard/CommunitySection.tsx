@@ -7,13 +7,18 @@ interface Props {
   active: LguStat[]
 }
 
-/** Rank badge — a trophy for #1, the number otherwise. */
+const TROPHY_COLORS = ['#d1a017', '#9aa0a6', '#b4703a'] // gold, silver, bronze
+
+/** Rank badge — a trophy for the top three, a number otherwise. */
 function Rank({ i }: { i: number }) {
-  return (
-    <span className="bb-dash-rank-n">
-      {i === 0 ? <Trophy size={13} aria-label="Leader" /> : i + 1}
-    </span>
-  )
+  if (i < TROPHY_COLORS.length) {
+    return (
+      <span className="bb-dash-rank-medal" aria-label={`Rank ${i + 1}`}>
+        <Trophy size={16} style={{ color: TROPHY_COLORS[i] }} />
+      </span>
+    )
+  }
+  return <span className="bb-dash-rank-n">{i + 1}</span>
 }
 
 /** Side-by-side leaderboards: cleanest areas and most active areas. */

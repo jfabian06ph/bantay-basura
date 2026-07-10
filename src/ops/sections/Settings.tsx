@@ -66,7 +66,7 @@ export default function SettingsSection() {
           <button className="ops-btn" type="submit">
             {saved ? 'Saved ✓' : 'Save settings'}
           </button>
-          {isDemo && <p className="ops-cell-sub">Demo mode — settings are stored locally in this browser.</p>}
+          {isDemo && <p className="ops-cell-sub">Demo mode. Settings are stored locally in this browser.</p>}
         </form>
       </section>
     </div>

@@ -31,6 +31,8 @@ function CleanupRow({
   now: number
   onOpen: () => void
 }) {
+  const resolveDays =
+    c.reportedAt != null ? Math.max(0, (c.when - c.reportedAt) / DAY_MS) : null
   return (
     <li>
       <button className="bb-cleanup-row" onClick={onOpen}>
@@ -41,15 +43,25 @@ function CleanupRow({
             <span className="bb-dash-event-emoji">{CATEGORY_EMOJI[c.category]}</span>
           )}
         </span>
-        <span className="bb-dash-event-name">{c.lgu}</span>
+        <span className="bb-cleanup-row-main">
+          <span className="bb-dash-event-name">{c.lgu}</span>
+          {resolveDays != null && (
+            <span className="bb-cleanup-row-sub">
+              Resolved in {resolveDays.toFixed(1)} days
+            </span>
+          )}
+        </span>
         <span className="bb-dash-event-when">{relativeTime(c.when, now)}</span>
+        <span className="bb-cleanup-row-cta">
+          View before &amp; after <ArrowRight size={13} />
+        </span>
       </button>
     </li>
   )
 }
 
 /** The detail view for one cleanup — before/after photos, note, and timeline. */
-function CleanupDetail({ c, now }: { c: Cleanup; now: number }) {
+function CleanupDetail({ c }: { c: Cleanup }) {
   const before = c.beforePhotos ?? []
   const after = c.afterPhotos ?? []
   const responseDays =
@@ -57,9 +69,14 @@ function CleanupDetail({ c, now }: { c: Cleanup; now: number }) {
 
   return (
     <div className="bb-cleanup-detail">
-      <span className="bb-cleanup-cat">
-        {CATEGORY_EMOJI[c.category]} {CATEGORY_LABELS[c.category]}
-      </span>
+      <div className="bb-cleanup-badges">
+        <span className="bb-cleanup-status">
+          <span className="bb-cleanup-status-dot" /> Cleanup Completed
+        </span>
+        <span className="bb-cleanup-cat">
+          {CATEGORY_EMOJI[c.category]} {CATEGORY_LABELS[c.category]}
+        </span>
+      </div>
 
       {(before.length > 0 || after.length > 0) && (
         <div className="bb-cleanup-photos">
@@ -88,20 +105,22 @@ function CleanupDetail({ c, now }: { c: Cleanup; now: number }) {
           </div>
         )}
         <div>
-          <dt>Resolved</dt>
-          <dd>
-            {fmtDate(c.when)} · {relativeTime(c.when, now)}
-          </dd>
+          <dt>Cleaned</dt>
+          <dd>{fmtDate(c.when)}</dd>
         </div>
         {responseDays != null && (
           <div>
-            <dt>Response time</dt>
+            <dt>Turnaround</dt>
             <dd>
               {responseDays.toFixed(1)} day{responseDays === 1 ? '' : 's'}
             </dd>
           </div>
         )}
       </dl>
+
+      <p className="bb-cleanup-by">
+        Reported by a resident · Verified by {c.confirmations ?? 0} residents
+      </p>
     </div>
   )
 }
@@ -137,13 +156,13 @@ export default function RecentCleanup({ cleanups, now }: Props) {
                 setOpen(true)
               }}
             >
-              See all {cleanups.length} cleanups
+              Browse all cleanup stories
               <ArrowRight size={16} className="bb-hotspots-more-chev" aria-hidden />
             </button>
           )}
         </>
       ) : (
-        <Empty label="No cleanups recorded yet — be the first to resolve a flag." />
+        <Empty label="No cleanups recorded yet. Be the first to resolve a flag." />
       )}
 
       <Dialog
@@ -171,7 +190,7 @@ export default function RecentCleanup({ cleanups, now }: Props) {
                 </DialogTitle>
                 <DialogDescription className="text-[#55504a]">
                   {detail
-                    ? 'Resolved report details'
+                    ? `Resolved ${relativeTime(detail.when, now)}`
                     : `${cleanups.length} resolved reports, most recent first.`}
                 </DialogDescription>
               </div>
@@ -187,7 +206,7 @@ export default function RecentCleanup({ cleanups, now }: Props) {
 
           <div className="bb-hotspots-modal-body">
             {detail ? (
-              <CleanupDetail c={detail} now={now} />
+              <CleanupDetail c={detail} />
             ) : (
               <ul className="bb-dash-events bb-dash-events--modal">
                 {cleanups.map((c) => (
