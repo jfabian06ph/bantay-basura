@@ -10,6 +10,9 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover"
     />
     <meta name="theme-color" content="#e11d2a" />
+    <!-- Fetch the splash map during initial parse so the intro's reveal never
+         paints late on a cold cache (it's cached for every visit after). -->
+    <link rel="preload" as="image" href="/splash-map.jpg" fetchpriority="high" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Bantay Basura" />
