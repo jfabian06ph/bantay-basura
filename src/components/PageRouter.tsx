@@ -36,7 +36,15 @@ export default function PageRouter({
   const navigate = (v: string) => onNavigate(v as View)
 
   if (view === 'about') {
-    return <About onClose={onClose} activeCount={activeCount} onNavigate={navigate} />
+    return (
+      <About
+        onClose={onClose}
+        activeCount={activeCount}
+        reports={reports}
+        now={now}
+        onNavigate={navigate}
+      />
+    )
   }
 
   if (view === 'transparency') {
