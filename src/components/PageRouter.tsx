@@ -1,6 +1,7 @@
 import About from './About'
 import Dashboard from './Dashboard'
 import Impact from './Impact'
+import HowItWorks from './HowItWorks'
 import InfoPage from './InfoPage'
 import { PAGES, type InfoView, type View } from '../content/pages'
 import type { Report } from '../types'
@@ -54,6 +55,11 @@ export default function PageRouter({
   // "Impact" in the nav — the community hub (how people can help).
   if (view === 'reports') {
     return <Impact onNavigate={navigate} />
+  }
+
+  // "How It Works" — the scroll-told story of a single report.
+  if (view === 'how') {
+    return <HowItWorks onNavigate={navigate} />
   }
 
   if (view === 'map') return null
