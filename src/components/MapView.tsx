@@ -13,13 +13,8 @@ import Supercluster from 'supercluster'
 import { Plus, Minus, Layers, Maximize } from 'lucide-react'
 import 'leaflet/dist/leaflet.css'
 import type { Report } from '../types'
-import {
-  CATEGORY_LABELS,
-  CATEGORY_EMOJI,
-  STATUS_LABELS,
-  STATUS_COLORS,
-  DONE_STATUSES,
-} from '../types'
+import { CATEGORY_LABELS, STATUS_LABELS, STATUS_COLORS, DONE_STATUSES } from '../types'
+import { CATEGORY_ICON } from '../lib/categoryIcons'
 import { pinIcon, clusterIcon, userLocationIcon } from '../markerIcon'
 import type { UserLocation } from '../hooks/useUserLocation'
 import { distanceMeters, formatDistance } from '../lib/geo'
@@ -182,6 +177,7 @@ function ReportPin({
 }) {
   const dist = userPos ? formatDistance(distanceMeters(userPos, report)) : null
   const color = STATUS_COLORS[report.status]
+  const Cat = CATEGORY_ICON[report.category]
   return (
     <Marker
       position={[report.lat, report.lng]}
@@ -189,7 +185,9 @@ function ReportPin({
       eventHandlers={onSelect ? { click: () => onSelect(report) } : undefined}
     >
       <Tooltip direction="top" offset={[0, -8]} opacity={1} className="bb-tip">
-        {CATEGORY_EMOJI[report.category]} {CATEGORY_LABELS[report.category]}
+        <span className="inline-flex items-center gap-1">
+          <Cat className="size-3.5" /> {CATEGORY_LABELS[report.category]}
+        </span>
       </Tooltip>
       {!onSelect && (
         <Popup>
@@ -197,8 +195,8 @@ function ReportPin({
             {report.photoUrl && (
               <img className="bb-popup-photo" src={report.photoUrl} alt="report" />
             )}
-            <div className="bb-popup-title">
-              {CATEGORY_EMOJI[report.category]} {CATEGORY_LABELS[report.category]}
+            <div className="bb-popup-title inline-flex items-center gap-1.5">
+              <Cat className="size-4" /> {CATEGORY_LABELS[report.category]}
             </div>
             <div className="bb-status" style={{ background: `${color}22`, color }}>
               {STATUS_LABELS[report.status]}

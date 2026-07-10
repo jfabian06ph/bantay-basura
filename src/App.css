@@ -647,6 +647,18 @@
   .bb-filters-map {
     left: 14px;
     top: 76px;
+    gap: 6px;
+    max-width: calc(100% - 28px);
+  }
+  /* Smaller chips so All · Pending · Review · Resolved fit on one row. */
+  .bb-filter {
+    padding: 6px 11px;
+    font-size: 12px;
+    gap: 6px;
+  }
+  .bb-filter-dot {
+    width: 8px;
+    height: 8px;
   }
 }
 
@@ -664,27 +676,105 @@
   box-shadow: var(--shadow);
   backdrop-filter: blur(var(--glass-blur));
   overflow: hidden;
-  /* Gentle slide-up + settle whenever the panel appears. */
   transform-origin: bottom left;
-  animation: bb-trust-in 0.42s var(--ease);
+  /* Open with a little spring; close smoothly (see the open/closed states). */
+  transition:
+    opacity 0.32s var(--ease),
+    transform 0.46s cubic-bezier(0.34, 1.35, 0.5, 1),
+    visibility 0.46s;
+}
+/* Opening — settles in with a gentle overshoot. */
+.bb-trust-open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  visibility: visible;
+  animation: bb-trust-in 0.5s cubic-bezier(0.34, 1.35, 0.5, 1);
+}
+/* Dismissing — sinks + fades away, then hides so it can't catch taps. */
+.bb-trust-closed {
+  opacity: 0;
+  transform: translateY(26px) scale(0.92);
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.24s var(--ease),
+    transform 0.3s var(--ease),
+    visibility 0s 0.3s;
 }
 @keyframes bb-trust-in {
   from {
     opacity: 0;
-    transform: translateY(16px) scale(0.97);
+    transform: translateY(26px) scale(0.92);
   }
   to {
     opacity: 1;
-    transform: none;
+    transform: translateY(0) scale(1);
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .bb-trust {
+  .bb-trust,
+  .bb-trust-open,
+  .bb-trust-closed,
+  .bb-trust-reopen {
     animation: none;
+    transition: none;
   }
 }
 .bb-hidden {
   display: none !important;
+}
+
+/* Portrait-only enforcement (browser). Hidden by default; only shown on small
+   screens held in landscape. The installed PWA is locked via the manifest. */
+.bb-rotate-gate {
+  display: none;
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  .bb-rotate-gate {
+    position: fixed;
+    inset: 0;
+    z-index: 100000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 24px;
+    text-align: center;
+    background: #0b1220;
+    color: var(--text);
+  }
+  .bb-rotate-icon {
+    width: 40px;
+    height: 40px;
+    color: var(--green);
+    margin-bottom: 6px;
+    animation: bb-rotate-nudge 2.4s ease-in-out infinite;
+  }
+  .bb-rotate-title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+  .bb-rotate-sub {
+    margin: 0;
+    font-size: 14px;
+    color: var(--text-dim);
+  }
+}
+@keyframes bb-rotate-nudge {
+  0%,
+  60%,
+  100% {
+    transform: rotate(0deg);
+  }
+  75% {
+    transform: rotate(-90deg);
+  }
+  90% {
+    transform: rotate(-90deg);
+  }
 }
 .bb-trust-toggle {
   position: absolute;
@@ -710,16 +800,55 @@
   left: 26px;
   bottom: 24px;
   z-index: 600;
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 50%;
-  background: rgba(12, 20, 35, 0.93);
+  /* no dark circle — just the pulsing green beacon (a bigger invisible tap area) */
+  border: none;
+  background: none;
+  box-shadow: none;
   color: var(--text);
-  box-shadow: var(--shadow);
   cursor: pointer;
+  animation: bb-beacon-in 0.42s cubic-bezier(0.34, 1.4, 0.5, 1) both;
+}
+@keyframes bb-beacon-in {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+/* A live green beacon (instead of an "i") — says "there's live status here". */
+.bb-trust-live-dot {
+  position: relative;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px rgba(35, 194, 102, 0.85);
+}
+.bb-trust-live-dot::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 2px solid var(--green);
+  animation: bb-live-ping 1.8s var(--ease) infinite;
+}
+@keyframes bb-live-ping {
+  0% {
+    opacity: 0.7;
+    transform: scale(0.8);
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(2.4);
+  }
 }
 .bb-trust-eyebrow {
   color: #9fb0c9;
@@ -1291,6 +1420,9 @@
   inset: 0;
   z-index: 1200;
   overflow-y: auto;
+  /* clip any hair of horizontal overflow so the page can't wobble side-to-side
+     during momentum scroll */
+  overflow-x: hidden;
   background: #faf9f7;
   color: #14110f;
   padding: 0 0 calc(env(safe-area-inset-bottom, 0px) + 40px);
@@ -2009,6 +2141,31 @@
     grid-template-columns: 1fr;
   }
 }
+/* Dashboard on phones: trim the side padding so charts fit, stack the donut
+   legend to one column (long labels + % on their own row), and tighten the KPI
+   cards so their text stops wrapping awkwardly / spilling below. */
+@media (max-width: 600px) {
+  .bb-page-wide {
+    padding: 0 16px;
+  }
+  .bb-dash-donut-legend {
+    grid-template-columns: 1fr;
+    gap: 4px 0;
+  }
+  .bb-dash-metric {
+    padding: 18px 15px;
+    min-height: 0;
+  }
+  /* The sub-stat drops to its own line under the place name (no mid-phrase
+     wrap like "Subic · 50%↵resolved"). */
+  .bb-dash-hl-stat {
+    flex-basis: 100%;
+    margin-top: 1px;
+  }
+  .bb-dash-hl-stat::before {
+    content: none;
+  }
+}
 .bb-dash-demo-note {
   text-align: center;
   color: #8a847c;
@@ -2239,8 +2396,6 @@
     width: 33px;
     height: 33px;
   }
-  .bb-trust,
-  .bb-trust-reopen,
   .bb-legend {
     display: none;
   }
@@ -2254,6 +2409,61 @@
     bottom: calc(env(safe-area-inset-bottom, 0px) + 18px);
     transform: translateX(-50%);
     max-width: calc(100% - 28px);
+  }
+  /* Live Community Status: a full-width bottom card that sits ABOVE the report
+     CTA. The whole card is a SINGLE scroll view (the inner lists grow instead
+     of scrolling on their own — no nested scroll fighting). */
+  .bb-trust {
+    left: 12px;
+    right: 12px;
+    width: auto;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 120px);
+    max-height: 56vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding: 16px;
+    transform-origin: bottom center;
+  }
+  .bb-trust .bb-drill-list {
+    max-height: none;
+    overflow: visible;
+  }
+  .bb-trust .bb-drill-list.is-scrollable {
+    -webkit-mask-image: none;
+    mask-image: none;
+    padding-bottom: 0;
+  }
+  /* Collapsed beacon: bottom-left, vertically aligned with the Report Waste
+     button (its centre), clear of the centred CTA. */
+  .bb-trust-reopen {
+    left: 16px;
+    right: auto;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 22px);
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* Landscape / short viewports (any width): keep the panel inside the viewport
+   and let it scroll, instead of overflowing off the top. */
+@media (max-height: 560px) {
+  .bb-trust {
+    top: auto;
+    bottom: 14px;
+    max-height: calc(100dvh - 96px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  /* single scroller here too */
+  .bb-trust .bb-drill-list {
+    max-height: none;
+    overflow: visible;
+  }
+  .bb-trust .bb-drill-list.is-scrollable {
+    -webkit-mask-image: none;
+    mask-image: none;
   }
 }
 
@@ -2514,7 +2724,8 @@
 .bb-dash-hl-place {
   display: flex;
   align-items: baseline;
-  gap: 4px;
+  flex-wrap: wrap;
+  gap: 2px 6px;
   margin-top: 5px;
   font-size: 16px;
   font-weight: 700;
@@ -2528,6 +2739,11 @@
   font-size: 13px;
   font-weight: 600;
   color: #8a847c;
+}
+/* Inline separator on wide screens ("Subic · 50% resolved"). */
+.bb-dash-hl-stat::before {
+  content: '·';
+  margin-right: 5px;
 }
 .bb-dash-hl .bb-dash-link {
   margin-top: 6px;
@@ -2906,6 +3122,9 @@
   font-size: 13px;
   cursor: default;
   transition: background 0.15s ease;
+  /* grid items default to min-width:auto — without this the long labels force
+     the columns wider than the card (and get clipped). Let them ellipsize. */
+  min-width: 0;
 }
 .bb-dash-donut-legend li.is-active {
   background: #f4f2ec;

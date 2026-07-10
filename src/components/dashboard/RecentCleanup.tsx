@@ -3,7 +3,8 @@ import { X, ArrowLeft, ArrowRight } from 'lucide-react'
 import { Card, Empty } from './primitives'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '../ui/dialog'
 import { relativeTime, type RecentCleanup as Cleanup } from '../../lib/stats'
-import { CATEGORY_EMOJI, CATEGORY_LABELS } from '../../types'
+import { CATEGORY_LABELS } from '../../types'
+import { CATEGORY_ICON } from '../../lib/categoryIcons'
 
 interface Props {
   cleanups: Cleanup[]
@@ -40,7 +41,12 @@ function CleanupRow({
           {c.photo ? (
             <img src={c.photo} alt="" loading="lazy" />
           ) : (
-            <span className="bb-dash-event-emoji">{CATEGORY_EMOJI[c.category]}</span>
+            <span className="bb-dash-event-emoji">
+              {(() => {
+                const Icon = CATEGORY_ICON[c.category]
+                return <Icon className="size-5" />
+              })()}
+            </span>
           )}
         </span>
         <span className="bb-cleanup-row-main">
@@ -73,8 +79,12 @@ function CleanupDetail({ c }: { c: Cleanup }) {
         <span className="bb-cleanup-status">
           <span className="bb-cleanup-status-dot" /> Cleanup Completed
         </span>
-        <span className="bb-cleanup-cat">
-          {CATEGORY_EMOJI[c.category]} {CATEGORY_LABELS[c.category]}
+        <span className="bb-cleanup-cat inline-flex items-center gap-1.5">
+          {(() => {
+            const Icon = CATEGORY_ICON[c.category]
+            return <Icon className="size-4" />
+          })()}
+          {CATEGORY_LABELS[c.category]}
         </span>
       </div>
 

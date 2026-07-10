@@ -1,18 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { X, Info, ChevronLeft, ChevronRight, MapPin, PartyPopper } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, MapPin, PartyPopper } from 'lucide-react'
 import {
   municipalitySnapshot,
   placesForStatus,
   relativeTime,
   type PlaceCount,
 } from '../lib/stats'
-import {
-  CATEGORY_EMOJI,
-  STATUS_COLORS,
-  STATUS_LABELS,
-  type Report,
-  type ReportStatus,
-} from '../types'
+import { STATUS_COLORS, STATUS_LABELS, type Report, type ReportStatus } from '../types'
+import { CATEGORY_ICON } from '../lib/categoryIcons'
 import CountUp from './CountUp'
 
 interface Props {
@@ -104,14 +99,14 @@ export default function TrustPanel({
         <button
           className="bb-trust-reopen"
           onClick={onReopen}
-          aria-label="Show status"
-          title="Show status"
+          aria-label="Show live community status"
+          title="Live community status"
         >
-          <Info className="size-5" />
+          <span className="bb-trust-live-dot" />
         </button>
       )}
 
-      <section className={`bb-trust ${open ? '' : 'bb-hidden'}`}>
+      <section className={`bb-trust ${open ? 'bb-trust-open' : 'bb-trust-closed'}`}>
         {level > 1 ? (
           <button className="bb-trust-back" onClick={back}>
             <ChevronLeft className="size-4" /> Back
@@ -275,9 +270,13 @@ export default function TrustPanel({
 
               <div className="bb-trust-eyebrow bb-snap-recent-k">Recent Reports</div>
               <div ref={listRef} className={`bb-drill-list ${scrollable ? 'is-scrollable' : ''}`}>
-                {snapshot.recent.slice(0, 6).map((r) => (
+                {snapshot.recent.slice(0, 6).map((r) => {
+                  const Icon = CATEGORY_ICON[r.category]
+                  return (
                   <button key={r.id} className="bb-drill-row" onClick={() => openReport(r)}>
-                    <span className="bb-snap-emoji">{CATEGORY_EMOJI[r.category]}</span>
+                    <span className="bb-snap-emoji">
+                      <Icon className="size-[18px]" />
+                    </span>
                     <span className="bb-drill-name">
                       {r.title ?? STATUS_LABELS[r.status]}
                     </span>
@@ -290,7 +289,8 @@ export default function TrustPanel({
                     </span>
                     <ChevronRight className="bb-drill-arrow size-4" />
                   </button>
-                ))}
+                  )
+                })}
               </div>
             </>
           )}

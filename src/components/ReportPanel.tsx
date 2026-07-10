@@ -25,8 +25,8 @@ import { relativeTime } from '../lib/stats'
 import { formatRef } from '../lib/ref'
 import ShareSheet from './ShareSheet'
 import BeforeAfter from './BeforeAfter'
+import { CATEGORY_ICON } from '../lib/categoryIcons'
 import {
-  CATEGORY_EMOJI,
   CATEGORY_LABELS,
   STATUS_COLORS,
   STATUS_LABELS,
@@ -303,11 +303,15 @@ export default function ReportPanel({ report, now, userPos, onConfirm, onClose }
             <div className="bb-panel-head">
               <div className="min-w-0 bb-panel-head-text">
                 <h2 className="bb-rsheet-title">{heading}</h2>
-                {report.title && (
-                  <span className="bb-cat-badge">
-                    {CATEGORY_EMOJI[report.category]} {CATEGORY_LABELS[report.category]}
-                  </span>
-                )}
+                {report.title &&
+                  (() => {
+                    const Cat = CATEGORY_ICON[report.category]
+                    return (
+                      <span className="bb-cat-badge inline-flex items-center gap-1.5">
+                        <Cat className="size-4" /> {CATEGORY_LABELS[report.category]}
+                      </span>
+                    )
+                  })()}
               </div>
 
               <div className="bb-head-actions">

@@ -8,7 +8,7 @@ import {
   DialogDescription,
 } from './ui/dialog'
 import { Button } from './ui/button'
-import { CATEGORY_LABELS, CATEGORY_EMOJI, type Report } from '../types'
+import { CATEGORY_LABELS, type Report } from '../types'
 
 function ago(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime()
@@ -38,8 +38,7 @@ export default function DuplicateModal({ report, onStillHere, onClose }: Props) 
           <DialogDescription>
             {report && (
               <>
-                A {CATEGORY_EMOJI[report.category]}{' '}
-                <b className="text-foreground">{CATEGORY_LABELS[report.category]}</b>{' '}
+                A <b className="text-foreground">{CATEGORY_LABELS[report.category]}</b>{' '}
                 report was already made on this spot {ago(report.createdAt)}. Instead
                 of a duplicate, confirm it's still there. That helps prioritize
                 clean-up more than a new pin.

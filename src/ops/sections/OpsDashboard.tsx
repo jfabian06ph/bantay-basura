@@ -1,11 +1,7 @@
 import { useMemo } from 'react'
 import { relativeTime } from '../../lib/stats'
-import {
-  CATEGORY_EMOJI,
-  STATUS_COLORS,
-  STATUS_LABELS,
-  type Report,
-} from '../../types'
+import { STATUS_COLORS, STATUS_LABELS, type Report } from '../../types'
+import { CATEGORY_ICON } from '../../lib/categoryIcons'
 import type { OpsData } from '../OperationsCenter'
 import type { OpsSectionKey } from '../types'
 
@@ -91,9 +87,13 @@ export function IncidentRows({ reports, now }: { reports: Report[]; now: number 
   if (!reports.length) return <p className="ops-empty">No incidents.</p>
   return (
     <ul className="ops-list">
-      {reports.map((r) => (
+      {reports.map((r) => {
+        const Icon = CATEGORY_ICON[r.category]
+        return (
         <li key={r.id} className="ops-list-row">
-          <span className="ops-list-emoji">{CATEGORY_EMOJI[r.category]}</span>
+          <span className="ops-list-emoji">
+            <Icon className="size-[18px]" />
+          </span>
           <span className="ops-list-main">
             {r.note ? r.note.slice(0, 60) : 'Waste report'}
           </span>
@@ -108,7 +108,8 @@ export function IncidentRows({ reports, now }: { reports: Report[]; now: number 
           </span>
           <span className="ops-list-time">{relativeTime(new Date(r.createdAt).getTime(), now)}</span>
         </li>
-      ))}
+        )
+      })}
     </ul>
   )
 }

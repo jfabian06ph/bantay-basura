@@ -1,12 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { Camera, Pencil, ChevronLeft, ChevronRight, Check, Plus, X } from 'lucide-react'
+import { Camera, Pencil, ChevronLeft, ChevronRight, Check, Plus, X, Flag } from 'lucide-react'
 import type { Category, Report } from '../types'
-import {
-  CATEGORY_LABELS,
-  CATEGORY_EMOJI,
-  CATEGORY_DESC,
-  CATEGORY_ORDER,
-} from '../types'
+import { CATEGORY_LABELS, CATEGORY_DESC, CATEGORY_ORDER } from '../types'
+import { CATEGORY_ICON } from '../lib/categoryIcons'
 import { reverseGeocode, type ReverseResult } from '../lib/geocode'
 import { cn } from '@/lib/utils'
 import {
@@ -159,8 +155,8 @@ export default function ReportSheet({
         className="gap-0 rounded-t-[28px] p-0 sm:inset-y-6 sm:top-6 sm:right-6 sm:left-auto sm:bottom-auto sm:h-auto sm:max-h-[calc(100dvh-3rem)] sm:w-[min(485px,calc(100vw-3rem))] sm:rounded-[30px] sm:border"
       >
         <SheetHeader className="border-b border-white/10 px-6 pt-6 pb-4">
-          <SheetTitle className="text-[22px] tracking-[-0.04em]">
-            🚩 Report Waste
+          <SheetTitle className="flex items-center gap-2 text-[22px] tracking-[-0.04em]">
+            <Flag className="size-5 text-primary" /> Report Waste
           </SheetTitle>
           <div className="mt-1 flex items-center gap-2 text-xs font-bold text-muted-foreground">
             <span>
@@ -197,7 +193,9 @@ export default function ReportSheet({
           {step === 1 && (
             <Section title="What kind of waste?">
               <div className="grid grid-cols-2 gap-2.5">
-                {CATEGORY_ORDER.map((c) => (
+                {CATEGORY_ORDER.map((c) => {
+                  const Icon = CATEGORY_ICON[c]
+                  return (
                   <button
                     key={c}
                     type="button"
@@ -209,7 +207,7 @@ export default function ReportSheet({
                         : 'border-white/10 bg-[#33445f]/50 hover:bg-[#33445f]',
                     )}
                   >
-                    <span className="text-2xl">{CATEGORY_EMOJI[c]}</span>
+                    <Icon className="size-6 text-primary" />
                     <span className="text-sm leading-tight font-extrabold">
                       {CATEGORY_LABELS[c]}
                     </span>
@@ -217,7 +215,8 @@ export default function ReportSheet({
                       {CATEGORY_DESC[c]}
                     </span>
                   </button>
-                ))}
+                  )
+                })}
               </div>
             </Section>
           )}
@@ -359,8 +358,17 @@ export default function ReportSheet({
                 </div>
                 <div className="flex justify-between gap-3">
                   <span className="text-muted-foreground">Type</span>
-                  <span className="font-bold">
-                    {category ? `${CATEGORY_EMOJI[category]} ${CATEGORY_LABELS[category]}` : '—'}
+                  <span className="flex items-center gap-1.5 font-bold">
+                    {category
+                      ? (() => {
+                          const Icon = CATEGORY_ICON[category]
+                          return (
+                            <>
+                              <Icon className="size-4 text-primary" /> {CATEGORY_LABELS[category]}
+                            </>
+                          )
+                        })()
+                      : '—'}
                   </span>
                 </div>
                 <div className="flex justify-between gap-3">

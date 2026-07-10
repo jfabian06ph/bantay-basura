@@ -53,6 +53,11 @@ export default function PublicApp({ onSignIn }: Props) {
   const [view, setView] = useState<View>('map')
   const [flyTarget, setFlyTarget] = useState<FlyTarget | null>(null)
   const [devMock, setDevMock] = useState<LatLng | null>(null)
+  // On mobile the panel opens for a moment then collapses to a pulsing beacon,
+  // so the live status is felt on arrival without crowding the map. Desktop
+  // keeps it open. Evaluated once (matchMedia in the initializer).
+  const isMobile =
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 860px)').matches
   const [trustOpen, setTrustOpen] = useState(true)
   // Default to unresolved issues — that's what most visitors are looking for.
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('pending')
@@ -75,6 +80,17 @@ export default function PublicApp({ onSignIn }: Props) {
       alive = false
     }
   }, [])
+
+  // Mobile: let the live status peek for a few seconds, then collapse it to the
+  // pulsing beacon. Skipped if the visitor already interacted with it.
+  const trustTouched = useRef(false)
+  useEffect(() => {
+    if (!isMobile) return
+    const t = window.setTimeout(() => {
+      if (!trustTouched.current) setTrustOpen(false)
+    }, 4500)
+    return () => window.clearTimeout(t)
+  }, [isMobile])
 
   const { position: realPosition, status, request } = useUserLocation()
 
@@ -213,8 +229,14 @@ export default function PublicApp({ onSignIn }: Props) {
         onReport={flow.openReport}
         onCancelPlacing={flow.cancelPlacing}
         onConfirmPlacement={flow.confirmPlacement}
-        onTrustClose={() => setTrustOpen(false)}
-        onTrustReopen={() => setTrustOpen(true)}
+        onTrustClose={() => {
+          trustTouched.current = true
+          setTrustOpen(false)
+        }}
+        onTrustReopen={() => {
+          trustTouched.current = true
+          setTrustOpen(true)
+        }}
         onFlyTo={flyTo}
       />
 

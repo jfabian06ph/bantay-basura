@@ -1,12 +1,7 @@
 import { useState } from 'react'
 import { useReveal } from '../../hooks/useReveal'
-import {
-  CATEGORY_EMOJI,
-  SOURCE_LABELS,
-  SOURCE_ORDER,
-  type Category,
-  type ReportSource,
-} from '../../types'
+import { SOURCE_LABELS, SOURCE_ORDER, type Category, type ReportSource } from '../../types'
+import { CATEGORY_ICON } from '../../lib/categoryIcons'
 import type { CategoryShare, TrendPoint } from '../../lib/stats'
 
 /** Reporter-role colors for the stacked "Reports Over Time" bars. */
@@ -110,10 +105,12 @@ export function ShareBars({ items }: { items: CategoryShare[] }) {
   const { ref, shown } = useReveal<HTMLDivElement>()
   return (
     <div className="bb-dash-bars" ref={ref}>
-      {items.map((c, i) => (
+      {items.map((c, i) => {
+        const Icon = CATEGORY_ICON[c.category as Category]
+        return (
         <div className="bb-dash-bar-row" key={c.category}>
-          <span className="bb-dash-bar-label">
-            {CATEGORY_EMOJI[c.category as Category]} {c.label}
+          <span className="bb-dash-bar-label inline-flex items-center gap-1.5">
+            <Icon className="size-4" /> {c.label}
           </span>
           <span className="bb-dash-bar-track">
             <span
@@ -126,7 +123,8 @@ export function ShareBars({ items }: { items: CategoryShare[] }) {
           </span>
           <span className="bb-dash-bar-val">{c.count}</span>
         </div>
-      ))}
+        )
+      })}
     </div>
   )
 }

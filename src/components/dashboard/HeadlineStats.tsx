@@ -52,8 +52,8 @@ function Highlight({
             {icon}
           </span>
         )}
-        {place}
-        {stat && <span className="bb-dash-hl-stat"> · {stat}</span>}
+        <span className="bb-dash-hl-placename">{place}</span>
+        {stat && <span className="bb-dash-hl-stat">{stat}</span>}
       </div>
       {onAction && (
         <button className="bb-dash-link" onClick={onAction}>

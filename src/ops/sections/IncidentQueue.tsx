@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react'
 import { nearestMunicipality } from '../../municipalities'
 import { updateReportStatus, createAssignment } from '../../lib/db'
 import {
-  CATEGORY_EMOJI,
   CATEGORY_LABELS,
   STATUS_COLORS,
   STATUS_LABELS,
@@ -10,6 +9,7 @@ import {
   type Report,
   type ReportStatus,
 } from '../../types'
+import { CATEGORY_ICON } from '../../lib/categoryIcons'
 import type { OpsData } from '../OperationsCenter'
 
 interface Props {
@@ -82,11 +82,12 @@ export default function IncidentQueue({ data }: Props) {
           <tbody>
             {rows.map((r) => {
               const area = nearestMunicipality(r).place.name
+              const Icon = CATEGORY_ICON[r.category]
               return (
                 <tr key={r.id} className={busy === r.id ? 'ops-row-busy' : ''}>
                   <td>
-                    <div className="ops-cell-title">
-                      {CATEGORY_EMOJI[r.category]} {CATEGORY_LABELS[r.category]}
+                    <div className="ops-cell-title inline-flex items-center gap-1.5">
+                      <Icon className="size-4" /> {CATEGORY_LABELS[r.category]}
                     </div>
                     {r.note && <div className="ops-cell-sub">{r.note.slice(0, 70)}</div>}
                   </td>
