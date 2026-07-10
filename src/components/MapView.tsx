@@ -10,7 +10,7 @@ import {
 } from 'react-leaflet'
 import type { Map as LeafletMap } from 'leaflet'
 import Supercluster from 'supercluster'
-import { Plus, Minus, Layers, Maximize } from 'lucide-react'
+import { Plus, Minus, Layers, Maximize, Trash2, SlidersHorizontal } from 'lucide-react'
 import 'leaflet/dist/leaflet.css'
 import type { Report } from '../types'
 import { CATEGORY_LABELS, STATUS_LABELS, STATUS_COLORS, DONE_STATUSES } from '../types'
@@ -18,6 +18,14 @@ import { CATEGORY_ICON } from '../lib/categoryIcons'
 import { pinIcon, clusterIcon, userLocationIcon } from '../markerIcon'
 import type { UserLocation } from '../hooks/useUserLocation'
 import { distanceMeters, formatDistance } from '../lib/geo'
+import type { StatusFilter } from '../PublicApp'
+
+const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
+  { key: 'all', label: 'All reports' },
+  { key: 'pending', label: 'Needs attention' },
+  { key: 'in_review', label: 'Under review' },
+  { key: 'resolved', label: 'Cleaned' },
+]
 
 const ZAMBALES_CENTER: [number, number] = [15.1, 120.05]
 
@@ -148,6 +156,17 @@ function TapToPlace({ enabled }: { enabled: boolean }) {
   return null
 }
 
+/** Tapping empty map area (not a marker, not an overlay) dismisses the open
+ * report — the expected "tap outside to close" gesture. */
+function TapToDismiss({ onDismiss }: { onDismiss?: () => void }) {
+  useMapEvents({
+    click() {
+      onDismiss?.()
+    },
+  })
+  return null
+}
+
 function MapController({ target }: { target: FlyTarget | null }) {
   const map = useMap()
   const lastNonce = useRef(-1)
@@ -184,10 +203,17 @@ function ReportPin({
       icon={pinIcon(report)}
       eventHandlers={onSelect ? { click: () => onSelect(report) } : undefined}
     >
-      <Tooltip direction="top" offset={[0, -8]} opacity={1} className="bb-tip">
-        <span className="inline-flex items-center gap-1">
-          <Cat className="size-3.5" /> {CATEGORY_LABELS[report.category]}
-        </span>
+      <Tooltip direction="top" offset={[0, -10]} opacity={1} className="bb-tip">
+        <div className="bb-pin-tip">
+          <div className="bb-pin-tip-title">
+            <Cat className="size-3.5" /> {report.title ?? CATEGORY_LABELS[report.category]}
+          </div>
+          <div className="bb-pin-tip-sub">
+            {report.stillHere > 0
+              ? `Verified by ${report.stillHere} ${report.stillHere === 1 ? 'resident' : 'residents'}`
+              : CATEGORY_LABELS[report.category]}
+          </div>
+        </div>
       </Tooltip>
       {!onSelect && (
         <Popup>
@@ -338,19 +364,25 @@ function ClusterLayer({ reports, now, userPos, onConfirm, onSelect }: ClusterPro
   )
 }
 
-/** Floating zoom buttons + basemap switcher, Apple/Google-Maps style. */
+/** Floating zoom buttons + basemap/status switcher, Apple/Google-Maps style. */
 function MapControls({
   mapRef,
   basemap,
   onBasemap,
   userPos,
+  statusFilter,
+  onStatusFilter,
 }: {
   mapRef: React.RefObject<LeafletMap | null>
   basemap: BasemapKey
   onBasemap: (key: BasemapKey) => void
   userPos: UserLocation | null
+  statusFilter: StatusFilter
+  onStatusFilter?: (f: StatusFilter) => void
 }) {
-  const [layersOpen, setLayersOpen] = useState(false)
+  // Only one menu open at a time (dedicated filter button + layers button).
+  const [menu, setMenu] = useState<'filter' | 'layers' | null>(null)
+  const filtered = statusFilter !== 'all'
 
   // Re-center on the current (real or spoofed) location; otherwise show the
   // whole coverage area. Prevents the "jumps back to the overview" surprise.
@@ -360,17 +392,59 @@ function MapControls({
   }
   return (
     <div className="bb-map-ctrls">
+      {/* Dedicated filter button (status) — sits above the map-style layers. */}
+      {onStatusFilter && (
+        <div className="bb-layers">
+          <button
+            className={`bb-control bb-control-round bb-layers-btn ${filtered ? 'bb-layers-btn-active' : ''}`}
+            onClick={() => setMenu((m) => (m === 'filter' ? null : 'filter'))}
+            aria-label="Filter reports"
+            aria-expanded={menu === 'filter'}
+            title="Filter reports"
+          >
+            <SlidersHorizontal className="size-5" />
+            {filtered && <span className="bb-layers-badge" />}
+          </button>
+          {menu === 'filter' && (
+            <div className="bb-layers-menu bb-filter-menu" role="menu">
+              <div className="bb-layers-group-k">Filter Reports</div>
+              {STATUS_FILTERS.map((f) => (
+                <button
+                  key={f.key}
+                  role="menuitemradio"
+                  aria-checked={statusFilter === f.key}
+                  className={`bb-layers-opt bb-layers-opt-status ${statusFilter === f.key ? 'bb-layers-active' : ''}`}
+                  onClick={() => {
+                    onStatusFilter(f.key)
+                    setMenu(null)
+                  }}
+                >
+                  <span
+                    className="bb-layers-dot"
+                    style={{ background: f.key === 'all' ? '#64748b' : STATUS_COLORS[f.key] }}
+                  />
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Map-style (basemap) layers. */}
       <div className="bb-layers">
         <button
           className="bb-control bb-control-round bb-layers-btn"
-          onClick={() => setLayersOpen((o) => !o)}
-          aria-label="Change map style"
-          title="Change map style"
+          onClick={() => setMenu((m) => (m === 'layers' ? null : 'layers'))}
+          aria-label="Map style"
+          aria-expanded={menu === 'layers'}
+          title="Map style"
         >
           <Layers className="size-5" />
         </button>
-        {layersOpen && (
+        {menu === 'layers' && (
           <div className="bb-layers-menu" role="menu">
+            <div className="bb-layers-group-k">Map style</div>
             {BASEMAP_ORDER.map((key) => (
               <button
                 key={key}
@@ -379,7 +453,7 @@ function MapControls({
                 className={`bb-layers-opt ${basemap === key ? 'bb-layers-active' : ''}`}
                 onClick={() => {
                   onBasemap(key)
-                  setLayersOpen(false)
+                  setMenu(null)
                 }}
               >
                 {BASEMAPS[key].label}
@@ -433,6 +507,12 @@ interface Props {
   onSelect?: (r: Report) => void
   /** Called on load + after each pan/zoom with the visible map area. */
   onViewport?: (v: MapViewport) => void
+  /** Filter controls — omitted by the internal ops map, which shows all reports. */
+  statusFilter?: StatusFilter
+  onStatusFilter?: (f: StatusFilter) => void
+  onReport?: () => void
+  /** Tapping empty map area — used to dismiss the open report panel. */
+  onMapClick?: () => void
 }
 
 export default function MapView({
@@ -445,9 +525,51 @@ export default function MapView({
   placing,
   onSelect,
   onViewport,
+  statusFilter = 'all',
+  onStatusFilter,
+  onReport,
+  onMapClick,
 }: Props) {
   const [basemap, setBasemap] = useState<BasemapKey>('streets')
   const tiles = BASEMAPS[basemap]
+  const empty = reports.length === 0
+
+  // The "victories" banner is a celebratory beat, not a permanent chrome —
+  // show it when the Cleaned filter turns on, then fade it away after a moment.
+  const [showVictories, setShowVictories] = useState(false)
+  const [victoriesLeaving, setVictoriesLeaving] = useState(false)
+  useEffect(() => {
+    if (statusFilter !== 'resolved' || reports.length === 0) {
+      setShowVictories(false)
+      setVictoriesLeaving(false)
+      return
+    }
+    setShowVictories(true)
+    setVictoriesLeaving(false)
+    const fade = setTimeout(() => setVictoriesLeaving(true), 4100)
+    const hide = setTimeout(() => setShowVictories(false), 4500)
+    return () => {
+      clearTimeout(fade)
+      clearTimeout(hide)
+    }
+  }, [statusFilter, reports.length])
+
+  // A tiny "Showing N reports" toast whenever the filter changes — the little
+  // confirmation that makes a filter tap feel responsive. Skipped on first
+  // render and when the Cleaned filter shows its own victories banner.
+  const [filterToast, setFilterToast] = useState<string | null>(null)
+  const firstFilter = useRef(true)
+  useEffect(() => {
+    if (firstFilter.current) {
+      firstFilter.current = false
+      return
+    }
+    if (statusFilter === 'resolved') return
+    setFilterToast(`Showing ${reports.length} ${reports.length === 1 ? 'report' : 'reports'}`)
+    const t = setTimeout(() => setFilterToast(null), 2000)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter])
 
   return (
     <>
@@ -455,7 +577,7 @@ export default function MapView({
         ref={mapRef}
         center={ZAMBALES_CENTER}
         zoom={9}
-        className="bb-map"
+        className={`bb-map ${placing ? 'bb-map-placing' : ''}`}
         zoomControl={false}
       >
         <TileLayer
@@ -470,6 +592,7 @@ export default function MapView({
         <MapController target={flyTarget} />
         <ViewportWatcher onChange={onViewport} />
         <TapToPlace enabled={placing} />
+        {!placing && <TapToDismiss onDismiss={onMapClick} />}
 
         {userPos && (
           <Marker
@@ -495,7 +618,50 @@ export default function MapView({
           basemap={basemap}
           onBasemap={setBasemap}
           userPos={userPos}
+          statusFilter={statusFilter}
+          onStatusFilter={onStatusFilter}
         />
+      )}
+
+      {!placing && filterToast && (
+        <div className="bb-map-toast" role="status">
+          {filterToast}
+        </div>
+      )}
+
+      {!placing && showVictories && (
+        <div className={`bb-victories ${victoriesLeaving ? 'is-leaving' : ''}`} role="status">
+          <span className="bb-victories-emoji" aria-hidden>🎉</span>
+          <span className="bb-victories-text">
+            <b>{reports.length}</b> {reports.length === 1 ? 'cleanup' : 'cleanups'} completed here —
+            these aren&rsquo;t problems, they&rsquo;re victories.
+          </span>
+        </div>
+      )}
+
+      {!placing && empty && (
+        <div className="bb-map-empty" role="status">
+          <div className="bb-map-empty-card">
+            <span className="bb-map-empty-icon">
+              <Trash2 className="size-7" strokeWidth={1.5} />
+            </span>
+            <strong className="bb-map-empty-title">
+              {statusFilter === 'all'
+                ? 'No reports in this area yet'
+                : `No ${STATUS_LABELS[statusFilter].toLowerCase()} reports here`}
+            </strong>
+            <p className="bb-map-empty-sub">
+              {statusFilter === 'all'
+                ? 'Be the first to help your community.'
+                : 'Try another filter, or add a new report.'}
+            </p>
+            {onReport && (
+              <button className="bb-map-empty-btn" onClick={onReport}>
+                Report Waste
+              </button>
+            )}
+          </div>
+        </div>
       )}
     </>
   )

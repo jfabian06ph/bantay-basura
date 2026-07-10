@@ -1,5 +1,5 @@
 import L from 'leaflet'
-import { STATUS_COLORS, type Report } from './types'
+import { pinColor, type Report } from './types'
 
 // One consistent pin size for every report — severity is conveyed in the
 // report detail, not by marker size (which read as "inconsistent" on the map).
@@ -11,7 +11,7 @@ const PIN_SIZE = 17
  */
 export function pinIcon(report: Report): L.DivIcon {
   const size = PIN_SIZE
-  const color = STATUS_COLORS[report.status]
+  const color = pinColor(report)
   return L.divIcon({
     className: 'bb-pin',
     html: `<span class="bb-pin-dot" style="width:${size}px;height:${size}px;background:${color}"></span>`,

@@ -24,7 +24,7 @@ function RotateGate() {
 }
 
 /** Chooses between the public civic site and the authenticated ops console. */
-function Root() {
+function Root({ ready }: { ready: boolean }) {
   const { operator } = useAuth()
   const [signInOpen, setSignInOpen] = useState(false)
 
@@ -32,7 +32,7 @@ function Root() {
 
   return (
     <>
-      <PublicApp onSignIn={() => setSignInOpen(true)} />
+      <PublicApp onSignIn={() => setSignInOpen(true)} ready={ready} />
       {signInOpen && <SignIn onClose={() => setSignInOpen(false)} />}
     </>
   )
@@ -41,9 +41,11 @@ function Root() {
 export default function App() {
   // Evaluate once, before first paint, so the map never flashes behind it.
   const [splash, setSplash] = useState(shouldShowSplash)
+  // The map surface is "revealed" once the splash is gone — the cue to play the
+  // map overlays' entrance animations (they'd otherwise run hidden behind it).
   return (
     <AuthProvider>
-      <Root />
+      <Root ready={!splash} />
       {splash && <Splash onDone={() => setSplash(false)} />}
       <RotateGate />
     </AuthProvider>

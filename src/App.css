@@ -340,26 +340,34 @@
 }
 
 /* ---- Placement crosshair ---- */
+/* Zero-size anchor at the exact map center; all parts center on this one point
+ * so the pin and its target read as a single object (📍 sitting on ◉). */
 .bb-crosshair {
   position: absolute;
   left: 50%;
   top: 50%;
+  width: 0;
+  height: 0;
   z-index: 700;
   pointer-events: none;
 }
 .bb-crosshair-pin {
+  position: absolute;
+  left: 0;
+  top: 0;
   width: 40px;
   height: 40px;
   color: var(--red);
   fill: rgba(225, 29, 42, 0.18);
   transform: translate(-50%, -100%);
   filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.4));
-  animation: bb-crosshair-bob 1.4s ease-in-out infinite;
+  /* A single confident bounce when edit mode opens — then it rests. */
+  animation: bb-crosshair-drop 0.6s var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1)) both;
 }
 .bb-crosshair-dot {
   position: absolute;
-  left: 50%;
-  top: 50%;
+  left: 0;
+  top: 0;
   width: 8px;
   height: 8px;
   border-radius: 50%;
@@ -367,9 +375,88 @@
   transform: translate(-50%, -50%);
   box-shadow: 0 0 0 3px rgba(225, 29, 42, 0.3);
 }
-@keyframes bb-crosshair-bob {
-  0%, 100% { transform: translate(-50%, -100%); }
-  50% { transform: translate(-50%, calc(-100% - 5px)); }
+/* Faint Google-Maps-style center target, directly under the pin — gently pulses. */
+.bb-crosshair-target {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 46px;
+  height: 46px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1.5px solid rgba(225, 29, 42, 0.4);
+  animation: bb-target-pulse 2.6s ease-in-out infinite;
+}
+.bb-crosshair-target::before,
+.bb-crosshair-target::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  background: rgba(225, 29, 42, 0.45);
+}
+.bb-crosshair-target::before {
+  width: 1.5px;
+  height: 14px;
+  transform: translate(-50%, -50%);
+}
+.bb-crosshair-target::after {
+  width: 14px;
+  height: 1.5px;
+  transform: translate(-50%, -50%);
+}
+@keyframes bb-target-pulse {
+  0%, 100% { opacity: 0.65; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 0.4; transform: translate(-50%, -50%) scale(1.2); }
+}
+@keyframes bb-crosshair-drop {
+  0% { transform: translate(-50%, calc(-100% - 8px)); }
+  60% { transform: translate(-50%, -100%); }
+  78% { transform: translate(-50%, calc(-100% - 3px)); }
+  100% { transform: translate(-50%, -100%); }
+}
+/* On Confirm: the pin drops onto the target with a tiny bounce. */
+.bb-crosshair.is-confirming .bb-crosshair-pin {
+  animation: bb-crosshair-confirm 0.42s ease-out both;
+}
+@keyframes bb-crosshair-confirm {
+  0% { transform: translate(-50%, calc(-100% - 16px)); }
+  50% { transform: translate(-50%, -100%); }
+  68% { transform: translate(-50%, calc(-100% - 7px)); }
+  84% { transform: translate(-50%, -100%); }
+  92% { transform: translate(-50%, calc(-100% - 2px)); }
+  100% { transform: translate(-50%, -100%); }
+}
+.bb-crosshair.is-confirming .bb-crosshair-target {
+  animation: bb-target-accept 0.42s ease-out both;
+}
+@keyframes bb-target-accept {
+  0% { opacity: 0.65; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 0.9; transform: translate(-50%, -50%) scale(1.25); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bb-crosshair-pin,
+  .bb-crosshair-target {
+    animation: none;
+  }
+  .bb-crosshair-pin {
+    transform: translate(-50%, -100%);
+  }
+  .bb-crosshair-target {
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* Adjustment mode: de-emphasize other reports so it's clear which point you're
+ * placing, and keep the map readable (roads a touch darker, not washed out). */
+.bb-map-placing .leaflet-tile-pane {
+  filter: contrast(1.06) brightness(0.96) saturate(1.02);
+}
+.bb-map-placing .bb-pin,
+.bb-map-placing .bb-cluster {
+  opacity: 0.28;
+  transition: opacity 0.25s ease;
 }
 
 /* ---- Placement bottom bar ---- */
@@ -378,8 +465,8 @@
   left: 50%;
   bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
   transform: translateX(-50%);
-  width: calc(100% - 24px);
-  max-width: 460px;
+  width: calc(100% - 40px);
+  max-width: 430px;
   background: var(--surface);
   border-radius: 18px;
   padding: 14px;
@@ -395,9 +482,17 @@
 }
 .bb-place-actions {
   display: flex;
+  align-items: center;
   gap: 10px;
 }
+/* Cancel is deliberately lighter than the dominant Confirm. */
+.bb-place-cancel {
+  flex: none;
+}
 /* ---- Circular status pins ---- */
+/* NB: never animate `transform` on .bb-pin / .bb-cluster — Leaflet positions
+ * the marker icon root via transform: translate3d(...). Spawn/scale effects go
+ * on the INNER elements (.bb-pin-dot / .bb-cluster-bubble) only. */
 .bb-pin {
   background: transparent;
   border: none;
@@ -409,9 +504,29 @@
   box-shadow: 0 2px 6px rgba(2, 8, 23, 0.5);
   cursor: pointer;
   transition: transform 0.12s ease;
+  /* Spawn (scale/fade in as pins appear — the "explode outward" feel), then
+   * gentle breathing so the map feels alive. Both act on this inner span. */
+  animation:
+    bb-marker-spawn 0.34s cubic-bezier(0.34, 1.56, 0.64, 1) both,
+    bb-pin-breathe 3.6s ease-in-out 0.34s infinite;
 }
 .bb-pin-dot:hover {
+  animation-play-state: paused;
   transform: scale(1.25);
+}
+@keyframes bb-pin-breathe {
+  0%,
+  100% {
+    transform: scale(0.94);
+  }
+  50% {
+    transform: scale(1);
+  }
+}
+
+@keyframes bb-marker-spawn {
+  from { opacity: 0; transform: scale(0.2); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 /* ---- Cluster bubbles ---- */
@@ -430,6 +545,8 @@
   box-shadow: 0 6px 16px rgba(2, 8, 23, 0.45);
   cursor: pointer;
   transition: transform 0.12s ease;
+  /* Spawn scale-in on the inner bubble (never the Leaflet-positioned root). */
+  animation: bb-marker-spawn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 .bb-cluster-bubble:hover {
   transform: scale(1.08);
@@ -602,64 +719,48 @@
   flex: none;
 }
 
-/* ---- Status filters (double as the legend) ---- */
-.bb-filters-map {
-  position: absolute;
-  top: 84px;
-  left: 26px;
-  z-index: 600;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  max-width: calc(100% - 52px);
-}
-.bb-filter {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 8px 14px;
-  border-radius: 999px;
-  background: rgba(12, 20, 35, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #c2ccda;
-  font-size: 13px;
+/* Status filters now live inside the layers menu (see .bb-layers-opt-status). */
+
+/* ---- Layers menu: status filter + basemap sections ---- */
+.bb-layers-group-k {
+  font-size: 10px;
   font-weight: 800;
-  cursor: pointer;
-  box-shadow: var(--softshadow);
-  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim, #94a3b8);
+  padding: 6px 12px 3px;
 }
-.bb-filter:hover {
-  background: rgba(22, 33, 52, 0.95);
-  color: #fff;
+.bb-layers-sep {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.09);
+  margin: 5px 6px;
 }
-.bb-filter-on {
-  background: #fff;
-  color: #14110f;
-  border-color: #fff;
+.bb-layers-opt-status {
+  display: flex;
+  align-items: center;
+  gap: 9px;
 }
-.bb-filter-dot {
+.bb-layers-dot {
   width: 9px;
   height: 9px;
   border-radius: 50%;
   flex: none;
 }
-@media (max-width: 860px) {
-  .bb-filters-map {
-    left: 14px;
-    top: 76px;
-    gap: 6px;
-    max-width: calc(100% - 28px);
-  }
-  /* Smaller chips so All · Pending · Review · Resolved fit on one row. */
-  .bb-filter {
-    padding: 6px 11px;
-    font-size: 12px;
-    gap: 6px;
-  }
-  .bb-filter-dot {
-    width: 8px;
-    height: 8px;
-  }
+.bb-layers-btn {
+  position: relative;
+}
+.bb-layers-btn-active {
+  color: #fff;
+}
+.bb-layers-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--primary, #e31e2f);
+  border: 2px solid #111d32;
 }
 
 /* ---- Trust / hero card ---- */
@@ -683,12 +784,13 @@
     transform 0.46s cubic-bezier(0.34, 1.35, 0.5, 1),
     visibility 0.46s;
 }
-/* Opening — settles in with a gentle overshoot. */
+/* Opening — the .bb-trust transition handles reopen (closed→open) smoothly.
+ * The initial entrance is owned by the one-shot .bb-intro rule, so there is no
+ * base `animation` here — otherwise it would re-fire when .bb-intro is removed. */
 .bb-trust-open {
   opacity: 1;
   transform: translateY(0) scale(1);
   visibility: visible;
-  animation: bb-trust-in 0.5s cubic-bezier(0.34, 1.35, 0.5, 1);
 }
 /* Dismissing — sinks + fades away, then hides so it can't catch taps. */
 .bb-trust-closed {
@@ -936,8 +1038,8 @@
 .bb-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 9px;
-  margin-top: 16px;
+  gap: 12px;
+  margin-top: 20px;
 }
 .bb-stat {
   position: relative;
@@ -945,7 +1047,7 @@
   background: var(--glass-bg-soft);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-sm);
-  padding: 14px 12px 12px;
+  padding: 18px 14px 15px;
   text-align: left;
   color: inherit;
   font: inherit;
@@ -990,10 +1092,30 @@
   color: var(--text-mute);
   font-size: 10px;
   font-weight: 700;
+  white-space: nowrap;
   transition: color var(--dur-fast) var(--ease);
 }
 .bb-stat:hover .bb-stat-hint {
   color: #b9c6db;
+}
+
+/* The status card is the first thing users read — lead with a big white number,
+ * label beneath. Status color stays as the top strip only (no emoji). */
+.bb-stat-meaning-v {
+  display: block;
+  font-size: 38px;
+  line-height: 1;
+  letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-strong, #fff);
+}
+.bb-stat-meaning-label {
+  display: block;
+  margin-top: 8px;
+  color: var(--text-dim, #94a3b8);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.25;
 }
 
 /* ---- Summary panel drill-down (per-place breakdown) ---- */
@@ -1246,6 +1368,22 @@
   font-weight: 800 !important;
   border-radius: 999px !important;
   box-shadow: 0 16px 36px rgba(227, 30, 47, 0.42);
+}
+/* Contextual CTA: when a report is open the action turns into a trust-blue
+ * "Verify this report" so the primary action follows what you're looking at. */
+.bb-cta-verify {
+  animation: bb-cta-swap 0.28s ease;
+}
+@keyframes bb-cta-swap {
+  from { opacity: 0; transform: translate(-50%, 8px); }
+  to { opacity: 1; transform: translateX(-50%); }
+}
+.bb-cta-btn-verify {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(180deg, #3b82f6, #2563eb) !important;
+  box-shadow: 0 16px 36px rgba(37, 99, 235, 0.42) !important;
 }
 
 /* ---- Popup ---- */
@@ -2242,6 +2380,14 @@
 .bb-about-hero {
   padding: 32px 0 40px;
 }
+.bb-about-manifesto-label {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--red);
+  margin-bottom: 20px;
+}
 .bb-about-title {
   font-size: clamp(48px, 16vw, 92px);
   line-height: 0.94;
@@ -2257,7 +2403,7 @@
   font-size: 18px;
   line-height: 1.5;
   color: #55504a;
-  max-width: 30ch;
+  max-width: 38ch;
 }
 .bb-about-block {
   padding: 24px 0;
@@ -2268,7 +2414,7 @@
   line-height: 1.7;
   color: #33302c;
   margin: 0 0 18px;
-  max-width: 48ch;
+  max-width: 64ch;
 }
 .bb-about-para:last-child {
   margin-bottom: 0;
@@ -2293,6 +2439,10 @@
   gap: 18px;
   padding: 20px 0;
   border-bottom: 1px solid #efece7;
+}
+/* The last step's border would double up with the next section's top border. */
+.bb-about-step:last-child {
+  border-bottom: none;
 }
 .bb-about-step-n {
   font-size: 14px;
@@ -2379,8 +2529,8 @@
   color: var(--red);
 }
 .bb-about-manifesto p {
-  margin: 24px 0 0;
-  max-width: 52ch;
+  margin: 20px 0 0;
+  max-width: 66ch;
   font-size: 17px;
   line-height: 1.7;
   color: #55504a;
@@ -2423,10 +2573,26 @@
 }
 .bb-about-belief h3 {
   margin: 12px 0 5px;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 800;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
   color: #14110f;
+}
+/* The memorable one-liner in the manifesto section. */
+.bb-about-manifesto-line {
+  font-size: 19px !important;
+  font-weight: 700;
+  color: #14110f !important;
+}
+/* Honest "built by one developer" note — quiet, sits before the dark close. */
+.bb-about-maker {
+  padding: 40px 0;
+  border-top: 1px solid #e7e3dd;
+}
+/* Before/after slider: ease the one-time load nudge, keep dragging instant. */
+.bb-ba.is-hinting .bb-ba-before,
+.bb-ba.is-hinting .bb-ba-divider {
+  transition: clip-path 0.7s ease, left 0.7s ease;
 }
 .bb-about-belief p {
   margin: 0;
@@ -2475,7 +2641,7 @@
 }
 .bb-about-open-lead {
   margin: 0 0 18px;
-  max-width: 40ch;
+  max-width: 56ch;
   font-size: 17px;
   line-height: 1.6;
   color: #33302c;
@@ -4001,6 +4167,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .bb-pin-dot,
   .bb-flag-pulse,
   .bb-user-pulse,
   .bb-hint,
@@ -4206,10 +4373,14 @@
 }
 .bb-rsheet-badge {
   align-self: flex-start;
+  max-width: 100%;
   font-size: 12px;
   font-weight: 800;
-  padding: 3px 10px;
+  padding: 4px 11px;
   border-radius: 999px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .bb-rsheet-section {
   margin-bottom: 14px;
@@ -4233,14 +4404,14 @@
    the vote counts live in the tally, not crammed onto the buttons. */
 .bb-verify {
   margin-bottom: 14px;
-  padding: 14px;
+  padding: 16px;
   border-radius: var(--radius);
   background: var(--glass-bg-soft);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 .bb-verify-q {
   display: block;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   font-size: 13px;
   font-weight: 800;
   color: var(--text-strong);
@@ -4283,13 +4454,15 @@
   background: rgba(34, 197, 94, 0.18);
   border-color: rgba(34, 197, 94, 0.5);
 }
-/* Consensus tally */
+/* Consensus tally — set apart from the action buttons with a divider + air. */
 .bb-verify-tally {
-  margin-top: 14px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 .bb-verify-tally-k {
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   font-size: 11px;
   font-weight: 800;
   text-transform: uppercase;
@@ -4298,13 +4471,13 @@
 }
 .bb-verify-basis {
   display: block;
-  margin-top: 8px;
+  margin-top: 10px;
   font-size: 11px;
   color: var(--text-mute);
 }
 .bb-verify-bar {
   display: flex;
-  height: 7px;
+  height: 9px;
   border-radius: var(--radius-pill);
   overflow: hidden;
   background: rgba(255, 255, 255, 0.08);
@@ -4322,7 +4495,7 @@
 .bb-verify-legend {
   display: flex;
   justify-content: space-between;
-  margin-top: 7px;
+  margin-top: 9px;
   font-size: 12px;
   color: var(--text-dim);
 }
@@ -4396,9 +4569,6 @@
   transition: transform 0.42s var(--ease-out-soft);
   animation: bb-panel-in 0.42s var(--ease-out-soft);
   will-change: transform;
-}
-.bb-panel.is-collapsed {
-  transform: translateX(-100%);
 }
 /* A clean horizontal slide in from the left edge. */
 @keyframes bb-panel-in {
@@ -4522,36 +4692,6 @@
   from { opacity: 0; transform: translate(-50%, 10px); }
   to { opacity: 1; transform: translate(-50%, 0); }
 }
-.bb-panel-collapse,
-.bb-panel-reopen {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 26px;
-  height: 48px;
-  display: grid;
-  place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-left: none;
-  border-radius: 0 12px 12px 0;
-  background: #0d1728;
-  color: var(--text-dim);
-  cursor: pointer;
-  box-shadow: 6px 0 16px rgba(2, 8, 23, 0.34);
-}
-.bb-panel-collapse {
-  right: -26px;
-  z-index: 1;
-}
-.bb-panel-reopen {
-  left: 0;
-  z-index: 1100;
-  animation: bb-fade-in 0.2s ease;
-}
-.bb-panel-collapse:hover,
-.bb-panel-reopen:hover {
-  color: #fff;
-}
 @media (max-width: 560px) {
   .bb-panel {
     width: 100%;
@@ -4574,6 +4714,8 @@
   animation: bb-fade-in 0.2s ease;
 }
 .bb-success {
+  position: relative;
+  overflow: hidden;
   width: 100%;
   max-width: 380px;
   text-align: center;
@@ -4583,6 +4725,56 @@
   padding: 30px 26px 26px;
   box-shadow: 0 30px 80px rgba(2, 8, 23, 0.6);
   animation: bb-signin-in 0.32s var(--ease-spring, ease);
+}
+
+/* Confetti burst — pure celebration, no red-as-danger here. */
+.bb-confetti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.bb-confetti-bit {
+  position: absolute;
+  top: -12px;
+  width: 8px;
+  height: 12px;
+  border-radius: 2px;
+  opacity: 0;
+  animation: bb-confetti-fall 1.5s ease-in forwards;
+}
+@keyframes bb-confetti-fall {
+  0% { opacity: 0; transform: translateY(-10px) rotate(0deg); }
+  10% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(360px) rotate(540deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bb-confetti {
+    display: none;
+  }
+}
+.bb-success-track {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #2fbf6b, #16a34a);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 14px 30px rgba(22, 163, 74, 0.32);
+  transition: filter 0.15s ease, transform 0.06s ease;
+}
+.bb-success-track:hover {
+  filter: brightness(1.06);
+}
+.bb-success-track:active {
+  transform: scale(0.98);
 }
 .bb-success-emoji {
   font-size: 46px;
@@ -4607,15 +4799,17 @@
   line-height: 1.55;
   color: var(--text-dim);
 }
+/* Deliberately recessive — the eye should land on Track Report first, then the
+ * ID for reference. Darker than the modal so it sits back, not forward. */
 .bb-success-ref {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px dashed rgba(255, 255, 255, 0.16);
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
   border-radius: 14px;
-  padding: 12px 16px;
+  padding: 11px 16px;
   margin-bottom: 18px;
 }
 .bb-success-ref-k {
@@ -4623,13 +4817,13 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--text-dim);
+  color: var(--text-mute, #7c8aa0);
 }
 .bb-success-ref-v {
   font-family: ui-monospace, monospace;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 800;
-  color: #fff;
+  color: var(--text-dim, #94a3b8);
 }
 .bb-success-actions {
   display: flex;
@@ -4712,26 +4906,33 @@
   backdrop-filter: blur(4px);
 }
 /* Prominent, two-line verification badge */
+/* THE trust indicator — deliberately the most prominent block in the drawer. */
 .bb-verif2 {
   display: flex;
   align-items: center;
-  gap: 11px;
-  margin-bottom: 14px;
-  padding: 11px 13px;
-  border: 1px solid;
-  border-radius: var(--radius-sm);
+  gap: 13px;
+  margin-bottom: 16px;
+  padding: 15px 16px;
+  border: 1.5px solid;
+  border-radius: var(--radius);
+}
+.bb-verif2 svg {
+  width: 26px;
+  height: 26px;
+  flex: none;
 }
 .bb-verif2-text {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
 }
 .bb-verif2-text b {
-  font-size: 13.5px;
-  font-weight: 800;
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
 }
 .bb-verif2-text span {
-  font-size: 12px;
+  font-size: 12.5px;
   color: var(--text-dim);
 }
 
@@ -4968,15 +5169,20 @@
   color: var(--text-dim);
 }
 .bb-panel-noimg-icon {
-  width: 42px;
-  height: 42px;
-  opacity: 0.6;
+  width: 38px;
+  height: 38px;
+  opacity: 0.55;
+}
+.bb-panel-noimg-title {
+  margin-top: 2px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-strong, #fff);
 }
 .bb-panel-noimg-label {
-  font-size: 12px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-dim);
 }
 
 /* ---- Report panel: photo gallery + thumbnails ---- */
@@ -4987,6 +5193,13 @@
   border: none;
   background: none;
   cursor: zoom-in;
+  overflow: hidden;
+}
+.bb-panel-photo-btn .bb-panel-photo {
+  transition: transform 0.4s ease;
+}
+.bb-panel-photo-btn:hover .bb-panel-photo {
+  transform: scale(1.05);
 }
 .bb-panel-thumbs {
   display: grid;
@@ -5017,6 +5230,10 @@
   height: 100%;
   object-fit: cover;
   display: block;
+  transition: transform 0.35s ease;
+}
+.bb-panel-thumb:hover img {
+  transform: scale(1.08);
 }
 .bb-panel-thumb-more {
   position: absolute;
@@ -5431,6 +5648,500 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .bb-celebrate {
+    animation: none;
+  }
+}
+
+/* ============================================================
+   Map page polish — empty state, activity timeline, victories
+   ============================================================ */
+
+/* ---- Empty map state (item 10) ---- */
+.bb-map-empty {
+  position: absolute;
+  inset: 0;
+  z-index: 550;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  padding: 20px;
+}
+.bb-map-empty-card {
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 4px;
+  max-width: 320px;
+  padding: 26px 26px 24px;
+  border-radius: 22px;
+  background: rgba(16, 26, 45, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(8px);
+  animation: bb-cta-swap 0.3s ease;
+}
+.bb-map-empty-icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  margin-bottom: 8px;
+  color: #9fb0c8;
+  background: rgba(255, 255, 255, 0.06);
+}
+.bb-map-empty-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
+}
+.bb-map-empty-sub {
+  font-size: 13px;
+  color: #a9b6c9;
+  margin-bottom: 14px;
+}
+.bb-map-empty-btn {
+  padding: 12px 28px;
+  border: none;
+  border-radius: 999px;
+  background: var(--primary, #e31e2f);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 12px 28px rgba(227, 30, 47, 0.4);
+}
+.bb-map-empty-btn:hover {
+  filter: brightness(1.06);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bb-pin-dot,
+  .bb-cluster-bubble {
+    animation: none !important;
+  }
+}
+
+/* ---- Report wizard: numbered step rail (item 9) ---- */
+.bb-steps {
+  display: flex;
+  align-items: center;
+  margin-top: 12px;
+  padding: 0;
+  list-style: none;
+}
+.bb-step {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+.bb-step:last-child {
+  flex: 0 0 auto;
+}
+.bb-step-dot {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  flex: none;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-dim, #94a3b8);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1.5px solid transparent;
+  transition: all 0.2s ease;
+}
+.bb-step-line {
+  flex: 1;
+  height: 2px;
+  margin: 0 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.12);
+  transition: background 0.2s ease;
+}
+.bb-step.is-active .bb-step-dot {
+  color: #93c5fd;
+  background: rgba(59, 130, 246, 0.16);
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+}
+.bb-step.is-done .bb-step-dot {
+  color: #fff;
+  background: #22c55e;
+}
+.bb-step.is-done .bb-step-line {
+  background: #22c55e;
+}
+
+/* ---- Cleanup timeline emoji (item 6) ---- */
+.bb-tl-emoji {
+  margin-right: 6px;
+  font-size: 13px;
+}
+
+/* ---- Verify block spotlight when the contextual CTA jumps to it (item 2) ---- */
+.bb-verify-flash {
+  animation: bb-verify-flash 1.4s ease;
+  border-radius: var(--radius);
+}
+@keyframes bb-verify-flash {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+  }
+  30% {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.55);
+  }
+}
+
+/* ---- Community Activity Timeline (bonus) ---- */
+.bb-activity {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+.bb-activity-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 26px 1fr auto;
+  align-items: start;
+  gap: 10px;
+  min-height: 34px;
+}
+.bb-activity-marker {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.bb-activity-dot {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #9fb0c8;
+  flex: none;
+}
+.bb-activity-line {
+  flex: 1;
+  width: 2px;
+  min-height: 12px;
+  margin: 2px 0;
+  background: rgba(255, 255, 255, 0.12);
+}
+.bb-activity-text {
+  font-size: 13px;
+  color: #cdd8e8;
+  line-height: 1.35;
+  padding-top: 4px;
+}
+.bb-activity-text b {
+  color: #fff;
+  font-weight: 800;
+}
+.bb-activity-date {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-mute, #7c8aa0);
+  padding-top: 5px;
+  white-space: nowrap;
+}
+
+/* ---- Victories banner when the "Cleaned" filter is on (item 15) ---- */
+.bb-victories {
+  position: absolute;
+  top: 88px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(460px, calc(100% - 40px));
+  padding: 11px 18px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.95), rgba(22, 163, 74, 0.95));
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 14px 34px rgba(22, 163, 74, 0.4);
+  color: #fff;
+  animation: bb-cta-swap 0.35s ease;
+}
+.bb-victories.is-leaving {
+  animation: bb-victories-out 0.4s ease forwards;
+}
+@keyframes bb-victories-out {
+  to { opacity: 0; transform: translate(-50%, -8px); }
+}
+.bb-victories-emoji {
+  font-size: 18px;
+  flex: none;
+}
+.bb-victories-text {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.bb-victories-text b {
+  font-weight: 900;
+}
+@media (max-width: 860px) {
+  .bb-victories {
+    top: 76px;
+    padding: 9px 14px;
+  }
+  .bb-victories-text {
+    font-size: 12px;
+  }
+}
+
+/* ---- Confirmation acknowledgement (the "received / N more needed" beat) ---- */
+.bb-ack {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+  animation: bb-ack-in 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.bb-ack b {
+  font-weight: 900;
+}
+.bb-ack.is-clean {
+  color: #bbf7d0;
+  background: rgba(34, 197, 94, 0.14);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+.bb-ack.is-still {
+  color: #fed7aa;
+  background: rgba(245, 158, 11, 0.14);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+@keyframes bb-ack-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ---- Search dropdown height: never overrun the bottom-anchored status card.
+ * The card is taller on mobile, so reserve more space there. ---- */
+.bb-search-pop {
+  max-height: clamp(240px, calc(100dvh - 470px), 440px);
+}
+@media (max-width: 860px) {
+  .bb-search-pop {
+    max-height: clamp(200px, calc(100dvh - 560px), 420px);
+  }
+}
+
+/* ---- Vote-first community consensus ---- */
+.bb-votes {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.bb-vote-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  color: var(--text);
+  line-height: 1.3;
+}
+.bb-vote-row b {
+  color: var(--text-strong);
+  font-weight: 900;
+}
+.bb-vote-row em {
+  font-style: normal;
+  color: var(--text-dim);
+}
+.bb-vote-row.is-clean svg {
+  color: var(--resolved, #22c55e);
+}
+.bb-vote-row.is-still svg {
+  color: var(--urgent, #e31e2f);
+}
+.bb-consensus {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.bb-consensus-verdict {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  margin: 7px 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+.bb-consensus-verdict b {
+  font-size: 26px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--resolved, #22c55e);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- "Add a photo?" prompt after Looks clean ---- */
+.bb-photo-prompt {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.28);
+  animation: bb-ack-in 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.bb-photo-prompt-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #bfdbfe;
+}
+.bb-photo-prompt-body {
+  margin: 5px 0 10px;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+.bb-photo-prompt-actions {
+  display: flex;
+  gap: 8px;
+}
+.bb-photo-prompt-upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 14px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: #2563eb;
+  color: #fff;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+}
+.bb-photo-prompt-upload:hover {
+  filter: brightness(1.08);
+}
+.bb-photo-prompt-skip {
+  padding: 9px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+}
+.bb-photo-prompt-skip:hover {
+  color: #fff;
+}
+
+/* ---- Richer pin hover tooltip ---- */
+.bb-tip.leaflet-tooltip {
+  padding: 9px 12px;
+}
+.bb-pin-tip {
+  min-width: 132px;
+  text-align: left;
+}
+.bb-pin-tip-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #fff;
+}
+.bb-pin-tip-sub {
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #9fb0c8;
+}
+.bb-pin-tip-open {
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #7dd3fc;
+}
+
+/* ---- Filter-change toast ("Showing N reports") ---- */
+.bb-map-toast {
+  position: absolute;
+  top: 96px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 640;
+  padding: 9px 16px;
+  border-radius: 999px;
+  background: rgba(16, 26, 45, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow: var(--softshadow);
+  backdrop-filter: blur(6px);
+  animation: bb-cta-swap 0.28s ease;
+}
+@media (max-width: 860px) {
+  .bb-map-toast {
+    top: 84px;
+  }
+}
+
+/* ---- Filter dropdown: compact + a touch more breathing from the button ---- */
+.bb-filter-menu {
+  bottom: calc(100% + 12px);
+  min-width: 172px;
+  padding: 7px;
+  gap: 1px;
+}
+.bb-filter-menu .bb-layers-opt-status {
+  padding: 8px 11px;
+  font-size: 12.5px;
+}
+.bb-filter-menu .bb-layers-group-k {
+  padding: 4px 11px 5px;
+}
+
+/* ---- Map overlays entrance (played once when the splash clears) ---- */
+/* The status card rises in, then gives one subtle pulse to draw the eye. */
+.bb-map-wrap.bb-intro .bb-trust {
+  animation:
+    bb-rise-in 0.62s cubic-bezier(0.34, 1.56, 0.64, 1) both,
+    bb-card-pulse 0.5s ease 0.72s both;
+}
+.bb-map-wrap.bb-intro .bb-cta {
+  animation: bb-cta-rise 0.62s cubic-bezier(0.34, 1.56, 0.64, 1) 0.12s both;
+}
+@keyframes bb-rise-in {
+  from { opacity: 0; transform: translateY(32px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes bb-cta-rise {
+  from { opacity: 0; transform: translate(-50%, 32px); }
+  to { opacity: 1; transform: translateX(-50%); }
+}
+@keyframes bb-card-pulse {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.025); }
+  100% { transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bb-map-wrap.bb-intro .bb-trust,
+  .bb-map-wrap.bb-intro .bb-cta {
     animation: none;
   }
 }

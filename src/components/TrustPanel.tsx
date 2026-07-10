@@ -24,9 +24,9 @@ interface Props {
 }
 
 const STATUS_CARDS: { status: ReportStatus; label: string }[] = [
-  { status: 'pending', label: 'Open Reports' },
-  { status: 'in_review', label: 'In Review' },
-  { status: 'resolved', label: 'Resolved' },
+  { status: 'pending', label: 'Needs Attention' },
+  { status: 'in_review', label: 'Under Review' },
+  { status: 'resolved', label: 'Cleaned' },
 ]
 
 /**
@@ -140,15 +140,15 @@ export default function TrustPanel({
                   return (
                     <button
                       key={status}
-                      className="bb-stat"
+                      className="bb-stat bb-stat-meaning"
                       style={{ '--stat-color': STATUS_COLORS[status] } as React.CSSProperties}
                       onClick={() => toStatus(status)}
                     >
                       <span className="bb-stat-strip" />
-                      <strong>
-                        <CountUp value={value} />
+                      <strong className="bb-stat-meaning-v">
+                        <CountUp value={value} duration={1200} />
                       </strong>
-                      <small>{label}</small>
+                      <small className="bb-stat-meaning-label">{label}</small>
                       <span className="bb-stat-hint">Tap to explore ›</span>
                     </button>
                   )

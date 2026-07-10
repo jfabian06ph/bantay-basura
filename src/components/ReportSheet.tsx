@@ -23,7 +23,8 @@ interface Props {
   onAdjustLocation: () => void
 }
 
-const STEPS = ['Location', 'Category', 'Photos', 'Details', 'Review']
+// Conversational step names — feels like a friendly chat, not a form (item 8).
+const STEPS = ['Where?', 'What?', 'Show us', 'Describe', 'Review']
 const SEVERITIES = [
   { v: 1 as const, label: 'Minor' },
   { v: 2 as const, label: 'Moderate' },
@@ -154,7 +155,7 @@ export default function ReportSheet({
         side="bottom"
         className="gap-0 rounded-t-[28px] p-0 sm:inset-y-6 sm:top-6 sm:right-6 sm:left-auto sm:bottom-auto sm:h-auto sm:max-h-[calc(100dvh-3rem)] sm:w-[min(485px,calc(100vw-3rem))] sm:rounded-[30px] sm:border"
       >
-        <SheetHeader className="border-b border-white/10 px-6 pt-6 pb-4">
+        <SheetHeader className="border-b border-white/10 px-6 pt-6 pb-3">
           <SheetTitle className="flex items-center gap-2 text-[22px] tracking-[-0.04em]">
             <Flag className="size-5 text-primary" /> Report Waste
           </SheetTitle>
@@ -162,22 +163,23 @@ export default function ReportSheet({
             <span>
               Step {step + 1} of {STEPS.length}
             </span>
-            <span className="text-primary">· {STEPS[step]}</span>
+            <span className="text-white">· {STEPS[step]}</span>
           </div>
-          <div className="mt-2 flex gap-1.5">
-            {STEPS.map((_, i) => (
-              <span
-                key={i}
-                className={cn(
-                  'h-1.5 flex-1 rounded-full transition-colors',
-                  i <= step ? 'bg-primary' : 'bg-white/12',
-                )}
-              />
-            ))}
-          </div>
+          {/* Numbered steps with connecting lines — makes reporting feel shorter (item 9). */}
+          <ol className="bb-steps" aria-hidden>
+            {STEPS.map((label, i) => {
+              const state = i < step ? 'is-done' : i === step ? 'is-active' : ''
+              return (
+                <li key={label} className={`bb-step ${state}`}>
+                  <span className="bb-step-dot">{i < step ? <Check className="size-3.5" /> : i + 1}</span>
+                  {i < STEPS.length - 1 && <span className="bb-step-line" />}
+                </li>
+              )
+            })}
+          </ol>
         </SheetHeader>
 
-        <div className="flex flex-col gap-5 overflow-y-auto px-6 py-5">
+        <div className="flex flex-col gap-5 overflow-y-auto px-6 pt-3 pb-5">
           {/* STEP 1 — Location */}
           {step === 0 && (
             <Section title="Where is the issue?">
@@ -201,13 +203,18 @@ export default function ReportSheet({
                     type="button"
                     onClick={() => setCategory(c)}
                     className={cn(
-                      'flex flex-col gap-1 rounded-2xl border p-3 text-left transition',
+                      'relative flex flex-col gap-1 rounded-2xl border-2 p-3 text-left transition',
                       category === c
-                        ? 'border-primary bg-primary/12'
+                        ? 'border-[#22c55e] bg-[#0f2318]'
                         : 'border-white/10 bg-[#33445f]/50 hover:bg-[#33445f]',
                     )}
                   >
-                    <Icon className="size-6 text-primary" />
+                    {category === c && (
+                      <span className="absolute top-2.5 right-2.5 grid size-5 place-items-center rounded-full bg-[#22c55e] text-white">
+                        <Check className="size-3.5" strokeWidth={3} />
+                      </span>
+                    )}
+                    <Icon className="size-6 text-[#f28b93]" />
                     <span className="text-sm leading-tight font-extrabold">
                       {CATEGORY_LABELS[c]}
                     </span>
@@ -239,8 +246,12 @@ export default function ReportSheet({
                   onClick={() => fileRef.current?.click()}
                   className="grid min-h-[120px] w-full place-items-center rounded-[18px] border border-dashed border-white/15 bg-[#33445f]/85 text-sm font-bold text-white hover:bg-[#33445f]"
                 >
-                  <span className="flex flex-col items-center gap-2">
-                    <Camera className="size-6" /> Take or upload photos
+                  <span className="flex flex-col items-center gap-1.5">
+                    <Camera className="size-6" />
+                    <span className="text-[15px] font-extrabold">Add photos</span>
+                    <span className="text-xs font-semibold text-muted-foreground">
+                      Help others verify faster
+                    </span>
                   </span>
                 </button>
               ) : (
@@ -282,6 +293,26 @@ export default function ReportSheet({
           {/* STEP 4 — Details */}
           {step === 3 && (
             <div className="flex flex-col gap-5">
+              {/* Severity is required, so it leads — the eye fills it first. */}
+              <Section title="How bad is it?">
+                <div className="flex flex-wrap gap-2">
+                  {SEVERITIES.map((s) => (
+                    <button
+                      key={s.v}
+                      type="button"
+                      onClick={() => setSeverity(s.v)}
+                      className={cn(
+                        'rounded-full border px-4 py-2.5 text-sm font-bold transition',
+                        severity === s.v
+                          ? 'border-[#3b82f6] bg-[#3b82f6]/15 text-white'
+                          : 'border-transparent bg-[#33445f] text-[#edf2fb] hover:bg-[#3c4f6d]',
+                      )}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              </Section>
               <Section title="Title (optional)">
                 <input
                   type="text"
@@ -294,25 +325,6 @@ export default function ReportSheet({
                 <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
                   A short name for the issue. Leave blank to use the waste type.
                 </p>
-              </Section>
-              <Section title="How bad is it?">
-                <div className="flex flex-wrap gap-2">
-                  {SEVERITIES.map((s) => (
-                    <button
-                      key={s.v}
-                      type="button"
-                      onClick={() => setSeverity(s.v)}
-                      className={cn(
-                        'rounded-full border px-4 py-2.5 text-sm font-bold transition',
-                        severity === s.v
-                          ? 'border-primary bg-primary/15 text-white'
-                          : 'border-transparent bg-[#33445f] text-[#edf2fb] hover:bg-[#3c4f6d]',
-                      )}
-                    >
-                      {s.label}
-                    </button>
-                  ))}
-                </div>
               </Section>
               <Section title="Description (optional)">
                 <textarea
@@ -343,20 +355,16 @@ export default function ReportSheet({
                   </div>
                 )}
                 {title.trim() && (
-                  <div className="flex justify-between gap-3">
+                  <div className="grid grid-cols-[88px_1fr] gap-3">
                     <span className="text-muted-foreground">Title</span>
-                    <span className="max-w-[60%] truncate text-right font-bold">
-                      {title.trim()}
-                    </span>
+                    <span className="truncate font-bold">{title.trim()}</span>
                   </div>
                 )}
-                <div className="flex justify-between gap-3">
+                <div className="grid grid-cols-[88px_1fr] gap-3">
                   <span className="text-muted-foreground">Location</span>
-                  <span className="max-w-[60%] truncate text-right font-bold">
-                    {placeName}
-                  </span>
+                  <span className="truncate font-bold">{placeName}</span>
                 </div>
-                <div className="flex justify-between gap-3">
+                <div className="grid grid-cols-[88px_1fr] gap-3">
                   <span className="text-muted-foreground">Type</span>
                   <span className="flex items-center gap-1.5 font-bold">
                     {category
@@ -364,29 +372,34 @@ export default function ReportSheet({
                           const Icon = CATEGORY_ICON[category]
                           return (
                             <>
-                              <Icon className="size-4 text-primary" /> {CATEGORY_LABELS[category]}
+                              <Icon className="size-4 text-[#f28b93]" /> {CATEGORY_LABELS[category]}
                             </>
                           )
                         })()
                       : '—'}
                   </span>
                 </div>
-                <div className="flex justify-between gap-3">
+                <div className="grid grid-cols-[88px_1fr] gap-3">
                   <span className="text-muted-foreground">Severity</span>
                   <span className="font-bold">
                     {SEVERITIES.find((s) => s.v === severity)?.label}
                   </span>
                 </div>
+                <div className="grid grid-cols-[88px_1fr] gap-3">
+                  <span className="text-muted-foreground">Photos</span>
+                  <span className="font-bold">
+                    {photoUrls.length > 0 ? `${photoUrls.length} attached` : 'None added'}
+                  </span>
+                </div>
                 {note.trim() && (
-                  <div className="flex flex-col gap-1">
+                  <div className="grid grid-cols-[88px_1fr] gap-3">
                     <span className="text-muted-foreground">Description</span>
                     <span>{note.trim()}</span>
                   </div>
                 )}
               </div>
               <div className="mt-3 flex items-start gap-2.5 rounded-2xl border border-[rgba(35,194,102,.16)] bg-[rgba(35,194,102,.08)] px-3.5 py-3 text-xs leading-snug font-medium text-[#cbeed9]">
-                🔒 Only the waste location and issue details are shown publicly.
-                Personal information is kept private.
+                🔒 Your personal information is never shown publicly.
               </div>
             </Section>
           )}
@@ -417,7 +430,7 @@ export default function ReportSheet({
               type="button"
               onClick={() => setStep((s) => s + 1)}
               disabled={!canNext}
-              className="flex flex-1 items-center justify-center gap-1 rounded-[18px] bg-primary py-3 text-[15px] font-extrabold text-primary-foreground disabled:opacity-40"
+              className="flex flex-1 items-center justify-center gap-1 rounded-[18px] bg-gradient-to-b from-[#2fbf6b] to-[#16a34a] py-3 text-[15px] font-extrabold text-white shadow-[0_14px_28px_rgba(22,163,74,.28)] disabled:opacity-40"
             >
               Next <ChevronRight className="size-4" />
             </button>

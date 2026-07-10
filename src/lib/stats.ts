@@ -655,9 +655,10 @@ export function computeAreaDetail(
 /** Friendly relative-time label, Filipino-flavored for the civic audience. */
 export function relativeTime(ms: number, now: number): string {
   const diff = now - ms
-  if (diff < 0) return 'soon'
+  // Anything within the last minute — or a just-created report timestamped
+  // slightly after our fixed "now" — reads as "just now" (never "soon").
+  if (diff < 60_000) return 'just now'
   const mins = Math.floor(diff / 60_000)
-  if (mins < 1) return 'just now'
   if (mins < 60) return `${mins}m ago`
   const hours = Math.floor(mins / 60)
   if (hours < 48) return `${hours}h ago`

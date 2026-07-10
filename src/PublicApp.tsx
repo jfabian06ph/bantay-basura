@@ -45,10 +45,12 @@ function labelForView(v: MapViewport | null): string {
 
 interface Props {
   onSignIn: () => void
+  /** True once the splash is gone — triggers the map overlays' entrance. */
+  ready?: boolean
 }
 
 /** The public-facing civic site: map, transparency, community, info pages. */
-export default function PublicApp({ onSignIn }: Props) {
+export default function PublicApp({ onSignIn, ready = true }: Props) {
   const [reports, setReports] = useState<Report[]>(MOCK_REPORTS)
   const [view, setView] = useState<View>('map')
   const [flyTarget, setFlyTarget] = useState<FlyTarget | null>(null)
@@ -59,8 +61,10 @@ export default function PublicApp({ onSignIn }: Props) {
   const isMobile =
     typeof window !== 'undefined' && window.matchMedia('(max-width: 860px)').matches
   const [trustOpen, setTrustOpen] = useState(true)
-  // Default to unresolved issues — that's what most visitors are looking for.
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('pending')
+  // Explore-first: show everything by default. The status filter now lives in
+  // the layers menu (with a badge when active), so a silent "pending" default
+  // would hide reports and mislead. Visitors filter deliberately, not on load.
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [mapView, setMapView] = useState<MapViewport | null>(null)
   const [areaLabel, setAreaLabel] = useState<string | null>(null)
@@ -204,6 +208,7 @@ export default function PublicApp({ onSignIn }: Props) {
 
       <div className={`bb-app-body ${view !== 'map' ? 'bb-page-open' : ''}`}>
       <MapCanvas
+        ready={ready}
         reports={viewReports}
         mapReports={mapReports}
         now={NOW}

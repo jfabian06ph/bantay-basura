@@ -7,6 +7,8 @@ import {
 } from 'lucide-react'
 import Footer from './Footer'
 import BeforeAfter from './BeforeAfter'
+import CountUp from './CountUp'
+import { useReveal } from '../hooks/useReveal'
 import type { Report } from '../types'
 
 interface Props {
@@ -25,7 +27,7 @@ const STEPS = [
   },
   {
     n: '02',
-    title: 'I-flag',
+    title: 'I-report',
     body: 'Kumuha ng larawan, piliin ang uri at gaano kalala. Isang tap lang, nakalagay na sa mapa.',
   },
   {
@@ -36,10 +38,10 @@ const STEPS = [
 ]
 
 const BELIEFS = [
-  { icon: Users, title: 'Community first', body: 'The people who live somewhere know it best.' },
-  { icon: Eye, title: 'Transparency always', body: 'Everything reported and resolved stays in the open.' },
-  { icon: HeartHandshake, title: 'Everyone can help', body: 'Residents, volunteers, schools, LGUs — all of us.' },
-  { icon: Flag, title: 'Every report matters', body: 'One flag can start a whole cleanup.' },
+  { icon: Users, title: 'Community first', body: 'Communities solve problems together.' },
+  { icon: Eye, title: 'Transparency always', body: 'Every report and cleanup remains public.' },
+  { icon: HeartHandshake, title: 'Everyone can help', body: 'Residents, volunteers and schools all play a role.' },
+  { icon: Flag, title: 'Every report matters', body: 'One report can start real change.' },
 ]
 
 const WEEK = 7 * 86_400_000
@@ -51,12 +53,14 @@ export default function About({ activeCount, reports, now, onNavigate }: Props) 
   const resolvedWeek = reports.filter(
     (r) => r.status === 'resolved' && r.resolvedAt && now - new Date(r.resolvedAt).getTime() <= WEEK,
   ).length
+  const live = useReveal<HTMLElement>()
 
   return (
     <div className="bb-about">
       <div className="bb-page">
         {/* ---------- Hero (unchanged) ---------- */}
         <section className="bb-about-hero">
+          <div className="bb-about-manifesto-label">Our manifesto</div>
           <h1 className="bb-about-title">
             Tingnan.
             <br />
@@ -65,26 +69,30 @@ export default function About({ activeCount, reports, now, onNavigate }: Props) 
             <span className="bb-about-accent">Linisin.</span>
           </h1>
           <p className="bb-about-lede">
-            Hindi lahat ng problema ay kailangang lutasin mag-isa. Minsan, kailangan lang muna itong{' '}
-            <strong>makita</strong>.
+            Not every problem can be solved alone. But every solution begins with someone choosing
+            not to <strong>look away</strong>.
           </p>
         </section>
 
         {/* ---------- My story (trimmed) ---------- */}
         <section className="bb-about-block">
           <p className="bb-about-para">
-            Mahilig akong mag-travel. Sa bawat biyahe, napapansin ko kung gaano kaiba ang kuwento ng
-            bawat lugar — may mga komunidad na malinis at maayos, at may mga lugar na may basurang{' '}
-            <em>tila matagal nang hindi napapansin</em>.
+            I love traveling. Every trip reminds me how differently communities care for their
+            surroundings. Some places are clean and well maintained. Others have waste that has
+            become so familiar, <em>people barely notice it anymore</em>.
           </p>
           <p className="bb-about-para">
-            Hindi ito tungkol sa paghusga sa isang bayan. Ipinapaalala lang nito na ang kalinisan ay{' '}
-            <strong>responsibilidad nating lahat</strong>.
+            This isn&rsquo;t about criticizing a town or a city. It&rsquo;s a reminder that keeping
+            our communities clean is <strong>everyone&rsquo;s responsibility</strong>.
           </p>
           <p className="bb-about-para">
-            Bilang software developer, gusto kong gamitin ang aking kakayahan para sa mga proyektong
-            may tunay na pakinabang sa komunidad. Mula sa simpleng obserbasyong iyon isinilang ang{' '}
-            <strong>Bantay Basura</strong>.
+            As a software developer, I wanted to use my skills for something beyond commercial
+            projects — something that could genuinely help communities.
+          </p>
+          <p className="bb-about-para">
+            That simple observation became <strong>Bantay Basura</strong>: a community-powered
+            platform that helps residents report waste hotspots, make cleanups visible, and encourage
+            collective action toward cleaner neighborhoods.
           </p>
         </section>
 
@@ -96,9 +104,11 @@ export default function About({ activeCount, reports, now, onNavigate }: Props) 
             <span>We lack visibility.</span>
           </h2>
           <p>
-            The waste we walk past every day is rarely a mystery — someone always noticed it first.
-            What&rsquo;s missing is a way to make it visible, shared, and impossible to ignore. That
-            is the whole idea behind Bantay Basura.
+            Communities rarely ignore waste because they don&rsquo;t care. More often, they simply
+            can&rsquo;t see the full picture.
+          </p>
+          <p className="bb-about-manifesto-line">
+            Visibility creates accountability. Accountability creates action.
           </p>
         </section>
       </div>
@@ -106,8 +116,10 @@ export default function About({ activeCount, reports, now, onNavigate }: Props) 
       {/* ---------- Full-width before/after (rhythm break) ---------- */}
       <section className="bb-about-ba">
         <div className="bb-about-ba-inner">
-          <BeforeAfter before="/zambales-town.jpg" after="/zambales-coast.jpg" />
-          <p className="bb-about-ba-cap">A real roadside, before and after the community stepped in.</p>
+          <BeforeAfter before="/zambales-town.jpg" after="/zambales-coast.jpg" hint />
+          <p className="bb-about-ba-cap">
+            <strong>Visibility creates action.</strong> Before and after one community cleanup.
+          </p>
         </div>
       </section>
 
@@ -131,7 +143,7 @@ export default function About({ activeCount, reports, now, onNavigate }: Props) 
 
         {/* ---------- Paano ito gumagana (unchanged) ---------- */}
         <section className="bb-about-steps">
-          <h2 className="bb-about-h2">Paano ito gumagana</h2>
+          <h2 className="bb-about-h2">How it starts</h2>
           {STEPS.map((s) => (
             <div className="bb-about-step" key={s.n}>
               <span className="bb-about-step-n">{s.n}</span>
@@ -144,22 +156,30 @@ export default function About({ activeCount, reports, now, onNavigate }: Props) 
         </section>
 
         {/* ---------- Live numbers (expanded) ---------- */}
-        <section className="bb-about-live">
+        <section className="bb-about-live" ref={live.ref}>
           <div className="bb-about-live-hero">
-            <div className="bb-about-stat-num">{activeCount}</div>
+            <div className="bb-about-stat-num">
+              <CountUp value={activeCount} active={live.shown} />
+            </div>
             <div className="bb-about-stat-label">active reports</div>
           </div>
           <div className="bb-about-live-row">
             <div className="bb-about-live-stat">
-              <b>{inReview}</b>
-              <span>In review</span>
+              <b>
+                <CountUp value={pending} active={live.shown} />
+              </b>
+              <span>Open</span>
             </div>
             <div className="bb-about-live-stat">
-              <b>{pending}</b>
-              <span>Awaiting action</span>
+              <b>
+                <CountUp value={inReview} active={live.shown} />
+              </b>
+              <span>Under review</span>
             </div>
             <div className="bb-about-live-stat">
-              <b>{resolvedWeek}</b>
+              <b>
+                <CountUp value={resolvedWeek} active={live.shown} />
+              </b>
               <span>Resolved this week</span>
             </div>
           </div>
@@ -167,15 +187,29 @@ export default function About({ activeCount, reports, now, onNavigate }: Props) 
 
         {/* ---------- Open project ---------- */}
         <section className="bb-about-open">
-          <h2 className="bb-about-h2">Open project</h2>
+          <h2 className="bb-about-h2">Open movement</h2>
           <p className="bb-about-open-lead">
-            Built in the Philippines. Open to LGUs. Open to volunteers. Open to contributors.
+            Built in the Philippines. Open to local governments, volunteers, schools, organizations,
+            and anyone who wants to build cleaner communities together.
           </p>
           <div className="bb-about-open-chips">
             <span>Community-led</span>
             <span>Open Data</span>
             <span>Volunteer-powered</span>
           </div>
+        </section>
+
+        {/* ---------- Honest note: built by one person ---------- */}
+        <section className="bb-about-maker">
+          <h2 className="bb-about-h2">Built by one developer</h2>
+          <p className="bb-about-para">
+            Bantay Basura began as a personal project after noticing the same pattern while
+            traveling — communities that cared, but lacked a simple way to make problems visible.
+          </p>
+          <p className="bb-about-para">
+            It isn&rsquo;t backed by a company. It&rsquo;s built one feature at a time, with the hope
+            that open technology can help neighborhoods work together.
+          </p>
         </section>
       </div>
 
@@ -185,18 +219,14 @@ export default function About({ activeCount, reports, now, onNavigate }: Props) 
           <h2 className="bb-about-close-title">
             Mas malinis na komunidad hindi nagsisimula sa gobyerno.
             <br />
-            <span>Nagsisimula ito sa taong unang nag-report.</span>
+            <span>Nagsisimula ito sa isang taong may malasakit.</span>
           </h2>
           <p className="bb-about-close-line">
-            Change doesn&rsquo;t begin with a cleanup. It begins when someone decides to report what
-            everyone else walks past.
+            Change begins the moment someone chooses not to look away.
           </p>
           <div className="bb-about-close-btns">
             <button className="bb-about-close-primary" onClick={() => onNavigate('map')}>
               Report your first issue <ArrowRight className="size-4" />
-            </button>
-            <button className="bb-about-close-secondary" onClick={() => onNavigate('map')}>
-              Explore the live map
             </button>
           </div>
         </div>

@@ -132,6 +132,38 @@ export const STATUS_COLORS: Record<ReportStatus, string> = {
 /** Ordered list for the legend. */
 export const STATUS_ORDER: ReportStatus[] = ['pending', 'in_review', 'resolved']
 
+/**
+ * Community confirmations needed before a spot is treated as consensus-clean.
+ * One tap is never enough — a small net majority is required so an accident or
+ * a lone actor can't hide a real problem.
+ */
+export const CLEAN_THRESHOLD = 3
+
+/** True when the crowd (not the LGU) has verified a spot as cleaned. */
+export function communityConfirmed(r: Report): boolean {
+  return r.cleared >= CLEAN_THRESHOLD && r.cleared > r.stillHere
+}
+
+/** How many more "clean now" confirmations until community consensus. */
+export function confirmationsNeeded(r: Report): number {
+  if (communityConfirmed(r)) return 0
+  // Must both hit the threshold AND out-number the "still here" votes.
+  return Math.max(CLEAN_THRESHOLD - r.cleared, r.stillHere - r.cleared + 1, 1)
+}
+
+/**
+ * The pin's *displayed* color — official status wins, but a pending spot greens
+ * (via amber) as neighbors confirm it's clean. This is the 🔴→🟡→🟢 morph; it
+ * never changes the official status used by stats, filters, or the legend.
+ */
+export function pinColor(r: Report): string {
+  if (r.status === 'resolved') return STATUS_COLORS.resolved
+  if (r.status === 'in_review') return STATUS_COLORS.in_review
+  if (communityConfirmed(r)) return STATUS_COLORS.resolved
+  if (r.cleared > 0 && r.cleared > r.stillHere) return STATUS_COLORS.in_review
+  return STATUS_COLORS.pending
+}
+
 export const SOURCE_LABELS: Record<ReportSource, string> = {
   resident: 'Residents',
   lgu: 'LGU / Officials',

@@ -29,13 +29,16 @@ export function useCountUp(value: number, active = true, duration = 900): number
       setDisplay(value)
       return
     }
-    started.current = true
     const start = performance.now()
 
     const tick = (now: number) => {
       const t = Math.min(1, (now - start) / duration)
       setDisplay(value * easeOut(t))
       if (t < 1) frame.current = requestAnimationFrame(tick)
+      // Mark complete only when the run finishes — not at kick-off. This keeps
+      // the guard correct under React StrictMode, whose mount→cleanup→remount
+      // would otherwise flip `started` before any frame paints and snap to end.
+      else started.current = true
     }
     frame.current = requestAnimationFrame(tick)
 

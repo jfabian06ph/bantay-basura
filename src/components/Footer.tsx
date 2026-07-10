@@ -1,5 +1,8 @@
 interface Props {
   onNavigate: (view: string) => void
+  /** Hide the full-bleed "See what's happening near you" band (e.g. on pages
+   *  that already end with their own strong closing CTA). */
+  hideCta?: boolean
 }
 
 interface Link {
@@ -33,24 +36,27 @@ const COLUMNS: { title: string; links: Link[] }[] = [
 
 const PARTNERS = ['🏛️ DENR', '🏛️ DILG', '🏛️ LGUs', '🌱 NGOs', '👥 Volunteers']
 
-export default function Footer({ onNavigate }: Props) {
+export default function Footer({ onNavigate, hideCta }: Props) {
   return (
     <>
-      {/* Full-bleed coastal CTA — closes out every page (except the map). */}
-      <section
-        className="bb-dash-cta"
-        style={{ backgroundImage: 'url(/zambales-coast.jpg)' }}
-      >
-        <div className="bb-dash-cta-inner">
-          <h2 className="bb-dash-cta-title">See what's happening near you.</h2>
-          <p className="bb-dash-cta-lede">
-            Every report helps keep this page, and your community, improving.
-          </p>
-          <button className="bb-dash-cta-btn" onClick={() => onNavigate('map')}>
-            Return to the live map →
-          </button>
-        </div>
-      </section>
+      {/* Full-bleed coastal CTA — closes out most pages (hidden where the page
+          already ends with its own strong closing CTA). */}
+      {!hideCta && (
+        <section
+          className="bb-dash-cta"
+          style={{ backgroundImage: 'url(/zambales-coast.jpg)' }}
+        >
+          <div className="bb-dash-cta-inner">
+            <h2 className="bb-dash-cta-title">See what's happening near you.</h2>
+            <p className="bb-dash-cta-lede">
+              Every report helps keep this page, and your community, improving.
+            </p>
+            <button className="bb-dash-cta-btn" onClick={() => onNavigate('map')}>
+              Return to the live map →
+            </button>
+          </div>
+        </section>
+      )}
 
       <footer className="bb-footer">
       <div className="bb-page bb-footer-inner">

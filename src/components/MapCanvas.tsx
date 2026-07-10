@@ -80,6 +80,8 @@ function FlyClouds({ nonce }: { nonce?: number }) {
 }
 
 interface Props {
+  /** True once the splash is gone — plays the overlays' entrance once. */
+  ready: boolean
   reports: Report[]
   /** Reports actually drawn on the map (after the legend filter). */
   mapReports: Report[]
@@ -119,6 +121,7 @@ interface Props {
  * panel (while browsing).
  */
 export default function MapCanvas({
+  ready,
   reports,
   mapReports,
   now,
@@ -149,8 +152,19 @@ export default function MapCanvas({
   onTrustReopen,
   onFlyTo,
 }: Props) {
+  // One-shot entrance: when the map is revealed (splash gone), let the status
+  // card + CTA rise in from the bottom, then drop the class so it never repeats.
+  const [intro, setIntro] = useState(false)
+  useEffect(() => {
+    if (!ready) return
+    setIntro(true)
+    // Long enough for the rise-in + the trailing one-time pulse to finish.
+    const t = window.setTimeout(() => setIntro(false), 1500)
+    return () => window.clearTimeout(t)
+  }, [ready])
+
   return (
-    <div className="bb-map-wrap">
+    <div className={`bb-map-wrap ${intro ? 'bb-intro' : ''}`}>
       <MapView
         reports={mapReports}
         onConfirm={onConfirmReport}
@@ -161,6 +175,10 @@ export default function MapCanvas({
         placing={placing}
         onSelect={onSelectReport}
         onViewport={onViewport}
+        statusFilter={statusFilter}
+        onStatusFilter={onStatusFilter}
+        onReport={onReport}
+        onMapClick={selectedReport ? onCloseReport : undefined}
       />
 
       <FlyClouds nonce={flyTarget?.nonce} />
@@ -172,11 +190,14 @@ export default function MapCanvas({
           <FloatingControls
             locateStatus={locateStatus}
             userPos={userPos}
-            statusFilter={statusFilter}
-            onStatusFilter={onStatusFilter}
+            selectedReport={selectedReport}
             onJump={onJump}
             onLocate={onLocate}
             onReport={onReport}
+            onVerify={() => {
+              if (selectedReport) onSelectReport(selectedReport)
+              window.dispatchEvent(new CustomEvent('bb-focus-verify'))
+            }}
           />
           <TrustPanel
             reports={reports}

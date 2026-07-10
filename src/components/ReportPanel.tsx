@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import {
   X,
   ChevronLeft,
@@ -7,12 +7,12 @@ import {
   Bell,
   BellRing,
   ThumbsUp,
+  ThumbsDown,
   CheckCircle2,
   Clock,
   Gauge,
   ShieldCheck,
   Camera,
-  CameraOff,
   Users,
   MapPin,
   MapPinned,
@@ -35,6 +35,8 @@ import {
   STATUS_LABELS,
   cleanupStage,
   awaitingAfterPhoto,
+  communityConfirmed,
+  confirmationsNeeded,
   type Report,
 } from '../types'
 import type { UserLocation } from '../hooks/useUserLocation'
@@ -60,14 +62,6 @@ const SEVERITY_TONE: Record<1 | 2 | 3, string> = {
   3: '#e31e2f',
 }
 
-// Friendlier, lifecycle-flavored status wording used in the report panel
-// (the map legend/filters keep the terse STATUS_LABELS).
-const PANEL_STATUS: Record<Report['status'], string> = {
-  pending: 'Awaiting Action',
-  in_review: 'Under Review',
-  resolved: 'Resolved',
-}
-
 const TRACK_KEY = 'bb-tracked'
 const loadTracked = (): string[] => {
   try {
@@ -89,7 +83,6 @@ export default function ReportPanel({
   onUploadAfter,
   onClose,
 }: Props) {
-  const [collapsed, setCollapsed] = useState(false)
   const [tracked, setTracked] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const toastTimer = useRef<number | undefined>(undefined)
@@ -97,6 +90,42 @@ export default function ReportPanel({
   const [shareOpen, setShareOpen] = useState(false)
   const [lightbox, setLightbox] = useState<number | null>(null)
   const afterFileRef = useRef<HTMLInputElement>(null)
+  const verifyRef = useRef<HTMLDivElement>(null)
+  const [verifyFlash, setVerifyFlash] = useState(false)
+  // Confirmation acknowledgement — the little "received / N more needed" beat.
+  const [ack, setAck] = useState<null | 'still' | 'cleared'>(null)
+  const ackTimer = useRef<number | undefined>(undefined)
+  // After "Looks clean", invite an optional photo — one upload feeds the
+  // cleanup evidence, transparency, and the monthly challenge.
+  const [photoPrompt, setPhotoPrompt] = useState(false)
+
+  function handleConfirm(kind: 'stillHere' | 'cleared') {
+    onConfirm(report.id, kind)
+    setAck(kind === 'cleared' ? 'cleared' : 'still')
+    if (kind === 'cleared') setPhotoPrompt(true)
+    window.clearTimeout(ackTimer.current)
+    ackTimer.current = window.setTimeout(() => setAck(null), 3600)
+  }
+  useEffect(() => () => window.clearTimeout(ackTimer.current), [])
+  // Fresh prompt state whenever a different report is opened.
+  useEffect(() => {
+    setPhotoPrompt(false)
+    setAck(null)
+  }, [report.id])
+
+  // The floating "Verify this report" CTA (shown while a report is open) asks
+  // us to reveal + spotlight the verify controls.
+  useEffect(() => {
+    const focus = () => {
+      requestAnimationFrame(() => {
+        verifyRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        setVerifyFlash(true)
+        window.setTimeout(() => setVerifyFlash(false), 1400)
+      })
+    }
+    window.addEventListener('bb-focus-verify', focus)
+    return () => window.removeEventListener('bb-focus-verify', focus)
+  }, [])
 
   useEffect(() => {
     setTracked(loadTracked().includes(report.id))
@@ -146,8 +175,8 @@ export default function ReportPanel({
       ? { title: 'LGU Verified', sub: 'Reviewed by the local government', tone: '#3b82f6' }
       : report.stillHere >= 3
         ? {
-            title: 'Community Verified',
-            sub: `Confirmed by ${report.stillHere} nearby residents`,
+            title: 'Verified by nearby residents',
+            sub: `Confirmed by ${report.stillHere} residents`,
             tone: '#22c55e',
           }
         : null
@@ -159,11 +188,12 @@ export default function ReportPanel({
   const stageIndex = { reported: 0, in_review: 1, cleaned: 2, documented: 3 }[stage]
   const green = STATUS_COLORS.resolved
   const timeline = [
-    { label: 'Reported', date: fmtDate(report.createdAt) },
-    { label: 'In Review', date: inReviewDone ? (resolved ? 'Done' : 'In progress') : '—' },
-    { label: 'Cleaned', date: report.resolvedAt ? fmtDate(report.resolvedAt) : '—' },
+    { label: 'Reported', icon: '📍', date: fmtDate(report.createdAt) },
+    { label: 'Verified', icon: '👥', date: inReviewDone ? (resolved ? 'Done' : 'In progress') : '—' },
+    { label: 'Cleaned', icon: '🧹', date: report.resolvedAt ? fmtDate(report.resolvedAt) : '—' },
     {
-      label: 'After photo',
+      label: 'Evidence Published',
+      icon: '📸',
       date: report.afterUploadedAt
         ? fmtDate(report.afterUploadedAt)
         : awaitingAfter
@@ -176,6 +206,44 @@ export default function ReportPanel({
     tone: i < stageIndex ? green : i === stageIndex ? (resolved ? green : STATUS_COLORS.in_review) : null,
   }))
 
+  // Community Activity Timeline — turns a static record into a living story.
+  // Built from the report's known timestamps + community signals.
+  const activity: { icon: ReactNode; text: ReactNode; date: string }[] = [
+    {
+      icon: <MapPin className="size-3.5" />,
+      text: <>Reported by a <b>resident</b></>,
+      date: fmtDate(report.createdAt),
+    },
+  ]
+  if (report.stillHere > 0)
+    activity.push({
+      icon: <Users className="size-3.5" />,
+      text: (
+        <>
+          <b>{report.stillHere}</b> {report.stillHere === 1 ? 'resident' : 'residents'} confirmed
+        </>
+      ),
+      date: '',
+    })
+  if (report.status !== 'pending')
+    activity.push({
+      icon: <ShieldCheck className="size-3.5" />,
+      text: <>Barangay {resolved ? 'reviewed the report' : 'is reviewing the report'}</>,
+      date: '',
+    })
+  if (report.resolvedAt)
+    activity.push({
+      icon: <CheckCircle2 className="size-3.5" />,
+      text: <>Cleanup completed by <b>{area} LGU</b></>,
+      date: fmtDate(report.resolvedAt),
+    })
+  if (report.afterUploadedAt)
+    activity.push({
+      icon: <Camera className="size-3.5" />,
+      text: <>After photo uploaded</>,
+      date: fmtDate(report.afterUploadedAt),
+    })
+
   function handleAfterFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -183,7 +251,8 @@ export default function ReportPanel({
     reader.onload = () => {
       if (typeof reader.result === 'string') {
         onUploadAfter(report.id, reader.result)
-        showToast('After photo added — challenge complete! 🏅')
+        setPhotoPrompt(false)
+        showToast('Photo added — thank you for helping verify! 🙌')
       }
     }
     reader.readAsDataURL(file)
@@ -247,7 +316,7 @@ export default function ReportPanel({
 
   return (
     <>
-      <aside className={`bb-panel ${collapsed ? 'is-collapsed' : ''}`}>
+      <aside className="bb-panel">
         <div className="bb-panel-scroll">
           <div className="bb-panel-photo-wrap">
             {hasPhoto ? (
@@ -260,8 +329,9 @@ export default function ReportPanel({
               </button>
             ) : (
               <div className="bb-panel-noimg">
-                <CameraOff className="bb-panel-noimg-icon" strokeWidth={1.5} />
-                <span className="bb-panel-noimg-label">No photo provided</span>
+                <MapPin className="bb-panel-noimg-icon" strokeWidth={1.5} />
+                <span className="bb-panel-noimg-title">Community report</span>
+                <span className="bb-panel-noimg-label">No photo submitted</span>
               </div>
             )}
 
@@ -413,7 +483,7 @@ export default function ReportPanel({
                   <span className="bb-rsheet-k">Status</span>
                 </span>
                 <span className="bb-rsheet-badge" style={{ background: `${color}22`, color }}>
-                  {PANEL_STATUS[report.status]}
+                  {STATUS_LABELS[report.status]}
                 </span>
               </div>
             </div>
@@ -473,7 +543,10 @@ export default function ReportPanel({
                       />
                       {i < timeline.length - 1 && <span className="bb-tl-line" />}
                     </span>
-                    <span className="bb-tl-label">{t.label}</span>
+                    <span className="bb-tl-label">
+                      <span className="bb-tl-emoji" aria-hidden>{t.icon}</span>
+                      {t.label}
+                    </span>
                     <span className="bb-tl-date">{t.date}</span>
                   </li>
                 ))}
@@ -494,13 +567,6 @@ export default function ReportPanel({
                   >
                     <Upload className="size-4" /> Upload after photo
                   </button>
-                  <input
-                    ref={afterFileRef}
-                    type="file"
-                    accept="image/*"
-                    hidden
-                    onChange={handleAfterFile}
-                  />
                 </div>
               )}
 
@@ -511,46 +577,151 @@ export default function ReportPanel({
               )}
             </div>
 
-            <div className="bb-verify">
+            <div ref={verifyRef} className={`bb-verify ${verifyFlash ? 'bb-verify-flash' : ''}`}>
               <span className="bb-verify-q">Is this still here?</span>
               <div className="bb-verify-btns">
                 <button
                   className="bb-verify-btn"
-                  onClick={() => onConfirm(report.id, 'stillHere')}
+                  onClick={() => handleConfirm('stillHere')}
                 >
-                  <ThumbsUp className="size-4" /> Yes, still here
+                  <ThumbsUp className="size-4" /> Still here
                 </button>
                 <button
                   className="bb-verify-btn bb-verify-btn-ok"
-                  onClick={() => onConfirm(report.id, 'cleared')}
+                  onClick={() => handleConfirm('cleared')}
                 >
                   <CheckCircle2 className="size-4" /> Looks clean
                 </button>
               </div>
 
+              {ack && (
+                <div
+                  className={`bb-ack ${ack === 'cleared' ? 'is-clean' : 'is-still'}`}
+                  role="status"
+                  aria-live="polite"
+                >
+                  {ack === 'cleared' ? (
+                    communityConfirmed(report) ? (
+                      <>
+                        <Sparkles className="size-4 shrink-0" />
+                        <span>
+                          <b>Community consensus reached</b> — this spot is verified clean 🎉
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="size-4 shrink-0" />
+                        <span>
+                          Confirmation received ·{' '}
+                          <b>
+                            {confirmationsNeeded(report)} more{' '}
+                            {confirmationsNeeded(report) === 1 ? 'confirmation' : 'confirmations'}
+                          </b>{' '}
+                          needed
+                        </span>
+                      </>
+                    )
+                  ) : (
+                    <>
+                      <ThumbsUp className="size-4 shrink-0" />
+                      <span>
+                        Thanks — you marked this <b>still here</b>
+                      </span>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {photoPrompt && (
+                <div className="bb-photo-prompt">
+                  <div className="bb-photo-prompt-head">
+                    <Camera className="size-4 shrink-0" /> Can you add a photo?
+                  </div>
+                  <p className="bb-photo-prompt-body">
+                    Optional — a quick snap helps everyone verify the cleanup.
+                  </p>
+                  <div className="bb-photo-prompt-actions">
+                    <button
+                      className="bb-photo-prompt-upload"
+                      onClick={() => afterFileRef.current?.click()}
+                    >
+                      <Upload className="size-4" /> Add photo
+                    </button>
+                    <button
+                      className="bb-photo-prompt-skip"
+                      onClick={() => setPhotoPrompt(false)}
+                    >
+                      Not now
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {votes > 0 && (
                 <div className="bb-verify-tally">
-                  <span className="bb-verify-tally-k">Community consensus</span>
-                  <div className="bb-verify-bar">
-                    <span className="bb-verify-seg is-still" style={{ width: `${stillPct}%` }} />
-                    <span
-                      className="bb-verify-seg is-cleared"
-                      style={{ width: `${100 - stillPct}%` }}
-                    />
+                  <div className="bb-votes">
+                    <div className="bb-vote-row is-clean">
+                      <ThumbsUp className="size-[18px] shrink-0" />
+                      <span>
+                        <b>{report.cleared}</b>{' '}
+                        {report.cleared === 1 ? 'resident says' : 'residents say'}{' '}
+                        <em>&ldquo;It&rsquo;s clean&rdquo;</em>
+                      </span>
+                    </div>
+                    <div className="bb-vote-row is-still">
+                      <ThumbsDown className="size-[18px] shrink-0" />
+                      <span>
+                        <b>{report.stillHere}</b>{' '}
+                        {report.stillHere === 1 ? 'resident says' : 'residents say'}{' '}
+                        <em>&ldquo;It&rsquo;s still here&rdquo;</em>
+                      </span>
+                    </div>
                   </div>
-                  <div className="bb-verify-legend">
-                    <span>
-                      <i className="bb-verify-dot is-still" />
-                      <b>{stillPct}%</b> still here
-                    </span>
-                    <span>
-                      <b>{100 - stillPct}%</b> cleared
-                      <i className="bb-verify-dot is-cleared" />
-                    </span>
+
+                  <div className="bb-consensus">
+                    <span className="bb-verify-tally-k">Community consensus</span>
+                    <div className="bb-consensus-verdict">
+                      <b>{100 - stillPct}%</b> Cleaned
+                    </div>
+                    <div className="bb-verify-bar">
+                      <span className="bb-verify-seg is-still" style={{ width: `${stillPct}%` }} />
+                      <span
+                        className="bb-verify-seg is-cleared"
+                        style={{ width: `${100 - stillPct}%` }}
+                      />
+                    </div>
                   </div>
+
                   <span className="bb-verify-basis">Based on {votes} community confirmations</span>
                 </div>
               )}
+            </div>
+
+            {/* Shared hidden picker for after/verification photos (awaiting-after
+                CTA + the "Looks clean" prompt both trigger it). */}
+            <input
+              ref={afterFileRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={handleAfterFile}
+            />
+
+            {/* Community Activity — the report as a living story */}
+            <div className="bb-rsheet-section">
+              <span className="bb-rsheet-k">Activity</span>
+              <ol className="bb-activity">
+                {activity.map((a, i) => (
+                  <li key={i} className="bb-activity-item">
+                    <span className="bb-activity-marker">
+                      <span className="bb-activity-dot">{a.icon}</span>
+                      {i < activity.length - 1 && <span className="bb-activity-line" />}
+                    </span>
+                    <span className="bb-activity-text">{a.text}</span>
+                    {a.date && <span className="bb-activity-date">{a.date}</span>}
+                  </li>
+                ))}
+              </ol>
             </div>
 
             <p className="bb-rsheet-id">Report ID · {formatRef(report.id, report.createdAt)}</p>
@@ -563,27 +734,7 @@ export default function ReportPanel({
             {toast}
           </div>
         )}
-
-        <button
-          className="bb-panel-collapse"
-          onClick={() => setCollapsed(true)}
-          aria-label="Collapse panel"
-          title="Collapse"
-        >
-          <ChevronLeft className="size-4" />
-        </button>
       </aside>
-
-      {collapsed && (
-        <button
-          className="bb-panel-reopen"
-          onClick={() => setCollapsed(false)}
-          aria-label="Expand panel"
-          title="Expand"
-        >
-          <ChevronRight className="size-4" />
-        </button>
-      )}
 
       <ShareSheet report={shareOpen ? report : null} onClose={() => setShareOpen(false)} />
 

@@ -59,7 +59,7 @@ const STEPS: Step[] = [
   {
     n: 4,
     time: 'That afternoon',
-    title: 'The right people are notified',
+    title: 'Local responders are notified',
     body: 'The alert travels outward — resident to barangay to municipality to the volunteer groups who can act.',
   },
   {
@@ -101,7 +101,8 @@ const PILLARS = [
 ]
 
 const FAQ = [
-  { q: 'Can anyone report?', a: 'Yes. Anyone with a phone and a photo can flag an issue — no account required.' },
+  { q: 'Do I need an account?', a: 'No. You can browse the map and file a report without signing up.' },
+  { q: 'Can anyone report?', a: 'Yes. Anyone with a phone and a photo can flag an issue.' },
   { q: 'Can I report anonymously?', a: 'Yes. Reports are anonymous by default; your identity is never shown publicly.' },
   { q: 'Who verifies reports?', a: 'Nearby residents and community moderators confirm a report before action is prioritised.' },
   { q: 'How are cleanups organised?', a: 'By LGUs, NGOs, and volunteer groups who pick up verified reports in their area.' },
@@ -132,6 +133,7 @@ export default function HowItWorks({ onNavigate }: Props) {
   const rootRef = useRef<HTMLDivElement>(null)
   const decoRef = useRef<HTMLDivElement>(null)
   const [faqOpen, setFaqOpen] = useState<number | null>(0)
+  const closeReveal = useReveal<HTMLElement>()
 
   // Parallax: the scroll container is this .bb-about element. Drift the hero's
   // decorative layer slower than the page for depth (skipped for reduced motion).
@@ -168,12 +170,15 @@ export default function HowItWorks({ onNavigate }: Props) {
             <br />
             One community.
             <br />
-            <span>One cleaner neighbourhood.</span>
+            <span>Real change.</span>
           </h1>
-          <p className="bb-hiw-hero-lede">From one photo to a real cleanup — here&rsquo;s the whole journey.</p>
+          <p className="bb-hiw-hero-lede">
+            From one report to real community action. Follow every step of the journey.
+          </p>
           <button className="bb-hiw-hero-cta" onClick={() => onNavigate('map')}>
-            Report your first issue <ArrowRight className="size-4" />
+            Start reporting <ArrowRight className="size-4" />
           </button>
+          <p className="bb-hiw-scrollcue">Scroll to follow one real report ↓</p>
         </div>
         <div className="bb-hiw-hero-fade" />
       </section>
@@ -239,7 +244,18 @@ export default function HowItWorks({ onNavigate }: Props) {
                     <CheckCircle2 className="size-3.5" /> Verified
                   </span>
                 </div>
+                <div className="bb-hiw-verify-stats">
+                  <div>
+                    <b>18 min</b>
+                    <span>avg. to verify</span>
+                  </div>
+                  <div>
+                    <b>6</b>
+                    <span>avg. confirmations</span>
+                  </div>
+                </div>
               </div>
+              <p className="bb-hiw-caption">Verified by 7 nearby residents.</p>
             </TimelineStep>
 
             <TimelineStep step={STEPS[3]} last={false}>
@@ -284,12 +300,16 @@ export default function HowItWorks({ onNavigate }: Props) {
                   </div>
                 </div>
               </div>
+              <p className="bb-hiw-caption">
+                Volunteers and local partners update the cleanup with before &amp; after photos.
+              </p>
             </TimelineStep>
 
             <TimelineStep step={STEPS[5]} last>
               <div className="bb-hiw-flow">
                 {['Report', 'Cleanup', 'Public record', 'Impact'].map((f, i, arr) => (
                   <span key={f} className="bb-hiw-flow-item">
+                    <Check className="bb-hiw-flow-check size-3.5" />
                     {f}
                     {i < arr.length - 1 && <ArrowRight className="size-3.5" />}
                   </span>
@@ -364,7 +384,7 @@ export default function HowItWorks({ onNavigate }: Props) {
                 <div key={p.label} className="bb-hiw-pillar-wrap">
                   <div className="bb-hiw-pillar">
                     <span className="bb-hiw-pillar-icon">
-                      <Icon className="size-6" />
+                      <Icon className="size-7" />
                     </span>
                     <b>{p.label}</b>
                     <span className="bb-hiw-pillar-sub">{p.sub}</span>
@@ -375,7 +395,8 @@ export default function HowItWorks({ onNavigate }: Props) {
             })}
           </div>
           <p className="bb-hiw-trust-foot">
-            <ShieldCheck className="size-4" /> Three groups, one shared, public record.
+            <ShieldCheck className="size-4" /> Technology should help neighbors work together — not
+            replace them.
           </p>
         </div>
       </section>
@@ -408,19 +429,22 @@ export default function HowItWorks({ onNavigate }: Props) {
         </div>
       </section>
 
-      {/* ---------- Closing CTA ---------- */}
-      <section className="bb-hiw-close">
+      {/* ---------- Closing — Apple-style silence: one thought, one action ---------- */}
+      <section
+        className={`bb-hiw-close ${closeReveal.shown ? 'is-in' : ''}`}
+        ref={closeReveal.ref}
+      >
         <h2 className="bb-hiw-close-title">
           One report.
           <br />
-          One cleaner community.
+          Real change.
         </h2>
         <button className="bb-hiw-close-cta" onClick={() => onNavigate('map')}>
           Start reporting <ArrowRight className="size-4" />
         </button>
       </section>
 
-      <Footer onNavigate={onNavigate} />
+      <Footer onNavigate={onNavigate} hideCta />
     </div>
   )
 }

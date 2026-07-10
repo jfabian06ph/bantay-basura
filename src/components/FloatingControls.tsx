@@ -1,37 +1,32 @@
-import { Crosshair } from 'lucide-react'
+import { Crosshair, ShieldCheck } from 'lucide-react'
 import LocationSearch, { type Target } from './LocationSearch'
 import { Button } from './ui/button'
-import { STATUS_COLORS } from '../types'
 import type { GeoStatus, UserLocation } from '../hooks/useUserLocation'
-import type { StatusFilter } from '../PublicApp'
+import type { Report } from '../types'
 
 interface Props {
   locateStatus: GeoStatus
   userPos: UserLocation | null
-  statusFilter: StatusFilter
-  onStatusFilter: (f: StatusFilter) => void
+  /** The report currently open — makes the bottom CTA contextual. */
+  selectedReport: Report | null
   onJump: (target: Target) => void
   onLocate: () => void
   onReport: () => void
+  /** Focus the verify action inside the open report panel. */
+  onVerify: () => void
 }
 
-const FILTERS: { key: StatusFilter; label: string }[] = [
-  { key: 'all', label: 'All' },
-  { key: 'pending', label: 'Pending' },
-  { key: 'in_review', label: 'Review' },
-  { key: 'resolved', label: 'Resolved' },
-]
-
-/** The floating map controls shown when not placing a pin: search + locate,
- * status filters (double as the legend), and the "Report Waste" call to action. */
+/** The floating map controls shown when not placing a pin: a premium top row
+ * (search + locate only — status filters now live in the layers menu on the
+ * right), and a contextual call to action that adapts to the open report. */
 export default function FloatingControls({
   locateStatus,
   userPos,
-  statusFilter,
-  onStatusFilter,
+  selectedReport,
   onJump,
   onLocate,
   onReport,
+  onVerify,
 }: Props) {
   return (
     <>
@@ -47,29 +42,21 @@ export default function FloatingControls({
         </button>
       </div>
 
-      <div className="bb-filters-map" role="group" aria-label="Filter by status">
-        {FILTERS.map((f) => {
-          const active = statusFilter === f.key
-          const color = f.key === 'all' ? undefined : STATUS_COLORS[f.key]
-          return (
-            <button
-              key={f.key}
-              className={`bb-filter ${active ? 'bb-filter-on' : ''}`}
-              onClick={() => onStatusFilter(f.key)}
-            >
-              {color && <i className="bb-filter-dot" style={{ background: color }} />}
-              {f.label}
-            </button>
-          )
-        })}
-      </div>
-
-      <div className="bb-cta">
-        <span className="bb-cta-label">See something that needs cleaning?</span>
-        <Button size="lg" className="bb-cta-btn" onClick={onReport}>
-          Report Waste
-        </Button>
-      </div>
+      {selectedReport ? (
+        <div className="bb-cta bb-cta-verify">
+          <span className="bb-cta-label">Community Report</span>
+          <Button size="lg" className="bb-cta-btn bb-cta-btn-verify" onClick={onVerify}>
+            <ShieldCheck className="size-4" /> Verify this report
+          </Button>
+        </div>
+      ) : (
+        <div className="bb-cta">
+          <span className="bb-cta-label">See something that needs cleaning?</span>
+          <Button size="lg" className="bb-cta-btn" onClick={onReport}>
+            Report Waste
+          </Button>
+        </div>
+      )}
     </>
   )
 }

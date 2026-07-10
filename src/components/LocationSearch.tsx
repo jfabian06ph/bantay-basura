@@ -9,6 +9,7 @@ import {
   Map as MapIcon,
   ArrowLeft,
   LocateFixed,
+  Star,
 } from 'lucide-react'
 import { Popover, PopoverTrigger, PopoverContent } from './ui/popover'
 import { searchPlaces, geocodeText, type GeoResult } from '../lib/geocode'
@@ -42,6 +43,12 @@ type Level = 'region' | 'province' | 'city' | 'barangay'
 type Mode = 'home' | 'browse'
 
 const RECENT_KEY = 'bb-recent-locations'
+
+// Popular towns to seed brand-new visitors who have no recent history yet.
+const POPULAR_NAMES = ['Subic', 'Masinloc', 'San Felipe']
+const POPULAR: Place[] = POPULAR_NAMES.map((n) => MUNICIPALITIES.find((m) => m.name === n)).filter(
+  (p): p is Place => Boolean(p),
+)
 
 function loadRecent(): GeoResult[] {
   try {
@@ -241,7 +248,7 @@ export default function LocationSearch({ onJump, userPos, onNearMe }: Props) {
 
       <PopoverContent
         collisionPadding={16}
-        className="flex max-h-[min(48vh,440px)] w-[min(360px,calc(100vw-2rem))] flex-col overflow-hidden"
+        className="bb-search-pop flex w-[min(360px,calc(100vw-2rem))] flex-col overflow-hidden"
       >
         {/* Search input */}
         <div className="flex items-center gap-2 border-b border-white/10 px-4 py-3.5">
@@ -377,6 +384,21 @@ export default function LocationSearch({ onJump, userPos, onNearMe }: Props) {
                 <span className="flex-1 text-sm font-bold">Explore Philippines</span>
                 <ChevronRight className="size-4 text-muted-foreground" />
               </button>
+
+              {/* Popular — always shown, so first-time users have a starting point */}
+              <p className="px-3 pt-3 pb-1 text-[11px] font-extrabold tracking-wider text-muted-foreground uppercase">
+                Popular
+              </p>
+              {POPULAR.map((p) => (
+                <button
+                  key={`popular-${p.name}`}
+                  onClick={() => goPlace(p)}
+                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-white/5"
+                >
+                  <Star className="size-4 shrink-0 text-amber-400" />
+                  <span className="text-sm font-bold">{p.name}</span>
+                </button>
+              ))}
 
               {/* Recent */}
               {recent.length > 0 && (
