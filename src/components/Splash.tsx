@@ -30,8 +30,8 @@ const MUTED_KEY = 'bb-splash-muted'
 const TL = {
   line: { at: 0, dur: 600 }, // the question fades out fast, leaving a clean black beat
   map: { at: 850, dur: 2200 }, // ~0.85s of deliberate black after the click, THEN the map breathes in
-  welcome: { at: 9800, dur: 1200 }, // a longer still pause (~0.7s) on the finished map before the reveal
-  cta: { at: 13200, dur: 600 }, // after the whole lockup has landed, line by line
+  welcome: { at: 10700, dur: 1200 }, // ~1.6s still pause so the final green report is readable before the reveal
+  cta: { at: 14100, dur: 600 }, // after the whole lockup has landed, line by line
   hold: 6000, // wait for the click; auto-dissolve is the safety net
 } as const
 
