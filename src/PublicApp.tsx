@@ -202,7 +202,7 @@ export default function PublicApp({ onSignIn }: Props) {
     <div className="bb-app">
       <Navigation view={view} onNavigate={setView} onSignIn={onSignIn} />
 
-      <div className="bb-app-body">
+      <div className={`bb-app-body ${view !== 'map' ? 'bb-page-open' : ''}`}>
       <MapCanvas
         reports={viewReports}
         mapReports={mapReports}
@@ -222,6 +222,7 @@ export default function PublicApp({ onSignIn }: Props) {
         trustOpen={trustOpen}
         selectedReport={selectedReport}
         onConfirmReport={flow.confirmReport}
+        onUploadAfter={flow.uploadAfterPhoto}
         onSelectReport={(r) => setSelectedId(r.id)}
         onCloseReport={() => setSelectedId(null)}
         onJump={(t) => flyTo(t.lat, t.lng, t.zoom)}

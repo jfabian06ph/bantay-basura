@@ -1,0 +1,1748 @@
+/* ============================================================
+   Impact — the community hub. Editorial light theme (like About /
+   Transparency), with a cinematic video hero and Airbnb-style cards.
+   Scoped under .bb-impact-page so it never leaks into the dark app chrome.
+   (Not .bb-impact — that class already exists in App.css for the report-sheet
+   "Community Impact card"; reusing it here overrode the page's cream surface.)
+   ============================================================ */
+
+.bb-impact-page {
+  /* local tokens for the light editorial surface */
+  --imp-ink: #14110f;
+  --imp-dim: #6b6560;
+  --imp-mute: #8a847c;
+  --imp-line: #e7e3dc;
+  --imp-card: #ffffff;
+  --imp-green: #1f9d57;
+  --imp-radius: 20px;
+}
+
+/* ---------- Hero ---------- */
+.bb-imp-hero {
+  position: relative;
+  min-height: min(78vh, 620px);
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  background: #0b1220;
+}
+.bb-imp-hero-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Barely-there cinematic push-in — 25s in, 25s out. The page feels alive
+     without anyone quite noticing the motion. */
+  animation: bb-imp-hero-zoom 25s ease-in-out infinite alternate;
+}
+@keyframes bb-imp-hero-zoom {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.04);
+  }
+}
+.bb-imp-hero-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(11, 18, 32, 0.35) 0%, transparent 35%, rgba(11, 18, 32, 0.85) 100%);
+}
+.bb-imp-hero-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 1120px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 0 32px 52px;
+  color: #fff;
+}
+.bb-imp-hero-eyebrow {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #a7f3c4;
+  margin-bottom: 14px;
+}
+.bb-imp-hero-title {
+  margin: 0 0 24px;
+  max-width: 800px;
+  font-size: clamp(1.7rem, 4.6vw, 3rem);
+  line-height: 1.12;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+  text-shadow: 0 2px 30px rgba(0, 0, 0, 0.4);
+}
+/* Two-beat reveal: the first line rises in, a held pause, then the green payoff
+   line arrives with a cinematic blur-to-sharp — the moment the page "decides." */
+.bb-imp-hl {
+  display: block;
+}
+.bb-imp-hl-1 {
+  opacity: 0;
+  animation: bb-imp-hl1-in 0.8s ease 0.35s forwards;
+}
+.bb-imp-hl-2 {
+  color: #a7f3c4;
+  opacity: 0;
+  animation: bb-imp-hl2-in 1s cubic-bezier(0.2, 0.7, 0.2, 1) 1.6s forwards;
+}
+@keyframes bb-imp-hl1-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes bb-imp-hl2-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+    filter: blur(7px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+.bb-imp-hero-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 15px 26px;
+  border: none;
+  border-radius: 999px;
+  background: var(--imp-green);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 16px 36px rgba(31, 157, 87, 0.4);
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+.bb-imp-hero-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 44px rgba(31, 157, 87, 0.5);
+}
+
+/* ---------- Hero live-activity markers ----------
+   Pins drift over the drone footage so the video reads as a living place.
+   Centering uses `translate`, entrance uses `scale`/opacity, and the idle
+   float uses `transform` — three independent properties, so they compose
+   without fighting each other. */
+.bb-imp-hero-markers {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+.bb-imp-marker {
+  position: absolute;
+  top: var(--my);
+  left: var(--mx);
+  translate: -50% -50%;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px 6px 9px;
+  border-radius: 999px;
+  background: rgba(13, 20, 28, 0.5);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.25);
+  opacity: 0;
+  scale: 0.96;
+  /* Slow, opacity-led fade with a whisper of scale — no pop, no bounce — then
+     an easy 7s float so the pins feel like they're breathing over the scene. */
+  animation:
+    bb-imp-marker-in 1.2s ease var(--delay) forwards,
+    bb-imp-marker-float var(--dur, 7s) ease-in-out calc(var(--delay) + 1.2s) infinite;
+}
+.bb-imp-marker-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--tone);
+  animation: bb-imp-marker-pulse 2.4s ease-out infinite;
+}
+.bb-imp-marker-label {
+  line-height: 1;
+}
+@keyframes bb-imp-marker-in {
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+@keyframes bb-imp-marker-float {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(var(--sx, 0), var(--sy, -5px));
+  }
+}
+@keyframes bb-imp-marker-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--tone) 60%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 9px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+/* Mobile: keep the pins, but anchor them down the right edge (right-aligned so
+   the labels extend inward and never clip) and shrink them a touch. They stack
+   in the open upper band, clear of the headline below. */
+@media (max-width: 560px) {
+  .bb-imp-marker {
+    left: auto;
+    right: 12px;
+    translate: 0 -50%;
+    font-size: 10.5px;
+    padding: 5px 10px 5px 8px;
+  }
+  /* Stagger the right offset (and tops) so they scatter naturally down the
+     right side instead of lining up in a rigid column. */
+  .bb-imp-marker:nth-child(1) {
+    top: 12%;
+    right: 16px;
+  }
+  .bb-imp-marker:nth-child(2) {
+    top: 23%;
+    right: 46px;
+  }
+  .bb-imp-marker:nth-child(3) {
+    top: 34%;
+    right: 20px;
+  }
+  .bb-imp-marker:nth-child(4) {
+    top: 45%;
+    right: 52px;
+  }
+}
+/* Respect reduced-motion: keep everything, just hold it still. */
+@media (prefers-reduced-motion: reduce) {
+  .bb-imp-marker {
+    animation: bb-imp-marker-in 0.01s ease forwards;
+  }
+  .bb-imp-marker-dot,
+  .bb-imp-feed-row.is-new,
+  .bb-imp-cal-cell.is-today .bb-imp-cal-num {
+    animation: none;
+  }
+  /* Headline + challenge steps must still be visible with motion off. */
+  .bb-imp-hl-1,
+  .bb-imp-hl-2,
+  .bb-imp-step {
+    animation: none;
+    opacity: 1;
+    filter: none;
+    transform: none;
+    transition: none;
+  }
+  .bb-imp-hero-video {
+    animation: none;
+  }
+}
+
+/* ---------- Section scaffolding ---------- */
+.bb-imp-section {
+  padding: 60px 0 10px;
+}
+/* Top cluster (spotlight → ways to help → calendar) rides tight to the hero so
+   it reads as one arrival unit; the lower sections keep their roomier rhythm. */
+.bb-imp-section.bb-imp-tight {
+  padding-top: 22px;
+}
+
+/* ---------- Event spotlight (the one big story) ---------- */
+.bb-imp-spot-section {
+  padding-top: 28px;
+}
+.bb-imp-spotlight {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  border: 1px solid var(--imp-line);
+  border-radius: 24px;
+  overflow: hidden;
+  background: var(--imp-card);
+  box-shadow: 0 24px 60px rgba(20, 17, 15, 0.1);
+}
+.bb-imp-spot-media {
+  position: relative;
+  min-height: 380px;
+  background: #16233b;
+}
+.bb-imp-spot-media img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.bb-imp-spot-badge {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  background: rgba(13, 20, 28, 0.62);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+.bb-imp-spot-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 36px 38px;
+}
+.bb-imp-spot-when {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--imp-green);
+}
+.bb-imp-spot-title {
+  margin: 8px 0 6px;
+  font-size: clamp(1.9rem, 4vw, 2.7rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--imp-ink);
+}
+.bb-imp-spot-sub {
+  margin: 0 0 20px;
+  font-size: 15px;
+  color: var(--imp-dim);
+}
+.bb-imp-spot-meta {
+  list-style: none;
+  margin: 0 0 26px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.bb-imp-spot-meta li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--imp-ink);
+}
+.bb-imp-spot-meta svg {
+  color: var(--imp-green);
+}
+.bb-imp-spot-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  padding: 14px 28px;
+  border: none;
+  border-radius: 999px;
+  background: var(--imp-green);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 14px 30px rgba(31, 157, 87, 0.32);
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+.bb-imp-spot-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 38px rgba(31, 157, 87, 0.42);
+}
+@media (max-width: 780px) {
+  .bb-imp-spotlight {
+    grid-template-columns: 1fr;
+  }
+  .bb-imp-spot-media {
+    min-height: 210px;
+  }
+  .bb-imp-spot-body {
+    padding: 24px;
+  }
+}
+.bb-imp-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--imp-green);
+}
+.bb-imp-eyebrow-light {
+  color: #a7f3c4;
+}
+.bb-imp-live .bb-live-dot {
+  width: 9px;
+  height: 9px;
+}
+.bb-imp-h2 {
+  margin: 8px 0 22px;
+  font-size: clamp(1.4rem, 3.4vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--imp-ink);
+}
+
+/* ---------- Location filter (leads the activities section) ---------- */
+.bb-imp-filterbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+.bb-imp-filter-orb {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  background: var(--imp-green);
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(31, 157, 87, 0.34);
+}
+.bb-imp-fchips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 2px;
+}
+.bb-imp-fchips::-webkit-scrollbar {
+  display: none;
+}
+.bb-imp-fchip {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 9px 15px;
+  border: 1px solid var(--imp-line);
+  border-radius: 999px;
+  background: var(--imp-card);
+  color: var(--imp-ink);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.bb-imp-fchip:hover {
+  border-color: var(--imp-green);
+}
+.bb-imp-fchip.is-active {
+  background: var(--imp-green);
+  border-color: var(--imp-green);
+  color: #fff;
+}
+.bb-imp-fchip.is-active svg {
+  color: #fff;
+}
+
+/* ---------- Upcoming activity cards ---------- */
+.bb-imp-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+.bb-imp-card {
+  position: relative;
+  display: flex;
+  gap: 0;
+  background: var(--imp-card);
+  border: 1px solid var(--imp-line);
+  border-radius: var(--imp-radius);
+  overflow: hidden;
+  box-shadow: 0 12px 30px rgba(20, 17, 15, 0.06);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  height: 100%;
+}
+.bb-imp-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 28px 56px rgba(20, 17, 15, 0.16);
+}
+/* Icon gives a little life on hover, standing in for a photo zoom. */
+.bb-imp-card .bb-imp-card-icon {
+  transition: transform 0.18s ease;
+}
+.bb-imp-card:hover .bb-imp-card-icon {
+  transform: scale(1.1) rotate(-3deg);
+}
+/* The one recommendation the eye should land on first (Netflix billboard idea):
+   a green ring, a ribbon, and a hair larger than its neighbours. */
+.bb-imp-card.is-featured {
+  border-color: transparent;
+  box-shadow:
+    0 0 0 2px var(--imp-green),
+    0 22px 48px rgba(20, 17, 15, 0.14);
+  transform: scale(1.03);
+}
+.bb-imp-card.is-featured:hover {
+  transform: scale(1.03) translateY(-8px);
+}
+.bb-imp-card-ribbon {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--imp-green);
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  box-shadow: 0 6px 16px rgba(31, 157, 87, 0.4);
+}
+.bb-imp-card-date {
+  flex: 0 0 66px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 14px 6px;
+  background: color-mix(in srgb, var(--tone) 12%, #fff);
+  color: var(--tone);
+  border-right: 1px solid var(--imp-line);
+}
+.bb-imp-card-date span {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+.bb-imp-card-date strong {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1;
+}
+.bb-imp-card-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 16px 18px;
+}
+.bb-imp-card-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  margin-bottom: 10px;
+}
+.bb-imp-card-title {
+  margin: 0 0 8px;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--imp-ink);
+}
+.bb-imp-card-place,
+.bb-imp-card-time {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 3px 0;
+  font-size: 13px;
+  color: var(--imp-dim);
+}
+/* Stats row: turnout on the left, scarcity on the right (drives urgency). */
+.bb-imp-card-stats {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--imp-line);
+}
+.bb-imp-card-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--imp-ink);
+}
+.bb-imp-card-left {
+  flex: 0 0 auto;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--imp-green) 12%, #fff);
+  color: #157a42;
+  font-size: 12px;
+  font-weight: 800;
+}
+.bb-imp-card-left.is-urgent {
+  background: #fdecec;
+  color: #d63b3b;
+}
+.bb-imp-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+}
+.bb-imp-join {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border: none;
+  border-radius: 999px;
+  background: var(--imp-green);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.bb-imp-join:hover {
+  background: #157a42;
+  transform: translateX(1px);
+}
+.bb-imp-join:active {
+  transform: scale(0.96);
+}
+/* Few slots left → the Join button breathes a soft green pulse (scarcity). */
+.bb-imp-card.is-urgent .bb-imp-join {
+  animation: bb-imp-join-pulse 2s ease-in-out infinite;
+}
+@keyframes bb-imp-join-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(31, 157, 87, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(31, 157, 87, 0);
+  }
+}
+/* Tactile press feedback across the page's buttons. */
+.bb-imp-hero-cta:active,
+.bb-imp-spot-cta:active,
+.bb-imp-cta-btn:active,
+.bb-imp-fchip:active,
+.bb-imp-tool:active,
+.bb-imp-cal-navbtn:active:not(:disabled),
+.bb-imp-register:active {
+  transform: scale(0.97);
+}
+.bb-imp-card-host {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--imp-mute);
+}
+
+/* ---------- Calendar ---------- */
+/* Calendar header — deliberately low-key so the calendar reads as support. */
+.bb-imp-cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.bb-imp-cal-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.bb-imp-cal-month {
+  min-width: 132px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--imp-ink);
+  font-variant-numeric: tabular-nums;
+}
+.bb-imp-cal-navbtn {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--imp-line);
+  border-radius: 999px;
+  background: var(--imp-card);
+  color: var(--imp-ink);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+}
+.bb-imp-cal-navbtn:hover:not(:disabled) {
+  border-color: var(--imp-green);
+  color: var(--imp-green);
+}
+.bb-imp-cal-navbtn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.bb-imp-cal {
+  border: 1px solid var(--imp-line);
+  border-radius: var(--imp-radius);
+  background: var(--imp-card);
+  overflow: hidden;
+  box-shadow: 0 12px 30px rgba(20, 17, 15, 0.05);
+}
+/* Grayed invitation strip under the grid — space for organizers to claim. */
+.bb-imp-cal-cta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 14px 18px;
+  border: 1px dashed var(--imp-line);
+  border-radius: 14px;
+  background: #faf9f7;
+  color: var(--imp-mute);
+  font-size: 13px;
+  text-decoration: none;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.bb-imp-cal-cta:hover {
+  border-color: var(--imp-green);
+  color: var(--imp-dim);
+  background: color-mix(in srgb, var(--imp-green) 5%, #fff);
+}
+.bb-imp-cal-cta svg {
+  flex: 0 0 auto;
+  color: var(--imp-green);
+}
+.bb-imp-cal-cta b {
+  color: var(--imp-green);
+  font-weight: 800;
+}
+.bb-imp-cal-head {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border-bottom: 1px solid var(--imp-line);
+}
+.bb-imp-cal-head span {
+  padding: 10px 0;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--imp-mute);
+}
+.bb-imp-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+.bb-imp-cal-cell {
+  position: relative;
+  min-height: 62px;
+  padding: 8px;
+  border-right: 1px solid var(--imp-line);
+  border-bottom: 1px solid var(--imp-line);
+  background: var(--imp-card);
+  text-align: left;
+  font: inherit;
+  cursor: default;
+}
+.bb-imp-cal-cell.is-empty {
+  background: #faf9f7;
+}
+.bb-imp-cal-num {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--imp-dim);
+}
+.bb-imp-cal-cell.has-event {
+  cursor: pointer;
+  background: color-mix(in srgb, var(--tone) 9%, #fff);
+}
+.bb-imp-cal-cell.has-event:hover {
+  background: color-mix(in srgb, var(--tone) 16%, #fff);
+}
+.bb-imp-cal-cell.has-event .bb-imp-cal-num {
+  color: var(--tone);
+}
+/* Today — the day number sits inside a filled green circle (Google-style), so
+   "now" is obvious without a label crowding the date. A soft outward pulse
+   keeps drawing the eye back without dominating this supporting section. */
+.bb-imp-cal-cell.is-today .bb-imp-cal-num {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--imp-green);
+  color: #fff;
+  font-weight: 800;
+  animation: bb-imp-today-pulse 2.6s ease-in-out infinite;
+}
+@keyframes bb-imp-today-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(31, 157, 87, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 7px rgba(31, 157, 87, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(31, 157, 87, 0);
+  }
+}
+.bb-imp-cal-evt {
+  display: block;
+  margin-top: 6px;
+  padding: 3px 6px;
+  border-radius: 7px;
+  background: var(--tone);
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---------- Live feed ---------- */
+.bb-imp-feed {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--imp-line);
+  border-radius: var(--imp-radius);
+  background: var(--imp-card);
+  overflow: hidden;
+}
+.bb-imp-feed-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--imp-line);
+}
+.bb-imp-feed-row:last-child {
+  border-bottom: none;
+}
+.bb-imp-feed-icon {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+}
+.bb-imp-feed-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--imp-ink);
+}
+.bb-imp-feed-when {
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: var(--imp-mute);
+}
+/* A fresh action slides in at the top and wears a NEW badge for a beat. */
+.bb-imp-feed-row.is-new {
+  animation: bb-imp-feed-in 0.45s cubic-bezier(0.34, 1.35, 0.5, 1);
+  background: color-mix(in srgb, var(--imp-green) 7%, #fff);
+}
+@keyframes bb-imp-feed-in {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+    background: color-mix(in srgb, var(--imp-green) 20%, #fff);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.bb-imp-feed-new {
+  flex: 0 0 auto;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: var(--imp-green);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  animation: bb-imp-pop-badge 0.3s ease both;
+}
+@keyframes bb-imp-pop-badge {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ---------- Stats counter ---------- */
+.bb-imp-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-top: 6px;
+}
+.bb-imp-stat {
+  padding: 22px 18px;
+  border: 1px solid var(--imp-line);
+  border-radius: var(--imp-radius);
+  background: var(--imp-card);
+  text-align: center;
+}
+.bb-imp-stat-icon {
+  color: var(--imp-green);
+  margin: 0 auto 8px;
+}
+.bb-imp-stat-v {
+  display: block;
+  font-size: clamp(26px, 5vw, 38px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--imp-ink);
+  font-variant-numeric: tabular-nums;
+}
+.bb-imp-stat-k {
+  display: block;
+  margin-top: 3px;
+  font-size: 12.5px;
+  color: var(--imp-mute);
+}
+
+/* ---------- Two-column panels (groups / leaderboard / schools / partners) ---------- */
+.bb-imp-two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.bb-imp-panel {
+  padding: 20px;
+  border: 1px solid var(--imp-line);
+  border-radius: var(--imp-radius);
+  background: var(--imp-card);
+}
+.bb-imp-panel .bb-imp-eyebrow {
+  margin-bottom: 14px;
+}
+.bb-imp-groups {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.bb-imp-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #faf9f7;
+}
+.bb-imp-group-1 {
+  background: linear-gradient(135deg, #fff6df, #fdeec2);
+}
+.bb-imp-group-2 {
+  background: linear-gradient(135deg, #f3f4f6, #e9ebef);
+}
+.bb-imp-group-3 {
+  background: linear-gradient(135deg, #fbeee3, #f6e0cd);
+}
+.bb-imp-medal {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+}
+.bb-imp-group-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-weight: 800;
+  color: var(--imp-ink);
+}
+/* Momentum over totals — the weekly gain leads, the running total supports. */
+.bb-imp-group-metric {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+.bb-imp-group-week {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #157a42;
+  white-space: nowrap;
+}
+.bb-imp-group-total {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--imp-mute);
+  font-variant-numeric: tabular-nums;
+}
+.bb-imp-board {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.bb-imp-board-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 2px;
+  border-bottom: 1px solid var(--imp-line);
+}
+.bb-imp-board-row:last-child {
+  border-bottom: none;
+}
+.bb-imp-board-rank {
+  flex: 0 0 16px;
+  font-weight: 800;
+  color: var(--imp-green);
+  font-variant-numeric: tabular-nums;
+}
+.bb-imp-board-avatar {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  box-shadow: 0 2px 6px rgba(20, 17, 15, 0.16);
+}
+.bb-imp-board-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-weight: 700;
+  color: var(--imp-ink);
+}
+.bb-imp-board-metric {
+  font-size: 13px;
+  color: var(--imp-mute);
+}
+
+/* ---------- Before/after gallery (horizontal, Instagram-style) ---------- */
+.bb-imp-gallery-wrap {
+  position: relative;
+}
+.bb-imp-gallery {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  padding: 2px 2px 6px;
+  scrollbar-width: none;
+  cursor: grab;
+}
+.bb-imp-gallery::-webkit-scrollbar {
+  display: none;
+}
+.bb-imp-gallery.is-grabbing {
+  cursor: grabbing;
+  scroll-behavior: auto;
+}
+.bb-imp-ba-card {
+  position: relative;
+  flex: 0 0 min(340px, 82%);
+  scroll-snap-align: start;
+  margin: 0;
+  border-radius: var(--imp-radius);
+  overflow: hidden;
+  border: 1px solid var(--imp-line);
+  box-shadow: 0 12px 30px rgba(20, 17, 15, 0.06);
+}
+/* Arrow controls — sit just off the rail, fade in on wrapper hover. */
+.bb-imp-gal-arrow {
+  position: absolute;
+  top: calc(50% - 12px);
+  transform: translateY(-50%);
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--imp-line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--imp-ink);
+  cursor: pointer;
+  box-shadow: 0 8px 22px rgba(20, 17, 15, 0.16);
+  opacity: 0;
+  transition: opacity 0.18s ease, transform 0.16s ease, background 0.15s ease;
+}
+.bb-imp-gallery-wrap:hover .bb-imp-gal-arrow {
+  opacity: 1;
+}
+.bb-imp-gal-arrow:hover {
+  background: var(--imp-green);
+  color: #fff;
+}
+.bb-imp-gal-prev {
+  left: -8px;
+}
+.bb-imp-gal-next {
+  right: -8px;
+}
+@media (hover: none) {
+  /* Touch: no hover to reveal arrows, so keep them visible and subtle. */
+  .bb-imp-gal-arrow {
+    opacity: 0.9;
+  }
+}
+.bb-imp-ba-card figcaption {
+  padding: 12px 16px;
+  font-weight: 700;
+  color: var(--imp-ink);
+  background: var(--imp-card);
+}
+/* Make the comparison slider feel discoverable: a hint pill fades in and the
+   knob swells on hover, inviting the drag people already love to play with. */
+.bb-imp-ba-card::after {
+  content: '⟷ Drag to compare';
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  translate: -50% 0;
+  z-index: 3;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: rgba(13, 20, 28, 0.6);
+  backdrop-filter: blur(5px);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.bb-imp-ba-card:hover::after {
+  opacity: 1;
+}
+.bb-imp-ba-card .bb-ba-knob {
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.bb-imp-ba-card:hover .bb-ba-knob {
+  box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.28);
+  transform: scale(1.12);
+}
+
+/* ---------- Monthly challenge ---------- */
+.bb-imp-challenge {
+  border-radius: 24px;
+  padding: 30px;
+  background: linear-gradient(135deg, #0f5132, #14110f);
+  color: #fff;
+  overflow: hidden;
+}
+.bb-imp-challenge-title {
+  margin: 8px 0 10px;
+  font-size: clamp(1.5rem, 4vw, 2.2rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+.bb-imp-challenge-lede {
+  margin: 0 0 24px;
+  max-width: 640px;
+  font-size: 15px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.82);
+}
+.bb-imp-challenge-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 24px;
+  padding: 14px 26px;
+  border: none;
+  border-radius: 999px;
+  background: #fff;
+  color: #0f5132;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+.bb-imp-challenge-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.25);
+}
+.bb-imp-challenge-cta:active {
+  transform: scale(0.97);
+}
+.bb-imp-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.bb-imp-step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.08);
+  font-weight: 700;
+  font-size: 14px;
+  /* Hidden until the section scrolls in, then the four steps rise in sequence. */
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.bb-imp-steps.is-in .bb-imp-step {
+  opacity: 1;
+  transform: translateY(0);
+}
+.bb-imp-steps.is-in .bb-imp-step:nth-child(1) {
+  transition-delay: 0.05s;
+}
+.bb-imp-steps.is-in .bb-imp-step:nth-child(2) {
+  transition-delay: 0.18s;
+}
+.bb-imp-steps.is-in .bb-imp-step:nth-child(3) {
+  transition-delay: 0.31s;
+}
+.bb-imp-steps.is-in .bb-imp-step:nth-child(4) {
+  transition-delay: 0.44s;
+}
+.bb-imp-step svg {
+  color: #a7f3c4;
+}
+.bb-imp-step-n {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  font-size: 12px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* ---------- Chip lists (schools / partners) ---------- */
+.bb-imp-chiplist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.bb-imp-chiplist li {
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: #f4f2ec;
+  border: 1px solid var(--imp-line);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--imp-ink);
+}
+
+/* ---------- Organizer toolkit ---------- */
+.bb-imp-toolkit {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+}
+.bb-imp-tool {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 20px;
+  border: 1px solid var(--imp-line);
+  border-radius: var(--imp-radius);
+  background: var(--imp-card);
+  color: var(--imp-ink);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.16s ease, border-color 0.16s ease;
+}
+/* Estimated effort — makes each toolkit feel approachable, not a project. */
+.bb-imp-tool-time {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #f4f2ec;
+  color: var(--imp-dim);
+  font-size: 11px;
+  font-weight: 700;
+}
+.bb-imp-tool:hover {
+  transform: translateY(-2px);
+  border-color: var(--imp-green);
+}
+.bb-imp-tool svg {
+  color: var(--imp-green);
+}
+.bb-imp-tool-title {
+  font-weight: 800;
+  margin-top: 4px;
+}
+.bb-imp-tool-note {
+  font-size: 12.5px;
+  color: var(--imp-mute);
+}
+.bb-imp-tool-dl {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--imp-green);
+}
+
+/* ---------- Join CTA band ---------- */
+.bb-imp-cta-band {
+  position: relative;
+  margin-top: 40px;
+  padding: 64px 32px 76px;
+  text-align: center;
+  color: #fff;
+  /* Layered so the band isn't flat: a soft light bloom behind the headline,
+     a rich diagonal green, and a deep shadow-green foot that melts into the
+     dark coastal photo below — no hard seam between the two sections. */
+  background:
+    radial-gradient(130% 90% at 50% 0%, rgba(255, 255, 255, 0.14), transparent 55%),
+    linear-gradient(180deg, transparent 42%, rgba(4, 15, 9, 0.6) 100%),
+    linear-gradient(135deg, #23a75e, #0f5132);
+  overflow: hidden;
+}
+.bb-imp-cta-glow {
+  display: none;
+}
+.bb-imp-cta-band h2 {
+  margin: 0 0 8px;
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+.bb-imp-cta-band p {
+  margin: 0 0 22px;
+  color: rgba(255, 255, 255, 0.85);
+}
+.bb-imp-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 15px 28px;
+  border: none;
+  border-radius: 999px;
+  background: #fff;
+  color: #0f5132;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.16s ease;
+}
+.bb-imp-cta-btn:hover {
+  transform: translateY(-2px);
+}
+
+/* ---------- Activity detail modal ---------- */
+.bb-imp-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+.bb-imp-modal-scrim {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background: rgba(11, 18, 32, 0.55);
+  backdrop-filter: blur(3px);
+  cursor: pointer;
+  animation: bb-imp-fade 0.2s ease;
+}
+.bb-imp-modal-card {
+  position: relative;
+  width: min(460px, 100%);
+  max-height: 88vh;
+  overflow-y: auto;
+  padding: 24px;
+  border-radius: 22px;
+  background: #fff;
+  color: var(--imp-ink);
+  box-shadow: 0 30px 80px rgba(2, 8, 23, 0.4);
+  animation: bb-imp-pop 0.28s cubic-bezier(0.34, 1.35, 0.5, 1);
+}
+@keyframes bb-imp-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes bb-imp-pop {
+  from { opacity: 0; transform: translateY(16px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+.bb-imp-modal-x {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  background: #f4f2ec;
+  color: var(--imp-ink);
+  cursor: pointer;
+}
+.bb-imp-modal-date {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--tone) 14%, #fff);
+  color: var(--tone);
+  font-weight: 800;
+  line-height: 1.1;
+}
+.bb-imp-modal-date strong {
+  font-size: 22px;
+}
+.bb-imp-modal-date span {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+.bb-imp-modal-title {
+  margin: 14px 0 10px;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.bb-imp-modal-meta {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 4px 0;
+  font-size: 14px;
+  color: var(--imp-dim);
+}
+.bb-imp-modal-about {
+  margin: 14px 0;
+  line-height: 1.5;
+  color: var(--imp-ink);
+}
+.bb-imp-modal-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 0;
+  border-top: 1px solid var(--imp-line);
+  border-bottom: 1px solid var(--imp-line);
+}
+.bb-imp-modal-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.bb-imp-modal-k {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--imp-mute);
+}
+.bb-imp-modal-v {
+  font-size: 14px;
+  color: var(--imp-ink);
+}
+.bb-imp-modal-bring {
+  padding: 14px 0 4px;
+}
+.bb-imp-bring-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.bb-imp-bring-chips span {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #f4f2ec;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.bb-imp-register {
+  width: 100%;
+  margin-top: 18px;
+  padding: 15px;
+  border: none;
+  border-radius: 14px;
+  background: var(--imp-green);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.bb-imp-register.is-done {
+  background: #0f5132;
+}
+
+/* ---------- Redesigned modal pieces ---------- */
+.bb-imp-modal-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--tone) 12%, #fff);
+  color: color-mix(in srgb, var(--tone) 72%, #14110f);
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.bb-imp-modal-badge-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--tone);
+}
+.bb-imp-modal-facts {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 16px;
+}
+.bb-imp-modal-facts li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--imp-ink);
+}
+.bb-imp-modal-facts svg {
+  flex: 0 0 auto;
+  color: var(--tone);
+}
+.bb-imp-modal-slots {
+  margin: 16px 0;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #faf9f7;
+  border: 1px solid var(--imp-line);
+}
+.bb-imp-slots-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.bb-imp-slots-pct {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--imp-ink);
+}
+.bb-imp-slots-left {
+  font-size: 13px;
+  font-weight: 800;
+  color: #157a42;
+}
+.bb-imp-slots-left.is-urgent {
+  color: #d63b3b;
+}
+.bb-imp-slots-bar {
+  height: 8px;
+  margin: 9px 0 7px;
+  border-radius: 999px;
+  background: #e7e3dc;
+  overflow: hidden;
+}
+.bb-imp-slots-bar span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #23c266, #1f9d57);
+}
+.bb-imp-slots-count {
+  font-size: 12px;
+  color: var(--imp-mute);
+  font-variant-numeric: tabular-nums;
+}
+.bb-imp-modal-maplink {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 5px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--imp-green);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.bb-imp-modal-maplink:hover {
+  text-decoration: underline;
+}
+.bb-imp-modal-org {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--imp-ink);
+}
+.bb-imp-org-check {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--imp-green);
+  color: #fff;
+}
+.bb-imp-modal-verified {
+  font-size: 12px;
+  color: var(--imp-mute);
+}
+.bb-imp-bring-emoji {
+  margin-right: 2px;
+}
+.bb-imp-modal-social {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0 4px;
+}
+.bb-imp-avatars {
+  display: flex;
+}
+.bb-imp-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 2px solid #fff;
+  margin-left: -8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+.bb-imp-avatar:first-child {
+  margin-left: 0;
+}
+.bb-imp-social-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.35;
+}
+.bb-imp-social-count {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--imp-dim);
+}
+.bb-imp-social-nudge {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--imp-green);
+}
+.bb-imp-modal-welcome {
+  margin: 12px 0 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--imp-green) 8%, #fff);
+  color: #157a42;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}
+.bb-imp-modal-note {
+  margin: 14px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--imp-mute);
+  text-align: center;
+}
+.bb-imp-modal-link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--imp-green);
+  font-weight: 800;
+  cursor: pointer;
+}
+.bb-imp-modal-link:hover {
+  text-decoration: underline;
+}
+
+/* ---------- Mobile ---------- */
+@media (max-width: 760px) {
+  .bb-imp-hero-inner {
+    padding: 0 18px 40px;
+  }
+  .bb-imp-two,
+  .bb-imp-stats {
+    grid-template-columns: 1fr;
+  }
+  .bb-imp-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+  .bb-imp-steps {
+    grid-template-columns: 1fr 1fr;
+  }
+  .bb-imp-cal-cell {
+    min-height: 58px;
+    padding: 5px;
+  }
+  .bb-imp-cal-evt {
+    font-size: 0; /* dot-only on small screens to avoid clutter */
+    padding: 0;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-top: 4px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bb-imp-hero-video {
+    display: none;
+  }
+  .bb-imp-modal-card,
+  .bb-imp-modal-scrim {
+    animation: none;
+  }
+}

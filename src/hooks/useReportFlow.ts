@@ -69,6 +69,23 @@ export function useReportFlow({
     )
   }
 
+  /** Attach the "after" photo to a resolved report — completes the cleanup. */
+  function uploadAfterPhoto(id: string, dataUrl: string) {
+    navigator.vibrate?.(12)
+    setReports((prev) =>
+      prev.map((r) =>
+        r.id === id
+          ? {
+              ...r,
+              afterImageUrl: dataUrl,
+              afterUploadedAt: new Date().toISOString(),
+              afterUploadedBy: 'volunteer',
+            }
+          : r,
+      ),
+    )
+  }
+
   function openReport() {
     const detected = Boolean(position)
     const coords =
@@ -188,6 +205,7 @@ export function useReportFlow({
     submitted,
     // actions
     confirmReport,
+    uploadAfterPhoto,
     openReport,
     startPlacing,
     cancelPlacing,

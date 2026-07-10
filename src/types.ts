@@ -46,6 +46,38 @@ export interface Report {
   createdAt: string
   /** ISO timestamp set when the report is marked resolved — powers response-time metrics. */
   resolvedAt?: string
+  /**
+   * The "after" photo that completes the cleanup story. A resolved report with
+   * no afterImageUrl is "awaiting after photo" — the finish line of the journey.
+   * (DB: after_image_url / after_uploaded_at / after_uploaded_by)
+   */
+  afterImageUrl?: string
+  afterUploadedAt?: string
+  afterUploadedBy?: ReportSource
+}
+
+/**
+ * The report lifecycle as a four-step journey, shared by the map panel and the
+ * Impact "Complete a Cleanup" challenge. "Awaiting after photo" is a derived
+ * sub-state of `resolved` (resolved && no afterImageUrl) — not a new status —
+ * so the existing status machinery (legend, filters, colors) stays untouched.
+ */
+export type CleanupStage = 'reported' | 'in_review' | 'cleaned' | 'documented'
+
+/** Any "after" photo — the uploaded one, or a legacy resolved photo. */
+function hasAfterPhoto(r: Report): boolean {
+  return Boolean(r.afterImageUrl || r.resolvedPhotoUrls?.length)
+}
+
+export function cleanupStage(r: Report): CleanupStage {
+  if (r.status === 'resolved') return hasAfterPhoto(r) ? 'documented' : 'cleaned'
+  if (r.status === 'in_review') return 'in_review'
+  return 'reported'
+}
+
+/** True when a resolved report still needs its "after" photo. */
+export function awaitingAfterPhoto(r: Report): boolean {
+  return r.status === 'resolved' && !hasAfterPhoto(r)
 }
 
 export const CATEGORY_LABELS: Record<Category, string> = {

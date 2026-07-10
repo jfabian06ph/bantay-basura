@@ -18,6 +18,9 @@ import {
   MapPinned,
   CalendarDays,
   QrCode,
+  Upload,
+  Award,
+  Sparkles,
 } from 'lucide-react'
 import { nearestMunicipality } from '../municipalities'
 import { distanceMeters, formatDistance } from '../lib/geo'
@@ -30,6 +33,8 @@ import {
   CATEGORY_LABELS,
   STATUS_COLORS,
   STATUS_LABELS,
+  cleanupStage,
+  awaitingAfterPhoto,
   type Report,
 } from '../types'
 import type { UserLocation } from '../hooks/useUserLocation'
@@ -39,6 +44,7 @@ interface Props {
   now: number
   userPos: UserLocation | null
   onConfirm: (id: string, kind: 'stillHere' | 'cleared') => void
+  onUploadAfter: (id: string, dataUrl: string) => void
   onClose: () => void
 }
 
@@ -75,7 +81,14 @@ const DAY = 86_400_000
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 
-export default function ReportPanel({ report, now, userPos, onConfirm, onClose }: Props) {
+export default function ReportPanel({
+  report,
+  now,
+  userPos,
+  onConfirm,
+  onUploadAfter,
+  onClose,
+}: Props) {
   const [collapsed, setCollapsed] = useState(false)
   const [tracked, setTracked] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
@@ -83,6 +96,7 @@ export default function ReportPanel({ report, now, userPos, onConfirm, onClose }
   const touchX = useRef<number | null>(null)
   const [shareOpen, setShareOpen] = useState(false)
   const [lightbox, setLightbox] = useState<number | null>(null)
+  const afterFileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     setTracked(loadTracked().includes(report.id))
@@ -114,10 +128,12 @@ export default function ReportPanel({ report, now, userPos, onConfirm, onClose }
           Math.round((new Date(report.resolvedAt).getTime() - new Date(report.createdAt).getTime()) / DAY),
         )
       : daysOpen
-  // Before/after: original photos vs. the "after" photos added on resolution.
+  // Before/after: original photos vs. the "after" photo. The uploaded
+  // afterImageUrl is canonical; fall back to legacy resolvedPhotoUrls.
   const beforePhoto = photos[0]
-  const afterPhoto = report.resolvedPhotoUrls?.[0]
+  const afterPhoto = report.afterImageUrl ?? report.resolvedPhotoUrls?.[0]
   const showBeforeAfter = resolved && Boolean(beforePhoto && afterPhoto)
+  const awaitingAfter = awaitingAfterPhoto(report)
 
   // Community verification split — powers the consensus tally under the buttons.
   const votes = report.stillHere + report.cleared
@@ -136,23 +152,43 @@ export default function ReportPanel({ report, now, userPos, onConfirm, onClose }
           }
         : null
 
-  // Timeline steps carry a tone: green = completed, amber = active, none = upcoming.
+  // Four-step cleanup journey (report → review → clean → document). The active
+  // stage is derived; steps at or before it read as done.
   const inReviewDone = report.status !== 'pending'
+  const stage = cleanupStage(report)
+  const stageIndex = { reported: 0, in_review: 1, cleaned: 2, documented: 3 }[stage]
+  const green = STATUS_COLORS.resolved
   const timeline = [
-    { label: 'Reported', date: fmtDate(report.createdAt), done: true, tone: STATUS_COLORS.resolved },
+    { label: 'Reported', date: fmtDate(report.createdAt) },
+    { label: 'In Review', date: inReviewDone ? (resolved ? 'Done' : 'In progress') : '—' },
+    { label: 'Cleaned', date: report.resolvedAt ? fmtDate(report.resolvedAt) : '—' },
     {
-      label: 'In Review',
-      date: inReviewDone ? (resolved ? 'Done' : 'In progress') : '—',
-      done: inReviewDone,
-      tone: resolved ? STATUS_COLORS.resolved : inReviewDone ? STATUS_COLORS.in_review : null,
+      label: 'After photo',
+      date: report.afterUploadedAt
+        ? fmtDate(report.afterUploadedAt)
+        : awaitingAfter
+          ? 'Your turn'
+          : '—',
     },
-    {
-      label: 'Resolved',
-      date: report.resolvedAt ? fmtDate(report.resolvedAt) : '—',
-      done: resolved,
-      tone: resolved ? STATUS_COLORS.resolved : null,
-    },
-  ]
+  ].map((s, i) => ({
+    ...s,
+    done: i <= stageIndex,
+    tone: i < stageIndex ? green : i === stageIndex ? (resolved ? green : STATUS_COLORS.in_review) : null,
+  }))
+
+  function handleAfterFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        onUploadAfter(report.id, reader.result)
+        showToast('After photo added — challenge complete! 🏅')
+      }
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
 
   function showToast(msg: string) {
     setToast(msg)
@@ -415,9 +451,14 @@ export default function ReportPanel({ report, now, userPos, onConfirm, onClose }
               </div>
             </div>
 
-            {/* Timeline */}
+            {/* Cleanup progress — every report is a mini "Complete a Cleanup" */}
             <div className="bb-rsheet-section">
-              <span className="bb-rsheet-k">Timeline</span>
+              <span className="bb-rsheet-krow">
+                <span className="bb-rsheet-k">Cleanup progress</span>
+                <span className={`bb-cl-badge ${stage === 'documented' ? 'is-earned' : ''}`}>
+                  <Award className="size-3.5" /> {stage === 'documented' ? 'Badge earned' : 'Earn your badge'}
+                </span>
+              </span>
               <ol className="bb-timeline">
                 {timeline.map((t, i) => (
                   <li key={t.label} className={`bb-tl-item ${t.done ? 'is-done' : ''}`}>
@@ -437,6 +478,37 @@ export default function ReportPanel({ report, now, userPos, onConfirm, onClose }
                   </li>
                 ))}
               </ol>
+
+              {awaitingAfter && (
+                <div className="bb-after-cta">
+                  <div className="bb-after-cta-head">
+                    <Sparkles className="size-4" /> Awaiting after photo
+                  </div>
+                  <p className="bb-after-cta-body">
+                    This spot has been cleaned. Help complete the story — add an “after” photo
+                    and earn your badge.
+                  </p>
+                  <button
+                    className="bb-after-upload"
+                    onClick={() => afterFileRef.current?.click()}
+                  >
+                    <Upload className="size-4" /> Upload after photo
+                  </button>
+                  <input
+                    ref={afterFileRef}
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    onChange={handleAfterFile}
+                  />
+                </div>
+              )}
+
+              {stage === 'documented' && (
+                <div className="bb-after-done">
+                  <Award className="size-4" /> Cleanup fully documented — badge unlocked. Thank you!
+                </div>
+              )}
             </div>
 
             <div className="bb-verify">

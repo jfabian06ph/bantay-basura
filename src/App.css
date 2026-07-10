@@ -1415,6 +1415,13 @@
 }
 
 /* ---- About page: light, airy, editorial ---- */
+/* When a content page (Transparency / Impact / About) is open, hide the map
+   layer entirely so nothing shows behind the opaque page — the map stays
+   mounted (instant, state-preserving return), just made invisible. */
+.bb-page-open .bb-map-wrap {
+  visibility: hidden;
+}
+
 .bb-about {
   position: absolute;
   inset: 0;
@@ -4649,6 +4656,80 @@
   font-size: 12px;
   color: var(--text-dim);
   font-weight: 600;
+}
+
+/* Cleanup-progress badge + "awaiting after photo" upload CTA */
+.bb-cl-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+.bb-cl-badge.is-earned {
+  background: rgba(35, 194, 102, 0.18);
+  color: #7ee2a6;
+}
+.bb-after-cta {
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(35, 194, 102, 0.3);
+  background: rgba(35, 194, 102, 0.1);
+}
+.bb-after-cta-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #7ee2a6;
+}
+.bb-after-cta-body {
+  margin: 6px 0 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+.bb-after-upload {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 12px;
+  background: var(--green);
+  color: #08130b;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.15s ease;
+}
+.bb-after-upload:hover {
+  filter: brightness(1.05);
+}
+.bb-after-upload:active {
+  transform: scale(0.98);
+}
+.bb-after-done {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(35, 194, 102, 0.14);
+  color: #7ee2a6;
+  font-size: 13px;
+  font-weight: 700;
 }
 .bb-panel-privacy {
   margin: 6px 0 0;

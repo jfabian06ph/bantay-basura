@@ -1,5 +1,6 @@
 import About from './About'
 import Dashboard from './Dashboard'
+import Impact from './Impact'
 import InfoPage from './InfoPage'
 import { PAGES, type InfoView, type View } from '../content/pages'
 import type { Report } from '../types'
@@ -48,6 +49,11 @@ export default function PageRouter({
         onViewOnMap={onViewOnMap}
       />
     )
+  }
+
+  // "Impact" in the nav — the community hub (how people can help).
+  if (view === 'reports') {
+    return <Impact onNavigate={navigate} />
   }
 
   if (view === 'map') return null
