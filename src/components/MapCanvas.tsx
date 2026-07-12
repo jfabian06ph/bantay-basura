@@ -108,6 +108,10 @@ interface Props {
   onJump: (target: Target) => void
   onLocate: () => void
   onReport: () => void
+  /** True until this visitor files their first report — warms the empty state. */
+  firstTime: boolean
+  /** Zoomed into a community with no reports in the vicinity — cues the quiet toast. */
+  quietVicinity: boolean
   onCancelPlacing: () => void
   onConfirmPlacement: () => void
   onTrustClose: () => void
@@ -146,6 +150,8 @@ export default function MapCanvas({
   onJump,
   onLocate,
   onReport,
+  firstTime,
+  quietVicinity,
   onCancelPlacing,
   onConfirmPlacement,
   onTrustClose,
@@ -178,6 +184,8 @@ export default function MapCanvas({
         statusFilter={statusFilter}
         onStatusFilter={onStatusFilter}
         onReport={onReport}
+        firstTime={firstTime}
+        quietVicinity={quietVicinity}
         onMapClick={selectedReport ? onCloseReport : undefined}
       />
 

@@ -57,6 +57,13 @@ create table if not exists public.reports (
 create index if not exists reports_status_idx on public.reports (status);
 create index if not exists reports_created_idx on public.reports (created_at desc);
 
+-- Columns added after the first cut — idempotent so this file stays re-runnable
+-- against an existing project (CREATE TABLE IF NOT EXISTS won't alter columns).
+alter table public.reports add column if not exists source            text default 'resident';
+alter table public.reports add column if not exists after_image_url   text;
+alter table public.reports add column if not exists after_uploaded_at timestamptz;
+alter table public.reports add column if not exists after_uploaded_by text;
+
 -- ---- Response teams ---------------------------------------------------------
 create table if not exists public.teams (
   id           uuid primary key default gen_random_uuid(),
@@ -139,3 +146,61 @@ begin
       t, t);
   end loop;
 end $$;
+
+-- ============================================================
+-- Community actions by anonymous public
+-- The reports UPDATE policy is authenticated-only (operators). Residents still
+-- need to (a) cast "still here" / "looks clean" confirmations and (b) attach an
+-- "after" photo when they complete a cleanup. These SECURITY DEFINER functions
+-- perform those *narrow* writes atomically, bypassing RLS without exposing a
+-- blanket UPDATE — the only mutations anon can make are the vote counters and
+-- the after-photo fields.
+-- ============================================================
+create or replace function public.confirm_report(rid uuid, kind text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if kind = 'stillHere' then
+    update public.reports set still_here = still_here + 1 where id = rid;
+  elsif kind = 'cleared' then
+    update public.reports set cleared = cleared + 1 where id = rid;
+  else
+    raise exception 'unknown confirmation kind: %', kind;
+  end if;
+end; $$;
+grant execute on function public.confirm_report(uuid, text) to anon, authenticated;
+
+create or replace function public.set_after_photo(rid uuid, url text, by_role text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  update public.reports
+    set after_image_url   = url,
+        after_uploaded_at = now(),
+        after_uploaded_by = by_role
+    where id = rid;
+end; $$;
+grant execute on function public.set_after_photo(uuid, text, text) to anon, authenticated;
+
+-- ============================================================
+-- Storage — public bucket for report photos
+-- Anyone can upload (community reporting) and read; nobody can update/delete
+-- through the anon key. Photos are addressed by a random uuid filename.
+-- ============================================================
+insert into storage.buckets (id, name, public)
+values ('report-photos', 'report-photos', true)
+on conflict (id) do nothing;
+
+drop policy if exists "report photos public read" on storage.objects;
+create policy "report photos public read" on storage.objects
+  for select using (bucket_id = 'report-photos');
+
+drop policy if exists "report photos anon insert" on storage.objects;
+create policy "report photos anon insert" on storage.objects
+  for insert with check (bucket_id = 'report-photos');

@@ -3,6 +3,7 @@ import type { Map as LeafletMap } from 'leaflet'
 import type { FlyTarget, MapViewport } from './components/MapView'
 import { nearestMunicipality } from './municipalities'
 import { reverseArea } from './lib/geocode'
+import { distanceMeters } from './lib/geo'
 import Navigation from './components/Navigation'
 import MapCanvas from './components/MapCanvas'
 import MapDialogs from './components/MapDialogs'
@@ -22,6 +23,11 @@ export type StatusFilter = 'all' | ReportStatus
 
 // A fixed "now" captured at load — avoids Date churn on every render.
 const NOW = new Date().getTime()
+
+// A vicinity this clean — no report within this radius of the map centre while
+// zoomed into a community — earns the gentle "no issues here yet" toast.
+const VICINITY_RADIUS_M = 3000
+const COMMUNITY_ZOOM = 12
 
 // Rough bounding box of Zambales — lets the status card name the province.
 const ZAMBALES_BBOX = { s: 14.6, n: 15.95, w: 119.75, e: 120.55 }
@@ -51,7 +57,11 @@ interface Props {
 
 /** The public-facing civic site: map, transparency, community, info pages. */
 export default function PublicApp({ onSignIn, ready = true }: Props) {
-  const [reports, setReports] = useState<Report[]>(MOCK_REPORTS)
+  // Connected → trust the backend entirely (empty means empty). Only demo mode
+  // (no backend) falls back to the seeded mock pins.
+  const [reports, setReports] = useState<Report[]>(
+    isBackendConnected ? [] : MOCK_REPORTS,
+  )
   const [view, setView] = useState<View>('map')
   const [flyTarget, setFlyTarget] = useState<FlyTarget | null>(null)
   const [devMock, setDevMock] = useState<LatLng | null>(null)
@@ -74,11 +84,19 @@ export default function PublicApp({ onSignIn, ready = true }: Props) {
   // Dev/demo chrome is hidden unless a developer opts in (?dev=1).
   const devMode = isDevMode()
 
+  // First-visit framing: until this visitor files their first report, the empty
+  // map greets them with a community-building invite. Read once; the flag is set
+  // on submit (see useReportFlow), by which point their own pin fills the map.
+  const firstTime =
+    typeof window !== 'undefined' && localStorage.getItem('bb-has-reported') !== '1'
+
   useEffect(() => {
     if (!isBackendConnected) return
     let alive = true
     loadReports().then((rows) => {
-      if (alive && rows && rows.length) setReports(rows)
+      // rows is [] when the DB is genuinely empty, null only on failure —
+      // so an empty backend correctly clears to a blank map, not the mocks.
+      if (alive && rows) setReports(rows)
     })
     return () => {
       alive = false
@@ -145,6 +163,16 @@ export default function PublicApp({ onSignIn, ready = true }: Props) {
     () => areaLabel ?? labelForView(mapView),
     [areaLabel, mapView],
   )
+
+  // True when the visitor has zoomed into a specific community that has no
+  // reports within the vicinity radius — even though reports exist elsewhere.
+  // (A truly empty map is handled by the full-screen welcome card instead.)
+  const quietVicinity = useMemo(() => {
+    if (!mapView || mapView.zoom < COMMUNITY_ZOOM) return false
+    if (reports.length === 0) return false
+    const centre = { lat: mapView.lat, lng: mapView.lng }
+    return !reports.some((r) => distanceMeters(centre, r) <= VICINITY_RADIUS_M)
+  }, [mapView, reports])
 
   const stats = useMemo(() => {
     let pending = 0
@@ -233,6 +261,8 @@ export default function PublicApp({ onSignIn, ready = true }: Props) {
         onJump={(t) => flyTo(t.lat, t.lng, t.zoom)}
         onLocate={handleLocate}
         onReport={flow.openReport}
+        firstTime={firstTime}
+        quietVicinity={quietVicinity}
         onCancelPlacing={flow.cancelPlacing}
         onConfirmPlacement={flow.confirmPlacement}
         onTrustClose={() => {

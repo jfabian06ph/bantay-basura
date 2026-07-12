@@ -5716,6 +5716,21 @@
 .bb-map-empty-btn:hover {
   filter: brightness(1.06);
 }
+/* First-visit welcome — a touch larger, with a reassurance line under the CTA. */
+.bb-map-empty-welcome {
+  max-width: 360px;
+  padding: 30px 28px 26px;
+}
+.bb-map-empty-icon-welcome {
+  color: #cdd8e8;
+}
+.bb-map-empty-note {
+  margin-top: 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--text-mute, #7f8ca3);
+}
 
 @media (prefers-reduced-motion: reduce) {
   .bb-pin-dot,
@@ -5897,6 +5912,75 @@
   }
   .bb-victories-text {
     font-size: 12px;
+  }
+}
+
+/* Quiet-vicinity toast — calm navy glass, not a loud status colour. It slowly
+   fades in when the visitor lands on an untouched community. */
+.bb-quiet {
+  position: absolute;
+  top: 88px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 600;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  max-width: min(420px, calc(100% - 40px));
+  padding: 12px 18px;
+  border-radius: 16px;
+  background: var(--glass-bg, rgba(12, 20, 35, 0.93));
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
+  color: var(--text, #f8fafc);
+  animation: bb-quiet-in 0.6s ease both;
+}
+@keyframes bb-quiet-in {
+  from { opacity: 0; transform: translate(-50%, -6px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+.bb-quiet.is-leaving {
+  animation: bb-quiet-out 0.4s ease forwards;
+}
+@keyframes bb-quiet-out {
+  to { opacity: 0; transform: translate(-50%, -6px); }
+}
+.bb-quiet-emoji {
+  font-size: 20px;
+  line-height: 1;
+  flex: none;
+}
+.bb-quiet-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.bb-quiet-text b {
+  font-size: 13.5px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #fff;
+}
+.bb-quiet-sub {
+  font-size: 12px;
+  color: var(--text-dim, #aebbd0);
+}
+@media (max-width: 860px) {
+  .bb-quiet {
+    top: 76px;
+    padding: 10px 14px;
+  }
+  .bb-quiet-text b {
+    font-size: 12.5px;
+  }
+  .bb-quiet-sub {
+    font-size: 11px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bb-quiet {
+    animation-duration: 0.01ms;
   }
 }
 

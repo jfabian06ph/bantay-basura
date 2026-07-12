@@ -3,8 +3,18 @@ import { distanceMeters } from '../lib/geo'
 import { reverseGeocode } from '../lib/geocode'
 import { ZAMBALES_OVERVIEW } from '../municipalities'
 import { DONE_STATUSES, type LatLng, type Report } from '../types'
+import {
+  insertReport,
+  isBackendConnected,
+  setAfterPhoto,
+  uploadReportPhotos,
+  voteReport,
+} from '../supabase'
 import type { Mismatch } from '../components/LocationMismatchModal'
 import type { UserLocation } from './useUserLocation'
+
+/** Local (not-yet-persisted) reports carry a `local-` id prefix. */
+const isLocalId = (id: string) => id.startsWith('local-')
 
 // A pinned spot farther than this from the reporter's GPS triggers a warning.
 const MISMATCH_METERS = 2000
@@ -67,10 +77,13 @@ export function useReportFlow({
     setReports((prev) =>
       prev.map((r) => (r.id === id ? { ...r, [kind]: r[kind] + 1 } : r)),
     )
+    // Persist the confirmation once the backend is live. Local-only reports
+    // (not yet round-tripped to the DB) stay optimistic until they reconcile.
+    if (isBackendConnected && !isLocalId(id)) void voteReport(id, kind)
   }
 
   /** Attach the "after" photo to a resolved report — completes the cleanup. */
-  function uploadAfterPhoto(id: string, dataUrl: string) {
+  async function uploadAfterPhoto(id: string, dataUrl: string) {
     navigator.vibrate?.(12)
     setReports((prev) =>
       prev.map((r) =>
@@ -84,6 +97,16 @@ export function useReportFlow({
           : r,
       ),
     )
+    if (isBackendConnected && !isLocalId(id)) {
+      const [url] = await uploadReportPhotos([dataUrl])
+      await setAfterPhoto(id, url, 'volunteer')
+      // Swap the heavy inline data URL for the hosted one once it's up.
+      if (url !== dataUrl) {
+        setReports((prev) =>
+          prev.map((r) => (r.id === id ? { ...r, afterImageUrl: url } : r)),
+        )
+      }
+    }
   }
 
   function openReport() {
@@ -133,7 +156,7 @@ export function useReportFlow({
     openDetails(chosen, false)
   }
 
-  function handleSubmit(draft: Draft) {
+  async function handleSubmit(draft: Draft) {
     // Block near-duplicates of the same waste type — nudge to confirm instead.
     const dup = reports.find(
       (r) =>
@@ -147,9 +170,11 @@ export function useReportFlow({
       return
     }
 
+    // Optimistic: show the pin, celebration, and reference immediately.
+    const localId = `local-${tempId++}`
     const report: Report = {
       ...draft,
-      id: `local-${tempId++}`,
+      id: localId,
       status: 'pending',
       stillHere: 1,
       cleared: 0,
@@ -160,6 +185,30 @@ export function useReportFlow({
     setPendingCoords(null)
     flyTo(report.lat, report.lng, 16)
     setSubmitted({ report, refId: nextRef() })
+    // This visitor has now contributed — retire the first-visit welcome.
+    try {
+      localStorage.setItem('bb-has-reported', '1')
+    } catch {
+      /* ignore */
+    }
+
+    // Persist once the backend is live: upload photos to Storage, insert the
+    // row, then reconcile the optimistic pin with the real DB id.
+    if (!isBackendConnected) return
+    const photos = await uploadReportPhotos(
+      draft.photoUrls ?? (draft.photoUrl ? [draft.photoUrl] : []),
+    )
+    const saved = await insertReport({
+      ...draft,
+      photoUrls: photos,
+      photoUrl: photos[0],
+    })
+    if (saved) {
+      setReports((prev) => prev.map((r) => (r.id === localId ? saved : r)))
+      setSubmitted((s) =>
+        s && s.report.id === localId ? { report: saved, refId: s.refId } : s,
+      )
+    }
   }
 
   function adjustLocation() {

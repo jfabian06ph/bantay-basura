@@ -10,7 +10,7 @@ import {
 } from 'react-leaflet'
 import type { Map as LeafletMap } from 'leaflet'
 import Supercluster from 'supercluster'
-import { Plus, Minus, Layers, Maximize, Trash2, SlidersHorizontal } from 'lucide-react'
+import { Plus, Minus, Layers, Maximize, Trash2, SlidersHorizontal, Sprout } from 'lucide-react'
 import 'leaflet/dist/leaflet.css'
 import type { Report } from '../types'
 import { CATEGORY_LABELS, STATUS_LABELS, STATUS_COLORS, DONE_STATUSES } from '../types'
@@ -511,6 +511,10 @@ interface Props {
   statusFilter?: StatusFilter
   onStatusFilter?: (f: StatusFilter) => void
   onReport?: () => void
+  /** True until this visitor has filed their first report — warms the empty state. */
+  firstTime?: boolean
+  /** Zoomed into a community with no reports nearby — cues the "no issues yet" toast. */
+  quietVicinity?: boolean
   /** Tapping empty map area — used to dismiss the open report panel. */
   onMapClick?: () => void
 }
@@ -528,6 +532,8 @@ export default function MapView({
   statusFilter = 'all',
   onStatusFilter,
   onReport,
+  firstTime = false,
+  quietVicinity = false,
   onMapClick,
 }: Props) {
   const [basemap, setBasemap] = useState<BasemapKey>('streets')
@@ -553,6 +559,34 @@ export default function MapView({
       clearTimeout(hide)
     }
   }, [statusFilter, reports.length])
+
+  // Quiet-vicinity toast: when the visitor zooms into a community with nothing
+  // reported nearby, gently affirm it. Always greets first-time visitors; for
+  // returning ones it shows once per session so it never nags. Fades on its own.
+  const [showQuiet, setShowQuiet] = useState(false)
+  const [quietLeaving, setQuietLeaving] = useState(false)
+  const quietShown = useRef(false)
+  useEffect(() => {
+    if (!quietVicinity) {
+      setQuietLeaving(true)
+      const t = setTimeout(() => {
+        setShowQuiet(false)
+        setQuietLeaving(false)
+      }, 400)
+      return () => clearTimeout(t)
+    }
+    // Returning visitors see it just once a session; first-timers on each entry.
+    if (!firstTime && quietShown.current) return
+    quietShown.current = true
+    setShowQuiet(true)
+    setQuietLeaving(false)
+    const fade = setTimeout(() => setQuietLeaving(true), 6600)
+    const hide = setTimeout(() => setShowQuiet(false), 7000)
+    return () => {
+      clearTimeout(fade)
+      clearTimeout(hide)
+    }
+  }, [quietVicinity, firstTime])
 
   // A tiny "Showing N reports" toast whenever the filter changes — the little
   // confirmation that makes a filter tap feel responsive. Skipped on first
@@ -639,28 +673,61 @@ export default function MapView({
         </div>
       )}
 
+      {!placing && showQuiet && (
+        <div className={`bb-quiet ${quietLeaving ? 'is-leaving' : ''}`} role="status">
+          <span className="bb-quiet-emoji" aria-hidden>🌱</span>
+          <span className="bb-quiet-text">
+            <b>This community has no reported issues yet.</b>
+            <span className="bb-quiet-sub">Help keep it that way—or report what you see.</span>
+          </span>
+        </div>
+      )}
+
       {!placing && empty && (
         <div className="bb-map-empty" role="status">
-          <div className="bb-map-empty-card">
-            <span className="bb-map-empty-icon">
-              <Trash2 className="size-7" strokeWidth={1.5} />
-            </span>
-            <strong className="bb-map-empty-title">
-              {statusFilter === 'all'
-                ? 'No reports in this area yet'
-                : `No ${STATUS_LABELS[statusFilter].toLowerCase()} reports here`}
-            </strong>
-            <p className="bb-map-empty-sub">
-              {statusFilter === 'all'
-                ? 'Be the first to help your community.'
-                : 'Try another filter, or add a new report.'}
-            </p>
-            {onReport && (
-              <button className="bb-map-empty-btn" onClick={onReport}>
-                Report Waste
-              </button>
-            )}
-          </div>
+          {statusFilter === 'all' && firstTime ? (
+            // First-visit welcome: no reports anywhere yet, and this visitor
+            // hasn't contributed — invite them to log the very first sighting.
+            <div className="bb-map-empty-card bb-map-empty-welcome">
+              <span className="bb-map-empty-icon bb-map-empty-icon-welcome">
+                <Sprout className="size-7" strokeWidth={1.5} />
+              </span>
+              <strong className="bb-map-empty-title">Help build a better community</strong>
+              <p className="bb-map-empty-sub">
+                No waste has been logged here yet. Be the first — your observation
+                puts it on the map for neighbours and your LGU to act on.
+              </p>
+              {onReport && (
+                <button className="bb-map-empty-btn" onClick={onReport}>
+                  Log your first observation
+                </button>
+              )}
+              <p className="bb-map-empty-note">
+                Takes 20 seconds · No account needed · Anonymous
+              </p>
+            </div>
+          ) : (
+            <div className="bb-map-empty-card">
+              <span className="bb-map-empty-icon">
+                <Trash2 className="size-7" strokeWidth={1.5} />
+              </span>
+              <strong className="bb-map-empty-title">
+                {statusFilter === 'all'
+                  ? 'No reports in this area yet'
+                  : `No ${STATUS_LABELS[statusFilter].toLowerCase()} reports here`}
+              </strong>
+              <p className="bb-map-empty-sub">
+                {statusFilter === 'all'
+                  ? 'Be the first to help your community.'
+                  : 'Try another filter, or add a new report.'}
+              </p>
+              {onReport && (
+                <button className="bb-map-empty-btn" onClick={onReport}>
+                  Report Waste
+                </button>
+              )}
+            </div>
+          )}
         </div>
       )}
     </>
