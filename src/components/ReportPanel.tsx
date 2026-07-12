@@ -526,7 +526,7 @@ export default function ReportPanel({
               <span className="bb-rsheet-krow">
                 <span className="bb-rsheet-k">Cleanup progress</span>
                 <span className={`bb-cl-badge ${stage === 'documented' ? 'is-earned' : ''}`}>
-                  <Award className="size-3.5" /> {stage === 'documented' ? 'Badge earned' : 'Earn your badge'}
+                  <Award className="size-3.5" /> {stage === 'documented' ? 'Documented' : 'In progress'}
                 </span>
               </span>
               <ol className="bb-timeline">
@@ -559,7 +559,7 @@ export default function ReportPanel({
                   </div>
                   <p className="bb-after-cta-body">
                     This spot has been cleaned. Help complete the story — add an “after” photo
-                    and earn your badge.
+                    so the whole community can see it through.
                   </p>
                   <button
                     className="bb-after-upload"
@@ -572,7 +572,7 @@ export default function ReportPanel({
 
               {stage === 'documented' && (
                 <div className="bb-after-done">
-                  <Award className="size-4" /> Cleanup fully documented — badge unlocked. Thank you!
+                  <Award className="size-4" /> Cleanup fully documented by the community. Thank you!
                 </div>
               )}
             </div>

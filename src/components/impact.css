@@ -1048,6 +1048,72 @@
   color: var(--imp-mute);
 }
 
+/* ---------- Communities Making Progress (places, not people) ---------- */
+.bb-imp-panel-sub {
+  margin: -8px 0 14px;
+  font-size: 12.5px;
+  color: var(--imp-mute);
+}
+.bb-imp-board-row.is-tappable {
+  cursor: pointer;
+  border-radius: 12px;
+  transition: background 0.15s ease;
+}
+.bb-imp-board-row.is-tappable:hover {
+  background: #faf9f7;
+}
+.bb-imp-board-place {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.bb-imp-board-place .bb-imp-board-name {
+  flex: none;
+}
+.bb-imp-board-health {
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.bb-imp-board-rate {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.1;
+}
+.bb-imp-board-rate b {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--imp-ink);
+  font-variant-numeric: tabular-nums;
+}
+.bb-imp-board-rate-k {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--imp-mute);
+}
+.bb-imp-board-empty {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 8px 2px;
+  color: var(--imp-mute);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+.bb-imp-board-empty-dot {
+  font-size: 22px;
+  line-height: 1;
+  flex: none;
+}
+.bb-imp-board-empty p {
+  margin: 0;
+}
+
 /* ---------- Before/after gallery (horizontal, Instagram-style) ---------- */
 .bb-imp-gallery-wrap {
   position: relative;

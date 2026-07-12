@@ -31,8 +31,6 @@ import {
   HERO_MARKERS,
   INCOMING_FEED,
   GROUPS,
-  CONTRIBUTORS,
-  IMPACT_STATS,
   GALLERY,
   CHALLENGE,
   SCHOOLS,
@@ -40,10 +38,23 @@ import {
   type Activity,
   type FeedItem,
 } from '../lib/impactData'
+import {
+  communityRankings,
+  impactTotals,
+  HEALTH_META,
+  type CommunityRank,
+  type ImpactTotals,
+} from '../lib/stats'
+import type { Report } from '../types'
 import './impact.css'
 
 interface Props {
   onNavigate: (view: string) => void
+  /** Live reports — powers the community rankings + real impact totals. */
+  reports: Report[]
+  now: number
+  /** Fly the map to a community and switch to the map view. */
+  onViewOnMap?: (lat: number, lng: number, zoom: number) => void
 }
 
 /** Monday-first weeks for any month, with a set of event days flagged. */
@@ -113,10 +124,14 @@ function useTodayInJuly() {
   }, [])
 }
 
-export default function Impact({ onNavigate }: Props) {
+export default function Impact({ onNavigate, reports, now, onViewOnMap }: Props) {
   const [selected, setSelected] = useState<Activity | null>(null)
   const [registered, setRegistered] = useState(false)
   const activitiesRef = useRef<HTMLDivElement>(null)
+
+  // Places, not people: rank communities by resolution rate from real reports.
+  const communities = useMemo(() => communityRankings(reports, now), [reports, now])
+  const totals = useMemo(() => impactTotals(reports), [reports])
 
   const byDay = useMemo(() => {
     const m = new Map<number, Activity>()
@@ -471,7 +486,7 @@ export default function Impact({ onNavigate }: Props) {
         {/* ---------- Impact Stats ---------- */}
         <section className="bb-imp-section">
           <div className="bb-imp-eyebrow">Impact Since Launch</div>
-          <ImpactStats />
+          <ImpactStats totals={totals} />
         </section>
 
         {/* ---------- Monthly Challenge (actionable → sits high) ---------- */}
@@ -542,11 +557,18 @@ export default function Impact({ onNavigate }: Props) {
           </div>
         </section>
 
-        {/* ---------- Groups + Leaderboard (supporting → sits lower) ---------- */}
+        {/* ---------- Communities + Heroes: we celebrate places & teams, never
+             individuals. Left = real municipal progress; right = volunteer orgs. */}
         <section className="bb-imp-section">
           <div className="bb-imp-two">
             <div className="bb-imp-panel">
-              <div className="bb-imp-eyebrow">Top Volunteer Groups</div>
+              <div className="bb-imp-eyebrow">Communities Making Progress</div>
+              <p className="bb-imp-panel-sub">Ranked by share of reports resolved.</p>
+              <CommunityBoard rows={communities} onViewOnMap={onViewOnMap} />
+            </div>
+            <div className="bb-imp-panel">
+              <div className="bb-imp-eyebrow">Community Heroes</div>
+              <p className="bb-imp-panel-sub">The organisations doing the work.</p>
               <ul className="bb-imp-groups">
                 {GROUPS.map((g) => (
                   <li key={g.name} className={`bb-imp-group bb-imp-group-${g.rank}`}>
@@ -558,24 +580,6 @@ export default function Impact({ onNavigate }: Props) {
                       <span className="bb-imp-group-week">🔥 +{g.weekly} hrs this week</span>
                       <span className="bb-imp-group-total">{g.hours} hrs total</span>
                     </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="bb-imp-panel">
-              <div className="bb-imp-eyebrow">Volunteer Leaderboard</div>
-              <ul className="bb-imp-board">
-                {CONTRIBUTORS.map((c, i) => (
-                  <li key={c.name} className="bb-imp-board-row">
-                    <span className="bb-imp-board-rank">{i + 1}</span>
-                    <span
-                      className="bb-imp-board-avatar"
-                      style={{ background: `linear-gradient(135deg, ${c.tone}, ${c.tone}bb)` }}
-                    >
-                      {c.initials}
-                    </span>
-                    <span className="bb-imp-board-name">{c.name}</span>
-                    <span className="bb-imp-board-metric">{c.metric}</span>
                   </li>
                 ))}
               </ul>
@@ -789,12 +793,18 @@ export default function Impact({ onNavigate }: Props) {
   )
 }
 
-/** Animated since-launch counters — count up once scrolled into view. */
-function ImpactStats() {
+/** Animated since-launch counters — real community totals, no vanity metrics. */
+function ImpactStats({ totals }: { totals: ImpactTotals }) {
   const { ref, shown } = useReveal<HTMLDivElement>()
+  const stats = [
+    { icon: FileText, value: totals.reports, label: 'Reports Filed' },
+    { icon: Check, value: totals.cleaned, label: 'Issues Cleaned' },
+    { icon: ShieldCheck, value: totals.resolutionRate, suffix: '%', label: 'Resolved' },
+    { icon: Building2, value: totals.communities, label: 'Communities Active' },
+  ]
   return (
     <div className="bb-imp-stats" ref={ref}>
-      {IMPACT_STATS.map((s) => {
+      {stats.map((s) => {
         const Icon = s.icon
         return (
           <div key={s.label} className="bb-imp-stat">
@@ -807,5 +817,56 @@ function ImpactStats() {
         )
       })}
     </div>
+  )
+}
+
+/**
+ * "Communities Making Progress" — municipalities ranked by resolution rate,
+ * each with a civic health status. Places, not people. Tapping a row flies the
+ * map there. Until real reports arrive, an honest empty state invites the first.
+ */
+function CommunityBoard({
+  rows,
+  onViewOnMap,
+}: {
+  rows: CommunityRank[]
+  onViewOnMap?: (lat: number, lng: number, zoom: number) => void
+}) {
+  if (rows.length === 0) {
+    return (
+      <div className="bb-imp-board-empty">
+        <span className="bb-imp-board-empty-dot">🌱</span>
+        <p>
+          No community data yet. As residents report and neighbours confirm
+          cleanups, the communities making the most progress will rise here.
+        </p>
+      </div>
+    )
+  }
+  return (
+    <ul className="bb-imp-board">
+      {rows.map((c, i) => {
+        const health = HEALTH_META[c.health]
+        return (
+          <li
+            key={c.name}
+            className={`bb-imp-board-row ${onViewOnMap ? 'is-tappable' : ''}`}
+            onClick={onViewOnMap ? () => onViewOnMap(c.lat, c.lng, c.zoom) : undefined}
+          >
+            <span className="bb-imp-board-rank">{i + 1}</span>
+            <span className="bb-imp-board-place">
+              <span className="bb-imp-board-name">{c.name}</span>
+              <span className="bb-imp-board-health" style={{ color: health.color }}>
+                {health.dot} {health.label}
+              </span>
+            </span>
+            <span className="bb-imp-board-rate">
+              <b>{c.resolutionRate}%</b>
+              <span className="bb-imp-board-rate-k">resolved</span>
+            </span>
+          </li>
+        )
+      })}
+    </ul>
   )
 }

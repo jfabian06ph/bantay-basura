@@ -8,7 +8,6 @@ import {
   Trees,
   Users,
   Trash2,
-  Sparkles,
   Camera,
   CheckCircle2,
   MapPin,
@@ -261,35 +260,12 @@ export const GROUPS: Group[] = [
   { rank: 3, medal: '🥉', name: 'Barangay Volunteers', hours: 290, weekly: 12 },
 ]
 
-export interface Contributor {
-  name: string
-  metric: string
-  /** Initials for the avatar chip. */
-  initials: string
-  /** Avatar background tint. */
-  tone: string
-}
-
-export const CONTRIBUTORS: Contributor[] = [
-  { name: 'Maria Santos', metric: '14 activities', initials: 'MS', tone: '#23c266' },
-  { name: 'John dela Cruz', metric: '8 activities', initials: 'JD', tone: '#2f7fe0' },
-  { name: 'Iba Eco Club', metric: '32 events hosted', initials: 'IE', tone: '#f5b84b' },
-  { name: 'Ana Reyes', metric: '11 activities', initials: 'AR', tone: '#e0619a' },
-]
-
-export interface Stat {
-  icon: LucideIcon
-  value: number
-  suffix?: string
-  label: string
-}
-
-export const IMPACT_STATS: Stat[] = [
-  { icon: Users, value: 1421, label: 'Volunteers' },
-  { icon: Sparkles, value: 420, label: 'Cleanups' },
-  { icon: Trash2, value: 18400, suffix: ' kg', label: 'Waste Removed' },
-  { icon: Trees, value: 12, label: 'Partner LGUs' },
-]
+// NOTE: There is no individual "leaderboard" by design. Bantay Basura recognises
+// communities, not people (see the "Communities Making Progress" board, which is
+// derived from real report data via `communityRankings` in lib/stats). Volunteer
+// *organisations* — not individuals — are celebrated in GROUPS above. The Impact
+// hero counters are likewise real community totals (`impactTotals`), not vanity
+// numbers, so there is no static IMPACT_STATS here anymore.
 
 /** Before/after pairs for the gallery (local images stand in for real uploads). */
 export const GALLERY = [
@@ -307,7 +283,7 @@ export const CHALLENGE = {
     { icon: MapPin, label: 'Report the spot' },
     { icon: Trash2, label: 'Help clean it up' },
     { icon: Camera, label: 'Upload the after' },
-    { icon: Award, label: 'Earn your badge' },
+    { icon: Award, label: 'Document the result' },
   ],
 }
 

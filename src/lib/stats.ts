@@ -1,4 +1,4 @@
-import { nearestMunicipality, type Place } from '../municipalities'
+import { MUNICIPALITIES, nearestMunicipality, type Place } from '../municipalities'
 import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
@@ -666,4 +666,107 @@ export function relativeTime(ms: number, now: number): string {
   if (days < 30) return `${days}d ago`
   const months = Math.floor(days / 30)
   return `${months}mo ago`
+}
+
+// ============================================================
+// Community recognition — places, not people.
+// Bantay Basura celebrates "we solved it", so every ranking here is by
+// municipality: resolution rate, responsiveness, and a civic health status.
+// ============================================================
+
+/** A municipality's civic health, from its share of resolved reports. */
+export type HealthTone = 'clean' | 'improving' | 'needs-help' | 'critical'
+
+export const HEALTH_META: Record<
+  HealthTone,
+  { label: string; dot: string; color: string }
+> = {
+  clean: { label: 'Clean Community', dot: '🟢', color: '#23c266' },
+  improving: { label: 'Improving', dot: '🟡', color: '#f5b84b' },
+  'needs-help': { label: 'Needs Help', dot: '🟠', color: '#f5842b' },
+  critical: { label: 'Critical Area', dot: '🔴', color: '#e31e2f' },
+}
+
+/**
+ * Grade a community's health. A place with no open issues is Clean; otherwise
+ * the resolution rate tells the story. Rate-based on purpose — a town with
+ * unresolved trash "needs help" no matter how many reports it has.
+ */
+export function healthTone(open: number, resolutionRate: number): HealthTone {
+  if (open === 0) return 'clean'
+  if (resolutionRate >= 50) return 'improving'
+  if (resolutionRate >= 20) return 'needs-help'
+  return 'critical'
+}
+
+export interface CommunityRank {
+  name: string
+  lat: number
+  lng: number
+  zoom: number
+  total: number
+  resolved: number
+  open: number
+  resolutionRate: number
+  avgResponseDays: number | null
+  confirmations: number
+  health: HealthTone
+}
+
+/**
+ * Rank the municipalities that have any reports by resolution rate — the
+ * "Communities Making Progress" board. Places with no reports are omitted
+ * (their rate would be meaningless). Ties break toward more resolved, then
+ * more total activity, then name for stability.
+ */
+export function communityRankings(reports: Report[], now: number): CommunityRank[] {
+  return MUNICIPALITIES.map((place) => {
+    const snap = municipalitySnapshot(reports, place.name, now)
+    const local = reportsInPlace(reports, place.name)
+    const resolvedCount = local.filter(isResolved).length
+    return {
+      name: place.name,
+      lat: place.lat,
+      lng: place.lng,
+      zoom: place.zoom,
+      total: local.length,
+      resolved: resolvedCount,
+      open: snap.open,
+      resolutionRate: snap.resolutionRate,
+      avgResponseDays: snap.avgResponseDays,
+      confirmations: snap.confirmations,
+      health: healthTone(snap.open, snap.resolutionRate),
+    }
+  })
+    .filter((c) => c.total > 0)
+    .sort(
+      (a, b) =>
+        b.resolutionRate - a.resolutionRate ||
+        b.resolved - a.resolved ||
+        b.total - a.total ||
+        a.name.localeCompare(b.name),
+    )
+}
+
+export interface ImpactTotals {
+  reports: number
+  cleaned: number
+  resolutionRate: number
+  /** Municipalities with at least one report. */
+  communities: number
+  /** Total community confirmations cast (the anonymous social proof). */
+  confirmations: number
+}
+
+/** Province-wide community totals for the Impact hero — all real, no vanity. */
+export function impactTotals(reports: Report[]): ImpactTotals {
+  const cleaned = reports.filter(isResolved).length
+  const communities = new Set(reports.map(lguOf)).size
+  return {
+    reports: reports.length,
+    cleaned,
+    resolutionRate: pct(cleaned, reports.length),
+    communities,
+    confirmations: reports.reduce((n, r) => n + r.stillHere + r.cleared, 0),
+  }
 }

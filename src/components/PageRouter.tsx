@@ -62,7 +62,14 @@ export default function PageRouter({
 
   // "Impact" in the nav — the community hub (how people can help).
   if (view === 'reports') {
-    return <Impact onNavigate={navigate} />
+    return (
+      <Impact
+        onNavigate={navigate}
+        reports={reports}
+        now={now}
+        onViewOnMap={onViewOnMap}
+      />
+    )
   }
 
   // "How It Works" — the scroll-told story of a single report.
