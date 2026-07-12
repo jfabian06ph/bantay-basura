@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { distanceMeters } from '../lib/geo'
-import { reverseGeocode } from '../lib/geocode'
+import { reverseGeocode, reverseLocality } from '../lib/geocode'
 import { ZAMBALES_OVERVIEW } from '../municipalities'
 import { DONE_STATUSES, type LatLng, type Report } from '../types'
 import {
@@ -192,6 +192,16 @@ export function useReportFlow({
       /* ignore */
     }
 
+    // Attribute the report to its REAL municipality/province (nationwide),
+    // reverse-geocoded from the pinned spot. Applied to the optimistic pin so
+    // the panel shows the true place, and persisted below.
+    const locality = await reverseLocality(draft.lat, draft.lng)
+    if (locality.municipality || locality.province || locality.barangay) {
+      setReports((prev) =>
+        prev.map((r) => (r.id === localId ? { ...r, ...locality } : r)),
+      )
+    }
+
     // Persist once the backend is live: upload photos to Storage, insert the
     // row, then reconcile the optimistic pin with the real DB id.
     if (!isBackendConnected) return
@@ -200,6 +210,7 @@ export function useReportFlow({
     )
     const saved = await insertReport({
       ...draft,
+      ...locality,
       photoUrls: photos,
       photoUrl: photos[0],
     })

@@ -31,6 +31,15 @@ export interface Report {
   /** 1 = minor, 2 = moderate, 3 = severe */
   severity: 1 | 2 | 3
   note?: string
+  /**
+   * The report's real administrative location, reverse-geocoded at submit time
+   * so the app works anywhere in the Philippines (not just Zambales). Grouping
+   * and attribution prefer these; a missing municipality falls back to the
+   * nearest known town. `province` disambiguates same-named municipalities.
+   */
+  municipality?: string
+  province?: string
+  barangay?: string
   /** data URL or remote URL of the primary photo (kept for backward compat) */
   photoUrl?: string
   /** All photos attached to the report. photoUrl is treated as the first if this is empty. */

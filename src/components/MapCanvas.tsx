@@ -114,6 +114,8 @@ interface Props {
   quietVicinity: boolean
   /** True while the report sheet is open — hides the empty-state card. */
   composing: boolean
+  /** True during the first backend load — holds back the empty card. */
+  loading: boolean
   onCancelPlacing: () => void
   onConfirmPlacement: () => void
   onTrustClose: () => void
@@ -155,6 +157,7 @@ export default function MapCanvas({
   firstTime,
   quietVicinity,
   composing,
+  loading,
   onCancelPlacing,
   onConfirmPlacement,
   onTrustClose,
@@ -190,6 +193,7 @@ export default function MapCanvas({
         firstTime={firstTime}
         quietVicinity={quietVicinity}
         composing={composing}
+        loading={loading}
         onMapClick={selectedReport ? onCloseReport : undefined}
       />
 

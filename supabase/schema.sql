@@ -63,6 +63,9 @@ alter table public.reports add column if not exists source            text defau
 alter table public.reports add column if not exists after_image_url   text;
 alter table public.reports add column if not exists after_uploaded_at timestamptz;
 alter table public.reports add column if not exists after_uploaded_by text;
+-- Real administrative location (reverse-geocoded at submit) so the app is
+-- nationwide, not Zambales-only. `municipality`/`barangay` already exist above.
+alter table public.reports add column if not exists province          text;
 
 -- ---- Response teams ---------------------------------------------------------
 create table if not exists public.teams (

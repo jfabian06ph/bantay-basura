@@ -62,6 +62,9 @@ export default function PublicApp({ onSignIn, ready = true }: Props) {
   const [reports, setReports] = useState<Report[]>(
     isBackendConnected ? [] : MOCK_REPORTS,
   )
+  // While the first backend load is in flight, hold back the empty-state card so
+  // "No reports" never flashes before the real reports arrive.
+  const [loadingReports, setLoadingReports] = useState(isBackendConnected)
   const [view, setView] = useState<View>('map')
   const [flyTarget, setFlyTarget] = useState<FlyTarget | null>(null)
   const [devMock, setDevMock] = useState<LatLng | null>(null)
@@ -93,11 +96,15 @@ export default function PublicApp({ onSignIn, ready = true }: Props) {
   useEffect(() => {
     if (!isBackendConnected) return
     let alive = true
-    loadReports().then((rows) => {
-      // rows is [] when the DB is genuinely empty, null only on failure —
-      // so an empty backend correctly clears to a blank map, not the mocks.
-      if (alive && rows) setReports(rows)
-    })
+    loadReports()
+      .then((rows) => {
+        // rows is [] when the DB is genuinely empty, null only on failure,
+        // so an empty backend correctly clears to a blank map, not the mocks.
+        if (alive && rows) setReports(rows)
+      })
+      .finally(() => {
+        if (alive) setLoadingReports(false)
+      })
     return () => {
       alive = false
     }
@@ -132,6 +139,31 @@ export default function PublicApp({ onSignIn, ready = true }: Props) {
       flyTo(position.lat, position.lng, 15)
     }
   }, [position])
+
+  // Once reports have loaded, frame them so a pin is never stranded off-screen
+  // (reports can be anywhere in the country now, not just the default view).
+  // The user's own location still wins if geolocation resolves.
+  const framedReports = useRef(false)
+  useEffect(() => {
+    if (framedReports.current || loadingReports || flewToUser.current) return
+    if (!reports.length) return
+    const m = mapRef.current
+    if (!m) return
+    framedReports.current = true
+    if (reports.length === 1) {
+      flyTo(reports[0].lat, reports[0].lng, 14)
+      return
+    }
+    const lats = reports.map((r) => r.lat)
+    const lngs = reports.map((r) => r.lng)
+    m.fitBounds(
+      [
+        [Math.min(...lats), Math.min(...lngs)],
+        [Math.max(...lats), Math.max(...lngs)],
+      ],
+      { padding: [60, 60], maxZoom: 14, animate: true },
+    )
+  }, [reports, loadingReports])
 
   // Reports inside the current map viewport — powers the contextual status card.
   const viewReports = useMemo(() => {
@@ -264,6 +296,7 @@ export default function PublicApp({ onSignIn, ready = true }: Props) {
         firstTime={firstTime}
         quietVicinity={quietVicinity}
         composing={flow.sheetOpen}
+        loading={loadingReports}
         onCancelPlacing={flow.cancelPlacing}
         onConfirmPlacement={flow.confirmPlacement}
         onTrustClose={() => {

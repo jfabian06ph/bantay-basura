@@ -28,6 +28,9 @@ interface ReportRow {
   category: Category
   severity: 1 | 2 | 3
   note: string | null
+  municipality: string | null
+  province: string | null
+  barangay: string | null
   photo_url: string | null
   photo_urls: string[] | null
   resolved_photo_urls: string[] | null
@@ -44,7 +47,7 @@ interface ReportRow {
 
 /** Columns selected for a full report — shared by loads and insert-returns. */
 const REPORT_COLS =
-  'id, lat, lng, title, category, severity, note, photo_url, photo_urls, resolved_photo_urls, status, source, still_here, cleared, created_at, resolved_at, after_image_url, after_uploaded_at, after_uploaded_by'
+  'id, lat, lng, title, category, severity, note, municipality, province, barangay, photo_url, photo_urls, resolved_photo_urls, status, source, still_here, cleared, created_at, resolved_at, after_image_url, after_uploaded_at, after_uploaded_by'
 
 /** Map a raw DB row into the camelCase `Report` the UI works with. */
 function fromRow(row: ReportRow): Report {
@@ -56,6 +59,9 @@ function fromRow(row: ReportRow): Report {
     category: row.category,
     severity: row.severity,
     note: row.note ?? undefined,
+    municipality: row.municipality ?? undefined,
+    province: row.province ?? undefined,
+    barangay: row.barangay ?? undefined,
     photoUrl: row.photo_url ?? undefined,
     photoUrls: row.photo_urls ?? undefined,
     resolvedPhotoUrls: row.resolved_photo_urls ?? undefined,
@@ -97,6 +103,9 @@ export interface ReportInput {
   category: Category
   severity: 1 | 2 | 3
   note?: string
+  municipality?: string
+  province?: string
+  barangay?: string
   photoUrl?: string
   photoUrls?: string[]
   source?: ReportSource
@@ -123,6 +132,9 @@ export async function insertReport(input: ReportInput): Promise<Report | null> {
       category: input.category,
       severity: input.severity,
       note: input.note ?? null,
+      municipality: input.municipality ?? null,
+      province: input.province ?? null,
+      barangay: input.barangay ?? null,
       photo_url: photos[0] ?? null,
       photo_urls: photos.length ? photos : null,
       status: 'pending',

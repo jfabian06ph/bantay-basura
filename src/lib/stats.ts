@@ -1,4 +1,4 @@
-import { MUNICIPALITIES, nearestMunicipality, type Place } from '../municipalities'
+import { nearestMunicipality } from '../municipalities'
 import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
@@ -22,9 +22,25 @@ function resolvedTime(r: Report): number {
   return new Date(r.resolvedAt ?? r.createdAt).getTime()
 }
 
-/** Attribute a report to its nearest known LGU. */
+/**
+ * Attribute a report to its municipality. Prefers the real, reverse-geocoded
+ * `municipality` stored at submit (nationwide); falls back to the nearest known
+ * town for older reports that predate geocoding.
+ */
 function lguOf(r: Report): string {
-  return nearestMunicipality({ lat: r.lat, lng: r.lng }).place.name
+  return r.municipality || nearestMunicipality({ lat: r.lat, lng: r.lng }).place.name
+}
+
+/** Default zoom when flying to a place derived from report locations. */
+const PLACE_ZOOM = 13
+
+/** Average position of a group of reports — the fly-to target for that place. */
+function centroidOf(rs: Report[]): { lat: number; lng: number } {
+  const n = rs.length || 1
+  return {
+    lat: rs.reduce((s, r) => s + r.lat, 0) / n,
+    lng: rs.reduce((s, r) => s + r.lng, 0) / n,
+  }
 }
 
 function pct(part: number, whole: number): number {
@@ -328,7 +344,10 @@ export function computeDashboard(reports: Report[], now: number): DashboardStats
  */
 function computeHotspots(reports: Report[]): Hotspot[] {
   interface Acc {
-    place: Place
+    name: string
+    sumLat: number
+    sumLng: number
+    n: number
     open: number
     inReview: number
     cats: Map<Category, number>
@@ -339,12 +358,15 @@ function computeHotspots(reports: Report[]): Hotspot[] {
 
   for (const r of reports) {
     if (!OPEN_STATUSES.includes(r.status)) continue
-    const place = nearestMunicipality({ lat: r.lat, lng: r.lng }).place
-    let e = map.get(place.name)
+    const name = lguOf(r)
+    let e = map.get(name)
     if (!e) {
-      e = { place, open: 0, inReview: 0, cats: new Map(), lastReported: 0, confirmations: 0 }
-      map.set(place.name, e)
+      e = { name, sumLat: 0, sumLng: 0, n: 0, open: 0, inReview: 0, cats: new Map(), lastReported: 0, confirmations: 0 }
+      map.set(name, e)
     }
+    e.sumLat += r.lat
+    e.sumLng += r.lng
+    e.n++
     e.open++
     if (r.status === 'in_review') e.inReview++
     e.confirmations += r.stillHere + r.cleared
@@ -364,10 +386,10 @@ function computeHotspots(reports: Report[]): Hotspot[] {
         }
       }
       return {
-        name: e.place.name,
-        lat: e.place.lat,
-        lng: e.place.lng,
-        zoom: e.place.zoom,
+        name: e.name,
+        lat: e.sumLat / e.n,
+        lng: e.sumLng / e.n,
+        zoom: PLACE_ZOOM,
         open: e.open,
         inReview: e.inReview,
         topCategory,
@@ -495,32 +517,36 @@ export interface PlaceCount {
 }
 
 /**
- * Group reports of one status by their nearest LGU, most reports first.
- * Powers the tappable drill-downs on the map's summary panel — each row
- * carries the coordinates needed to fly the map there.
+ * Group reports of one status by municipality, most reports first. Powers the
+ * tappable drill-downs on the map's summary panel — each row carries the
+ * centroid of its reports so we can fly the map there.
  */
 export function placesForStatus(
   reports: Report[],
   status: ReportStatus,
 ): PlaceCount[] {
-  const map = new Map<string, PlaceCount>()
+  const map = new Map<string, { name: string; sumLat: number; sumLng: number; count: number }>()
   for (const r of reports) {
     if (r.status !== status) continue
-    const place = nearestMunicipality({ lat: r.lat, lng: r.lng }).place
-    const e = map.get(place.name)
+    const name = lguOf(r)
+    const e = map.get(name)
     if (e) {
+      e.sumLat += r.lat
+      e.sumLng += r.lng
       e.count++
     } else {
-      map.set(place.name, {
-        name: place.name,
-        lat: place.lat,
-        lng: place.lng,
-        zoom: place.zoom,
-        count: 1,
-      })
+      map.set(name, { name, sumLat: r.lat, sumLng: r.lng, count: 1 })
     }
   }
-  return [...map.values()].sort((a, b) => b.count - a.count)
+  return [...map.values()]
+    .map((e) => ({
+      name: e.name,
+      lat: e.sumLat / e.count,
+      lng: e.sumLng / e.count,
+      zoom: PLACE_ZOOM,
+      count: e.count,
+    }))
+    .sort((a, b) => b.count - a.count)
 }
 
 /** Every report whose nearest LGU is `placeName`. */
@@ -715,31 +741,35 @@ export interface CommunityRank {
 }
 
 /**
- * Rank the municipalities that have any reports by resolution rate — the
- * "Communities Making Progress" board. Places with no reports are omitted
- * (their rate would be meaningless). Ties break toward more resolved, then
- * more total activity, then name for stability.
+ * Rank every municipality that has reports by resolution rate — the
+ * "Communities Making Progress" board. The set of places is derived from the
+ * reports themselves (nationwide), each flown to via its report centroid. Ties
+ * break toward more resolved, then more total activity, then name for stability.
  */
 export function communityRankings(reports: Report[], now: number): CommunityRank[] {
-  return MUNICIPALITIES.map((place) => {
-    const snap = municipalitySnapshot(reports, place.name, now)
-    const local = reportsInPlace(reports, place.name)
-    const resolvedCount = local.filter(isResolved).length
-    return {
-      name: place.name,
-      lat: place.lat,
-      lng: place.lng,
-      zoom: place.zoom,
-      total: local.length,
-      resolved: resolvedCount,
-      open: snap.open,
-      resolutionRate: snap.resolutionRate,
-      avgResponseDays: snap.avgResponseDays,
-      confirmations: snap.confirmations,
-      health: healthTone(snap.open, snap.resolutionRate),
-      growth: growthTier(local.length, snap.resolutionRate),
-    }
-  })
+  // Distinct municipalities present in the data (real, reverse-geocoded names).
+  const names = new Set(reports.map(lguOf))
+  return [...names]
+    .map((name) => {
+      const local = reportsInPlace(reports, name)
+      const snap = municipalitySnapshot(reports, name, now)
+      const resolvedCount = local.filter(isResolved).length
+      const c = centroidOf(local)
+      return {
+        name,
+        lat: c.lat,
+        lng: c.lng,
+        zoom: PLACE_ZOOM,
+        total: local.length,
+        resolved: resolvedCount,
+        open: snap.open,
+        resolutionRate: snap.resolutionRate,
+        avgResponseDays: snap.avgResponseDays,
+        confirmations: snap.confirmations,
+        health: healthTone(snap.open, snap.resolutionRate),
+        growth: growthTier(local.length, snap.resolutionRate),
+      }
+    })
     .filter((c) => c.total > 0)
     .sort(
       (a, b) =>

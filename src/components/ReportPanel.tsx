@@ -136,7 +136,7 @@ export default function ReportPanel({
     setLightbox(null)
   }, [report.id])
 
-  const area = nearestMunicipality(report).place.name
+  const area = report.municipality ?? nearestMunicipality(report).place.name
   const dist = userPos ? formatDistance(distanceMeters(userPos, report)) : null
   const color = STATUS_COLORS[report.status]
   // Unify legacy single photoUrl with the newer photoUrls array.

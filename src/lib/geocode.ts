@@ -101,6 +101,44 @@ export async function reverseArea(
   return a.country || null
 }
 
+export interface Locality {
+  /** Barangay / village, if resolvable. */
+  barangay?: string
+  /** City or municipality — the primary unit reports are grouped by. */
+  municipality?: string
+  /** Province (or state) — disambiguates same-named municipalities. */
+  province?: string
+}
+
+/**
+ * Resolve a coordinate to its administrative locality (barangay, municipality,
+ * province) for storing on a report. This is what makes the app nationwide:
+ * every report is attributed to its real municipality instead of the nearest
+ * Zambales town. Returns an empty object on failure so submission never blocks.
+ */
+export async function reverseLocality(
+  lat: number,
+  lng: number,
+  signal?: AbortSignal,
+): Promise<Locality> {
+  const url =
+    'https://nominatim.openstreetmap.org/reverse' +
+    `?format=jsonv2&addressdetails=1&zoom=14&lat=${lat}&lon=${lng}`
+  try {
+    const res = await fetch(url, { signal, headers: { Accept: 'application/json' } })
+    if (!res.ok) return {}
+    const d: { address?: Record<string, string> } = await res.json()
+    const a = d.address ?? {}
+    return {
+      barangay: a.village || a.suburb || a.neighbourhood || a.quarter || a.hamlet || undefined,
+      municipality: a.city || a.town || a.municipality || a.county || undefined,
+      province: a.province || a.state || a.region || undefined,
+    }
+  } catch {
+    return {}
+  }
+}
+
 /** Turn a coordinate into a human place name (barangay/area, city, province). */
 export async function reverseGeocode(
   lat: number,

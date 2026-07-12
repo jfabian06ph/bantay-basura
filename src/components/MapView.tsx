@@ -517,6 +517,8 @@ interface Props {
   quietVicinity?: boolean
   /** True while the report sheet/flow is open — hides the empty-state card. */
   composing?: boolean
+  /** True while the first backend load is in flight — holds back the empty card. */
+  loading?: boolean
   /** Tapping empty map area — used to dismiss the open report panel. */
   onMapClick?: () => void
 }
@@ -537,6 +539,7 @@ export default function MapView({
   firstTime = false,
   quietVicinity = false,
   composing = false,
+  loading = false,
   onMapClick,
 }: Props) {
   const [basemap, setBasemap] = useState<BasemapKey>('streets')
@@ -688,7 +691,7 @@ export default function MapView({
         </div>
       )}
 
-      {!placing && !composing && empty && (
+      {!placing && !composing && !loading && empty && (
         <div className="bb-map-empty" role="status">
           {statusFilter === 'all' && firstTime ? (
             // First-visit welcome: no reports anywhere yet, and this visitor

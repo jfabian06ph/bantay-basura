@@ -81,7 +81,7 @@ export default function IncidentQueue({ data }: Props) {
           </thead>
           <tbody>
             {rows.map((r) => {
-              const area = nearestMunicipality(r).place.name
+              const area = r.municipality ?? nearestMunicipality(r).place.name
               const Icon = CATEGORY_ICON[r.category]
               return (
                 <tr key={r.id} className={busy === r.id ? 'ops-row-busy' : ''}>
