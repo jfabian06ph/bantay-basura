@@ -711,6 +711,7 @@ export interface CommunityRank {
   avgResponseDays: number | null
   confirmations: number
   health: HealthTone
+  growth: GrowthTier
 }
 
 /**
@@ -736,6 +737,7 @@ export function communityRankings(reports: Report[], now: number): CommunityRank
       avgResponseDays: snap.avgResponseDays,
       confirmations: snap.confirmations,
       health: healthTone(snap.open, snap.resolutionRate),
+      growth: growthTier(local.length, snap.resolutionRate),
     }
   })
     .filter((c) => c.total > 0)
@@ -746,6 +748,37 @@ export function communityRankings(reports: Report[], now: number): CommunityRank
         b.total - a.total ||
         a.name.localeCompare(b.name),
     )
+}
+
+/**
+ * A community's *growth tier* — a maturity level that rises with participation.
+ * Distinct from `healthTone`: health measures how well issues get resolved right
+ * now; growth measures how engaged and transparent the community has become over
+ * time. Every municipality "levels up" as residents report and verify — the app
+ * grows alongside the community, so an early-days empty tier feels intentional.
+ */
+export type GrowthTier = 'seed' | 'growing' | 'transparent' | 'model'
+
+export const GROWTH_META: Record<
+  GrowthTier,
+  { emoji: string; label: string; blurb: string }
+> = {
+  seed: { emoji: '🌱', label: 'Seed Community', blurb: 'Just getting started' },
+  growing: { emoji: '🌿', label: 'Growing Community', blurb: 'Residents actively reporting' },
+  transparent: { emoji: '🌳', label: 'Transparent Community', blurb: 'Reliable, verified reporting' },
+  model: { emoji: '🌎', label: 'Model Community', blurb: 'High resolution, documented cleanups' },
+}
+
+/**
+ * Grade a community's growth from its participation. Thresholds are deliberately
+ * reachable so early communities feel momentum: 🌱 <10 reports · 🌿 10+ ·
+ * 🌳 100+ (established, verified) · 🌎 100+ AND a high resolution rate.
+ */
+export function growthTier(total: number, resolutionRate: number): GrowthTier {
+  if (total >= 100 && resolutionRate >= 70) return 'model'
+  if (total >= 100) return 'transparent'
+  if (total >= 10) return 'growing'
+  return 'seed'
 }
 
 export interface ImpactTotals {

@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { BarChart3, Check } from 'lucide-react'
 import Footer from './Footer'
 import Reveal from './Reveal'
 import HeadlineStats from './dashboard/HeadlineStats'
@@ -34,6 +35,7 @@ export default function Dashboard({
   onViewOnMap,
 }: Props) {
   const s = useMemo(() => computeDashboard(reports, now), [reports, now])
+  const empty = reports.length === 0
 
   const updated = useMemo(() => {
     if (!reports.length) return 'just now'
@@ -59,8 +61,15 @@ export default function Dashboard({
             cleaner, healthier places.
           </p>
           <div className="bb-dash-live">
-            <span className="bb-live-dot" /> <b>Live data</b>
-            <span className="bb-dash-live-sep">·</span> Updated {updated}
+            <span className="bb-live-dot" />{' '}
+            {empty ? (
+              <b>Waiting for the first report</b>
+            ) : (
+              <>
+                <b>Live data</b>
+                <span className="bb-dash-live-sep">·</span> Updated {updated}
+              </>
+            )}
           </div>
         </div>
         <div
@@ -70,44 +79,73 @@ export default function Dashboard({
       </section>
 
       <div className="bb-page bb-page-wide">
-        <HeadlineStats s={s} now={now} onViewDetails={onClose} />
+        {empty ? (
+          <section className="bb-dash-empty">
+            <div className="bb-dash-empty-card">
+              <span className="bb-dash-empty-icon">
+                <BarChart3 className="size-7" strokeWidth={1.5} />
+              </span>
+              <h2 className="bb-dash-empty-title">Nothing to show — yet.</h2>
+              <p className="bb-dash-empty-lede">
+                No reports have come in for this area. As residents flag waste,
+                this page fills with the numbers that keep everyone accountable:
+              </p>
+              <ul className="bb-dash-empty-list">
+                <li><Check className="size-4" /> How many reports were submitted</li>
+                <li><Check className="size-4" /> Average cleanup time</li>
+                <li><Check className="size-4" /> Resolution rate</li>
+                <li><Check className="size-4" /> Community verification</li>
+              </ul>
+              <p className="bb-dash-empty-foot">
+                Every report helps build a more transparent community.
+              </p>
+              <button className="bb-dash-empty-btn" onClick={onClose}>
+                Report the first issue
+              </button>
+            </div>
+          </section>
+        ) : (
+          <>
+            <HeadlineStats s={s} now={now} onViewDetails={onClose} />
 
-        <HotspotsSection
-          hotspots={s.hotspots}
-          reports={reports}
-          now={now}
-          onViewOnMap={onViewOnMap}
-        />
+            <HotspotsSection
+              hotspots={s.hotspots}
+              reports={reports}
+              now={now}
+              onViewOnMap={onViewOnMap}
+            />
 
-        <section className="bb-dash-section">
-          <div className="bb-dash-eyebrow">Community Highlights</div>
+            <section className="bb-dash-section">
+              <div className="bb-dash-eyebrow">Community Highlights</div>
 
-          <CommunitySection cleanest={s.cleanestLgus} active={s.activeAreas} />
-        </section>
+              <CommunitySection cleanest={s.cleanestLgus} active={s.activeAreas} />
+            </section>
 
-        <section className="bb-dash-section bb-dash-section-tight">
-          <div className="bb-dash-eyebrow">Waste Profile</div>
+            <section className="bb-dash-section bb-dash-section-tight">
+              <div className="bb-dash-eyebrow">Waste Profile</div>
 
-          <div className="bb-dash-grid3">
-            <WasteTrend trends={s.wasteTrends} />
-            <Card title="Reports Over Time" hint="Last 6 months">
-              <StackedBars points={s.monthlySeries} />
-            </Card>
-            <RecentCleanup cleanups={s.recentCleanups} now={now} />
-          </div>
+              <div className="bb-dash-grid3">
+                <WasteTrend trends={s.wasteTrends} />
+                <Card title="Reports Over Time" hint="Last 6 months">
+                  <StackedBars points={s.monthlySeries} />
+                </Card>
+                <RecentCleanup cleanups={s.recentCleanups} now={now} />
+              </div>
 
-          <Reveal>
-            <p className="bb-dash-privacy">
-              🔒 All figures are aggregated by area. No names, contacts, or personal
-              information are ever shown. Accountability without exposure.
-            </p>
-          </Reveal>
-        </section>
+              <Reveal>
+                <p className="bb-dash-privacy">
+                  🔒 All figures are aggregated by area. No names, contacts, or personal
+                  information are ever shown. Accountability without exposure.
+                </p>
+              </Reveal>
+            </section>
 
-        <CommunitySpotlight
-          cleanups={s.recentCleanups}
-          onReadMore={() => onNavigate('reports')}
-        />
+            <CommunitySpotlight
+              cleanups={s.recentCleanups}
+              onReadMore={() => onNavigate('reports')}
+            />
+          </>
+        )}
       </div>
 
       <Footer onNavigate={onNavigate} />

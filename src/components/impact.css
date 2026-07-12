@@ -1048,6 +1048,56 @@
   color: var(--imp-mute);
 }
 
+/* ---------- Impact "Since Launch" empty state (teaches, never zeros) ---------- */
+.bb-imp-empty {
+  text-align: center;
+  padding: 20px 20px 8px;
+}
+.bb-imp-empty-lede {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--imp-ink);
+  margin: 0 0 6px;
+}
+.bb-imp-empty-sub {
+  font-size: 13.5px;
+  color: var(--imp-mute);
+  margin: 0 0 20px;
+}
+.bb-imp-empty-grid {
+  list-style: none;
+  margin: 0 auto;
+  padding: 0;
+  max-width: 460px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.bb-imp-empty-grid li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--imp-line);
+  border-radius: 14px;
+  background: #faf9f7;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--imp-ink);
+  text-align: left;
+}
+.bb-imp-empty-emoji {
+  font-size: 20px;
+  line-height: 1;
+  flex: none;
+}
+@media (max-width: 560px) {
+  .bb-imp-empty-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ---------- Communities Making Progress (places, not people) ---------- */
 .bb-imp-panel-sub {
   margin: -8px 0 14px;
@@ -1061,6 +1111,11 @@
 }
 .bb-imp-board-row.is-tappable:hover {
   background: #faf9f7;
+}
+.bb-imp-board-level {
+  flex: 0 0 auto;
+  font-size: 18px;
+  line-height: 1;
 }
 .bb-imp-board-place {
   flex: 1 1 auto;

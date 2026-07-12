@@ -42,6 +42,7 @@ import {
   communityRankings,
   impactTotals,
   HEALTH_META,
+  GROWTH_META,
   type CommunityRank,
   type ImpactTotals,
 } from '../lib/stats'
@@ -486,7 +487,7 @@ export default function Impact({ onNavigate, reports, now, onViewOnMap }: Props)
         {/* ---------- Impact Stats ---------- */}
         <section className="bb-imp-section">
           <div className="bb-imp-eyebrow">Impact Since Launch</div>
-          <ImpactStats totals={totals} />
+          {totals.reports === 0 ? <ImpactEmpty /> : <ImpactStats totals={totals} />}
         </section>
 
         {/* ---------- Monthly Challenge (actionable → sits high) ---------- */}
@@ -793,6 +794,32 @@ export default function Impact({ onNavigate, reports, now, onViewOnMap }: Props)
   )
 }
 
+/** Teaching empty state — what this page will celebrate once cleanups happen. */
+function ImpactEmpty() {
+  const promises = [
+    { emoji: '📷', text: 'Before & after photos' },
+    { emoji: '🧹', text: 'Community cleanups' },
+    { emoji: '🏘', text: 'Cleaner barangays' },
+    { emoji: '🌱', text: 'Environmental milestones' },
+  ]
+  return (
+    <div className="bb-imp-empty">
+      <p className="bb-imp-empty-lede">Every cleanup story starts with one report.</p>
+      <p className="bb-imp-empty-sub">
+        Once issues are reported and resolved, this page will celebrate:
+      </p>
+      <ul className="bb-imp-empty-grid">
+        {promises.map((p) => (
+          <li key={p.text}>
+            <span className="bb-imp-empty-emoji" aria-hidden>{p.emoji}</span>
+            {p.text}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
 /** Animated since-launch counters — real community totals, no vanity metrics. */
 function ImpactStats({ totals }: { totals: ImpactTotals }) {
   const { ref, shown } = useReveal<HTMLDivElement>()
@@ -847,6 +874,7 @@ function CommunityBoard({
     <ul className="bb-imp-board">
       {rows.map((c, i) => {
         const health = HEALTH_META[c.health]
+        const growth = GROWTH_META[c.growth]
         return (
           <li
             key={c.name}
@@ -854,6 +882,13 @@ function CommunityBoard({
             onClick={onViewOnMap ? () => onViewOnMap(c.lat, c.lng, c.zoom) : undefined}
           >
             <span className="bb-imp-board-rank">{i + 1}</span>
+            <span
+              className="bb-imp-board-level"
+              title={`${growth.label} · ${growth.blurb}`}
+              aria-label={growth.label}
+            >
+              {growth.emoji}
+            </span>
             <span className="bb-imp-board-place">
               <span className="bb-imp-board-name">{c.name}</span>
               <span className="bb-imp-board-health" style={{ color: health.color }}>

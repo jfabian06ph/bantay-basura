@@ -4112,6 +4112,85 @@
   margin: 8px 0 28px;
 }
 
+/* Transparency empty state — teaches what the page will show, never zeros. */
+.bb-dash-empty {
+  display: grid;
+  place-items: center;
+  padding: 48px 20px 64px;
+}
+.bb-dash-empty-card {
+  max-width: 480px;
+  text-align: center;
+  background: #fff;
+  border: 1px solid #ece8e2;
+  border-radius: 22px;
+  padding: 36px 32px 32px;
+  box-shadow: 0 18px 50px rgba(20, 17, 15, 0.06);
+}
+.bb-dash-empty-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  margin-bottom: 18px;
+  color: #4a8f5b;
+  background: #eef6ef;
+}
+.bb-dash-empty-title {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #14110f;
+  margin: 0 0 10px;
+}
+.bb-dash-empty-lede {
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: #6b655e;
+  margin: 0 0 18px;
+}
+.bb-dash-empty-list {
+  list-style: none;
+  margin: 0 auto 18px;
+  padding: 0;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 9px;
+  text-align: left;
+}
+.bb-dash-empty-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2f2b27;
+}
+.bb-dash-empty-list li svg {
+  color: #23c266;
+  flex: none;
+}
+.bb-dash-empty-foot {
+  font-size: 13px;
+  color: #a49e95;
+  margin: 0 0 22px;
+}
+.bb-dash-empty-btn {
+  padding: 13px 30px;
+  border: none;
+  border-radius: 999px;
+  background: var(--primary, #e31e2f);
+  color: #fff;
+  font-size: 14.5px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 12px 28px rgba(227, 30, 47, 0.32);
+}
+.bb-dash-empty-btn:hover {
+  filter: brightness(1.06);
+}
+
 /* ---- Respect reduced-motion ---- */
 /* ============================================================
    Motion — a calm, springy "Apple / Linear / Arc" entrance feel
