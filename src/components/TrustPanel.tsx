@@ -254,7 +254,7 @@ export default function TrustPanel({
                 <div className="bb-snap-cell">
                   <span className="bb-snap-v">
                     {snapshot.avgResponseDays === null
-                      ? '—'
+                      ? 'N/A'
                       : `${snapshot.avgResponseDays.toFixed(1)}d`}
                   </span>
                   <span className="bb-snap-k">Avg. response</span>

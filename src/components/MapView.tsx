@@ -515,6 +515,8 @@ interface Props {
   firstTime?: boolean
   /** Zoomed into a community with no reports nearby — cues the "no issues yet" toast. */
   quietVicinity?: boolean
+  /** True while the report sheet/flow is open — hides the empty-state card. */
+  composing?: boolean
   /** Tapping empty map area — used to dismiss the open report panel. */
   onMapClick?: () => void
 }
@@ -534,6 +536,7 @@ export default function MapView({
   onReport,
   firstTime = false,
   quietVicinity = false,
+  composing = false,
   onMapClick,
 }: Props) {
   const [basemap, setBasemap] = useState<BasemapKey>('streets')
@@ -599,6 +602,8 @@ export default function MapView({
       return
     }
     if (statusFilter === 'resolved') return
+    // No "Showing 0 reports" — the empty-state card already says it better.
+    if (reports.length === 0) return
     setFilterToast(`Showing ${reports.length} ${reports.length === 1 ? 'report' : 'reports'}`)
     const t = setTimeout(() => setFilterToast(null), 2000)
     return () => clearTimeout(t)
@@ -667,8 +672,8 @@ export default function MapView({
         <div className={`bb-victories ${victoriesLeaving ? 'is-leaving' : ''}`} role="status">
           <span className="bb-victories-emoji" aria-hidden>🎉</span>
           <span className="bb-victories-text">
-            <b>{reports.length}</b> {reports.length === 1 ? 'cleanup' : 'cleanups'} completed here —
-            these aren&rsquo;t problems, they&rsquo;re victories.
+            <b>{reports.length}</b> {reports.length === 1 ? 'cleanup' : 'cleanups'} completed here.
+            These aren&rsquo;t problems, they&rsquo;re victories.
           </span>
         </div>
       )}
@@ -678,12 +683,12 @@ export default function MapView({
           <span className="bb-quiet-emoji" aria-hidden>🌱</span>
           <span className="bb-quiet-text">
             <b>This community has no reported issues yet.</b>
-            <span className="bb-quiet-sub">Help keep it that way—or report what you see.</span>
+            <span className="bb-quiet-sub">Help keep it that way, or report what you see.</span>
           </span>
         </div>
       )}
 
-      {!placing && empty && (
+      {!placing && !composing && empty && (
         <div className="bb-map-empty" role="status">
           {statusFilter === 'all' && firstTime ? (
             // First-visit welcome: no reports anywhere yet, and this visitor
@@ -694,7 +699,7 @@ export default function MapView({
               </span>
               <strong className="bb-map-empty-title">Help build a better community</strong>
               <p className="bb-map-empty-sub">
-                No waste has been logged here yet. Be the first — your observation
+                No waste has been logged here yet. Be the first. Your observation
                 puts it on the map for neighbours and your LGU to act on.
               </p>
               {onReport && (

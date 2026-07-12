@@ -87,7 +87,7 @@ export default function About({ activeCount, reports, now, onNavigate }: Props) 
           </p>
           <p className="bb-about-para">
             As a software developer, I wanted to use my skills for something beyond commercial
-            projects — something that could genuinely help communities.
+            projects, something that could genuinely help communities.
           </p>
           <p className="bb-about-para">
             That simple observation became <strong>Bantay Basura</strong>: a community-powered
@@ -204,7 +204,7 @@ export default function About({ activeCount, reports, now, onNavigate }: Props) 
           <h2 className="bb-about-h2">Built by one developer</h2>
           <p className="bb-about-para">
             Bantay Basura began as a personal project after noticing the same pattern while
-            traveling — communities that cared, but lacked a simple way to make problems visible.
+            traveling, communities that cared, but lacked a simple way to make problems visible.
           </p>
           <p className="bb-about-para">
             It isn&rsquo;t backed by a company. It&rsquo;s built one feature at a time, with the hope

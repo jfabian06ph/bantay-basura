@@ -73,7 +73,7 @@ export const ACTIVITIES: Activity[] = [
     photo: '/zambales-coast.jpg',
     detail: {
       about:
-        'Join your neighbours for a sunrise cleanup along San Felipe Beach — clearing plastic and debris before the tide carries it back out. First-time volunteers and families are very welcome.',
+        'Join your neighbours for a sunrise cleanup along San Felipe Beach, clearing plastic and debris before the tide carries it back out. First-time volunteers and families are very welcome.',
       meetingPoint: 'San Felipe Beach main pavilion, near the barangay hall.',
       slots: '34 / 44 volunteers',
       bring: ['Refillable water', 'Gloves (provided if none)', 'Hat & sunblock', 'Reusable sack'],
@@ -100,7 +100,7 @@ export const ACTIVITIES: Activity[] = [
     distance: '5 min away',
     detail: {
       about:
-        'A hands-on afternoon learning to sort, clean, and turn everyday household plastic into something genuinely useful. Beginner-friendly — bring the kids.',
+        'A hands-on afternoon learning to sort, clean, and turn everyday household plastic into something genuinely useful. Beginner-friendly, bring the kids.',
       meetingPoint: 'Iba Community Hall, function room 2.',
       slots: '18 / 40 participants',
       bring: ['Clean plastic bottles', 'Scissors', 'Notebook'],
@@ -277,7 +277,7 @@ export const GALLERY = [
 export const CHALLENGE = {
   month: 'August',
   title: 'Complete a Cleanup',
-  lede: 'One cleanup, from first report to final photo. It uses the tools you already have — report a spot, help clean it, show the result.',
+  lede: 'One cleanup, from first report to final photo. It uses the tools you already have: report a spot, help clean it, show the result.',
   cta: 'Start a cleanup',
   steps: [
     { icon: MapPin, label: 'Report the spot' },

@@ -42,9 +42,9 @@ export default function Residents({ data }: { data: OpsData }) {
             {rows.map((r) => (
               <tr key={r.id}>
                 <td className="ops-cell-title">{r.fullName}</td>
-                <td>{r.contact ?? '—'}</td>
-                <td>{r.barangay ?? '—'}</td>
-                <td>{r.municipality ?? '—'}</td>
+                <td>{r.contact ?? '-'}</td>
+                <td>{r.barangay ?? '-'}</td>
+                <td>{r.municipality ?? '-'}</td>
                 <td>{r.reportsCount}</td>
               </tr>
             ))}

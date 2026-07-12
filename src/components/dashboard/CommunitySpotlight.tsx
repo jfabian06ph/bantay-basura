@@ -177,7 +177,7 @@ export default function CommunitySpotlight({ cleanups, onReadMore }: Props) {
           <div className="bb-hotspots-modal-head">
             <div>
               <DialogTitle className="text-[#14110f]">
-                Before &amp; After{place ? ` — ${place}` : ''}
+                Before &amp; After{place ? `: ${place}` : ''}
               </DialogTitle>
               <DialogDescription className="text-[#55504a]">
                 {c?.title ?? 'Cleanup comparison'}

@@ -42,13 +42,13 @@ const STEPS: Step[] = [
     n: 1,
     time: 'June 21, 7:42 AM',
     title: 'Someone notices a problem',
-    body: 'On her way to work, a resident spots illegal dumping by the roadside — overflowing sacks nobody has claimed.',
+    body: 'On her way to work, a resident spots illegal dumping by the roadside, overflowing sacks nobody has claimed.',
   },
   {
     n: 2,
     time: '7:43 AM',
     title: 'She reports it',
-    body: 'A pin drops on the map, a photo uploads, GPS is captured, a category is picked. Submitted — the whole thing takes under a minute.',
+    body: 'A pin drops on the map, a photo uploads, GPS is captured, a category is picked. Submitted. The whole thing takes under a minute.',
   },
   {
     n: 3,
@@ -60,7 +60,7 @@ const STEPS: Step[] = [
     n: 4,
     time: 'That afternoon',
     title: 'Local responders are notified',
-    body: 'The alert travels outward — resident to barangay to municipality to the volunteer groups who can act.',
+    body: 'The alert travels outward: resident to barangay to municipality to the volunteer groups who can act.',
   },
   {
     n: 5,
@@ -72,7 +72,7 @@ const STEPS: Step[] = [
     n: 6,
     time: 'Monday',
     title: 'Everyone sees the result',
-    body: 'Before-and-after photos and the outcome publish to the Transparency page — automatically. Nothing disappears into a drawer.',
+    body: 'Before-and-after photos and the outcome publish to the Transparency page automatically. Nothing disappears into a drawer.',
   },
 ]
 
@@ -80,7 +80,7 @@ const WHY = [
   {
     icon: Camera,
     title: 'Before & After',
-    body: 'Every completed cleanup carries photo evidence — proof, not promises.',
+    body: 'Every completed cleanup carries photo evidence, proof, not promises.',
   },
   {
     icon: Users,
@@ -106,7 +106,7 @@ const FAQ = [
   { q: 'Can I report anonymously?', a: 'Yes. Reports are anonymous by default; your identity is never shown publicly.' },
   { q: 'Who verifies reports?', a: 'Nearby residents and community moderators confirm a report before action is prioritised.' },
   { q: 'How are cleanups organised?', a: 'By LGUs, NGOs, and volunteer groups who pick up verified reports in their area.' },
-  { q: 'Can schools participate?', a: 'Absolutely — schools are some of our most active volunteer organisers.' },
+  { q: 'Can schools participate?', a: 'Absolutely. Schools are some of our most active volunteer organisers.' },
 ]
 
 /** One timeline beat. Reveals on scroll, filling its marker and the line to
@@ -395,7 +395,7 @@ export default function HowItWorks({ onNavigate }: Props) {
             })}
           </div>
           <p className="bb-hiw-trust-foot">
-            <ShieldCheck className="size-4" /> Technology should help neighbors work together — not
+            <ShieldCheck className="size-4" /> Technology should help neighbors work together, not
             replace them.
           </p>
         </div>

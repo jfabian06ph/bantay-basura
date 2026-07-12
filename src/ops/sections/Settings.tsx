@@ -36,7 +36,7 @@ export default function SettingsSection() {
         <div className="ops-card-head"><h2>Profile</h2></div>
         <div className="ops-kv"><span>Name</span><strong>{operator?.fullName}</strong></div>
         <div className="ops-kv"><span>Role</span><strong>{operator?.role}</strong></div>
-        <div className="ops-kv"><span>LGU</span><strong>{operator?.lgu ?? '—'}</strong></div>
+        <div className="ops-kv"><span>LGU</span><strong>{operator?.lgu ?? '-'}</strong></div>
       </section>
 
       <section className="ops-card ops-settings">

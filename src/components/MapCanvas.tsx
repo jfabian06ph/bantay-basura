@@ -112,6 +112,8 @@ interface Props {
   firstTime: boolean
   /** Zoomed into a community with no reports in the vicinity — cues the quiet toast. */
   quietVicinity: boolean
+  /** True while the report sheet is open — hides the empty-state card. */
+  composing: boolean
   onCancelPlacing: () => void
   onConfirmPlacement: () => void
   onTrustClose: () => void
@@ -152,6 +154,7 @@ export default function MapCanvas({
   onReport,
   firstTime,
   quietVicinity,
+  composing,
   onCancelPlacing,
   onConfirmPlacement,
   onTrustClose,
@@ -186,6 +189,7 @@ export default function MapCanvas({
         onReport={onReport}
         firstTime={firstTime}
         quietVicinity={quietVicinity}
+        composing={composing}
         onMapClick={selectedReport ? onCloseReport : undefined}
       />
 

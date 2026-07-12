@@ -57,7 +57,7 @@ export function Headline({
         </>
       ) : (
         <>
-          <div className="bb-dash-metric-name bb-dash-dim">—</div>
+          <div className="bb-dash-metric-name bb-dash-dim">-</div>
           <div className="bb-dash-metric-sub">{emptyLabel}</div>
         </>
       )}

@@ -85,7 +85,7 @@ export default function Dashboard({
               <span className="bb-dash-empty-icon">
                 <BarChart3 className="size-7" strokeWidth={1.5} />
               </span>
-              <h2 className="bb-dash-empty-title">Nothing to show — yet.</h2>
+              <h2 className="bb-dash-empty-title">Nothing to show yet.</h2>
               <p className="bb-dash-empty-lede">
                 No reports have come in for this area. As residents flag waste,
                 this page fills with the numbers that keep everyone accountable:

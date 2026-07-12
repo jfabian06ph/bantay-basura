@@ -764,7 +764,7 @@ export default function Impact({ onNavigate, reports, now, onViewOnMap }: Props)
             </div>
 
             <p className="bb-imp-modal-welcome">
-              🙌 Families &amp; first-time volunteers welcome — no experience needed.
+              🙌 Families &amp; first-time volunteers welcome, no experience needed.
             </p>
 
             <button

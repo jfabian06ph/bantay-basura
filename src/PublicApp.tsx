@@ -263,6 +263,7 @@ export default function PublicApp({ onSignIn, ready = true }: Props) {
         onReport={flow.openReport}
         firstTime={firstTime}
         quietVicinity={quietVicinity}
+        composing={flow.sheetOpen}
         onCancelPlacing={flow.cancelPlacing}
         onConfirmPlacement={flow.confirmPlacement}
         onTrustClose={() => {

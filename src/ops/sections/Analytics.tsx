@@ -12,7 +12,7 @@ export default function Analytics({ data, now }: { data: OpsData; now: number })
       <div className="ops-kpis">
         <div className="ops-kpi"><div className="ops-kpi-val">{s.reportsThisMonth}</div><div className="ops-kpi-label">Reports this month</div></div>
         <div className="ops-kpi"><div className="ops-kpi-val">{s.resolvedRate}%</div><div className="ops-kpi-label">Resolution rate</div></div>
-        <div className="ops-kpi"><div className="ops-kpi-val">{s.avgResponseDays !== null ? `${s.avgResponseDays.toFixed(1)}d` : '—'}</div><div className="ops-kpi-label">Avg response</div></div>
+        <div className="ops-kpi"><div className="ops-kpi-val">{s.avgResponseDays !== null ? `${s.avgResponseDays.toFixed(1)}d` : '-'}</div><div className="ops-kpi-label">Avg response</div></div>
         <div className="ops-kpi"><div className="ops-kpi-val">{s.monthlyImpact.confirmations}</div><div className="ops-kpi-label">Confirmations</div></div>
       </div>
 

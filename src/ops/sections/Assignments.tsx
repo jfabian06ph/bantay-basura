@@ -101,7 +101,7 @@ export default function AssignmentsSection({ data }: { data: OpsData }) {
             {views.map((a) => (
               <tr key={a.id}>
                 <td>{a.report ? CATEGORY_LABELS[a.report.category] : a.reportId}</td>
-                <td>{a.team?.name ?? '—'}</td>
+                <td>{a.team?.name ?? '-'}</td>
                 <td>
                   <span
                     className="ops-badge"
@@ -110,7 +110,7 @@ export default function AssignmentsSection({ data }: { data: OpsData }) {
                     {ASSIGNMENT_STATUS_LABELS[a.status]}
                   </span>
                 </td>
-                <td className="ops-cell-sub">{a.notes ?? '—'}</td>
+                <td className="ops-cell-sub">{a.notes ?? '-'}</td>
                 <td>
                   <button
                     className="ops-btn-sm"

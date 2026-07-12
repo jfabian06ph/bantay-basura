@@ -101,7 +101,7 @@ export default function HeadlineStats({ s, now, onViewDetails }: Props) {
                 icon={<Trophy size={14} />}
                 iconColor="#d1a017"
                 label="Community Leader"
-                place={leader?.name ?? '—'}
+                place={leader?.name ?? '-'}
                 stat={leader ? `${leader.resolutionRate}% resolved` : undefined}
               />
             }
@@ -116,7 +116,7 @@ export default function HeadlineStats({ s, now, onViewDetails }: Props) {
                 icon={<Flame size={14} />}
                 iconColor="#e0662a"
                 label="Most Reported Area"
-                place={active?.name ?? '—'}
+                place={active?.name ?? '-'}
                 stat={active ? `${active.confirmations} community confirmations` : undefined}
               />
             }
@@ -126,7 +126,7 @@ export default function HeadlineStats({ s, now, onViewDetails }: Props) {
               s.avgResponseDays !== null ? (
                 <CountUp value={s.avgResponseDays} decimals={1} suffix=" days" />
               ) : (
-                '—'
+                '-'
               )
             }
             label="Average response"
@@ -135,13 +135,13 @@ export default function HeadlineStats({ s, now, onViewDetails }: Props) {
                 icon={<Zap size={14} />}
                 iconColor="#2563eb"
                 label="Fastest Cleanup"
-                place={fastest?.name ?? '—'}
+                place={fastest?.name ?? '-'}
                 stat={fastestStat}
               />
             }
           />
           <Metric
-            value={s.latestCleanup ? relativeTime(s.latestCleanup.when, now) : '—'}
+            value={s.latestCleanup ? relativeTime(s.latestCleanup.when, now) : '-'}
             label="Latest cleanup"
             foot={
               s.latestCleanup ? (

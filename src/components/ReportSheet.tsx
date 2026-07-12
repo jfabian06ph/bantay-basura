@@ -376,7 +376,7 @@ export default function ReportSheet({
                             </>
                           )
                         })()
-                      : '—'}
+                      : 'None selected'}
                   </span>
                 </div>
                 <div className="grid grid-cols-[88px_1fr] gap-3">

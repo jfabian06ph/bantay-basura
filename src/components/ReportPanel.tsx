@@ -189,8 +189,8 @@ export default function ReportPanel({
   const green = STATUS_COLORS.resolved
   const timeline = [
     { label: 'Reported', icon: '📍', date: fmtDate(report.createdAt) },
-    { label: 'Verified', icon: '👥', date: inReviewDone ? (resolved ? 'Done' : 'In progress') : '—' },
-    { label: 'Cleaned', icon: '🧹', date: report.resolvedAt ? fmtDate(report.resolvedAt) : '—' },
+    { label: 'Verified', icon: '👥', date: inReviewDone ? (resolved ? 'Done' : 'In progress') : 'Pending' },
+    { label: 'Cleaned', icon: '🧹', date: report.resolvedAt ? fmtDate(report.resolvedAt) : 'Pending' },
     {
       label: 'Evidence Published',
       icon: '📸',
@@ -198,7 +198,7 @@ export default function ReportPanel({
         ? fmtDate(report.afterUploadedAt)
         : awaitingAfter
           ? 'Your turn'
-          : '—',
+          : 'Pending',
     },
   ].map((s, i) => ({
     ...s,
@@ -252,7 +252,7 @@ export default function ReportPanel({
       if (typeof reader.result === 'string') {
         onUploadAfter(report.id, reader.result)
         setPhotoPrompt(false)
-        showToast('Photo added — thank you for helping verify! 🙌')
+        showToast('Photo added. Thank you for helping verify! 🙌')
       }
     }
     reader.readAsDataURL(file)
@@ -558,7 +558,7 @@ export default function ReportPanel({
                     <Sparkles className="size-4" /> Awaiting after photo
                   </div>
                   <p className="bb-after-cta-body">
-                    This spot has been cleaned. Help complete the story — add an “after” photo
+                    This spot has been cleaned. Help complete the story: add an “after” photo
                     so the whole community can see it through.
                   </p>
                   <button
@@ -605,7 +605,7 @@ export default function ReportPanel({
                       <>
                         <Sparkles className="size-4 shrink-0" />
                         <span>
-                          <b>Community consensus reached</b> — this spot is verified clean 🎉
+                          <b>Community consensus reached.</b> This spot is verified clean 🎉
                         </span>
                       </>
                     ) : (
@@ -625,7 +625,7 @@ export default function ReportPanel({
                     <>
                       <ThumbsUp className="size-4 shrink-0" />
                       <span>
-                        Thanks — you marked this <b>still here</b>
+                        Thanks, you marked this <b>still here</b>
                       </span>
                     </>
                   )}
@@ -638,7 +638,7 @@ export default function ReportPanel({
                     <Camera className="size-4 shrink-0" /> Can you add a photo?
                   </div>
                   <p className="bb-photo-prompt-body">
-                    Optional — a quick snap helps everyone verify the cleanup.
+                    Optional: a quick snap helps everyone verify the cleanup.
                   </p>
                   <div className="bb-photo-prompt-actions">
                     <button
