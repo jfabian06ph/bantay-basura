@@ -342,8 +342,11 @@ export default function ReportPanel({
             <div className="bb-panel-photo-scrim" />
             <div className="bb-photo-overlay">
               <span className="bb-photo-place">
-                <MapPin className="size-3.5" /> {area}
-                {dist && <span className="bb-photo-dist"> · {dist}</span>}
+                <MapPin className="size-3.5 bb-photo-place-icon" />
+                <span className="bb-photo-place-text">
+                  {area}
+                  {dist && <span className="bb-photo-dist"> · {dist}</span>}
+                </span>
               </span>
               <span className="bb-photo-status" style={{ background: `${color}e6` }}>
                 {STATUS_LABELS[report.status]}

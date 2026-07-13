@@ -4959,22 +4959,36 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  /* Leave room for the reported-time chip on the right so the place + distance
+     truncate instead of running underneath it. */
+  max-width: calc(100% - 150px);
 }
 .bb-photo-place {
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  min-width: 0;
   color: #fff;
   font-size: 16px;
   font-weight: 800;
   letter-spacing: -0.01em;
   text-shadow: 0 1px 6px rgba(2, 8, 23, 0.7);
 }
+.bb-photo-place-icon {
+  flex: none;
+}
+.bb-photo-place-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .bb-photo-dist {
   color: rgba(255, 255, 255, 0.8);
   font-weight: 600;
 }
 .bb-photo-status {
+  flex: none;
   padding: 2px 9px;
   border-radius: var(--radius-pill);
   color: #fff;

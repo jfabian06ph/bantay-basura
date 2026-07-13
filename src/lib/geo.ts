@@ -18,8 +18,8 @@ function toRad(deg: number): number {
   return (deg * Math.PI) / 180
 }
 
-/** Human-friendly Filipino distance label. */
+/** Human-friendly distance label ("≈ 5 m away"). */
 export function formatDistance(meters: number): string {
-  if (meters < 1000) return `≈ ${Math.round(meters)} m mula sa iyo`
-  return `≈ ${(meters / 1000).toFixed(1)} km mula sa iyo`
+  if (meters < 1000) return `≈ ${Math.round(meters)} m away`
+  return `≈ ${(meters / 1000).toFixed(1)} km away`
 }
