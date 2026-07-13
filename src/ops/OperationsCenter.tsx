@@ -13,6 +13,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { useAuth } from '../auth/AuthProvider'
+import { useOpsFavicon } from './useOpsFavicon'
 import { OPS_SECTIONS, type OpsSectionKey } from './types'
 import {
   listReports,
@@ -58,6 +59,7 @@ const NOW = Date.now()
 
 export default function OperationsCenter() {
   const { operator, isDemo, signOut } = useAuth()
+  useOpsFavicon()
   const [section, setSection] = useState<OpsSectionKey>('dashboard')
 
   const [reports, setReports] = useState<Report[]>([])
