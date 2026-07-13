@@ -12,11 +12,25 @@ interface Props {
   onViewOnMap?: (lat: number, lng: number, zoom: number) => void
 }
 
-const PILL: Record<ActivityKind, string> = {
-  reported: 'Reported',
-  verified: 'Verified',
-  cleanup: 'Cleanup',
-  resolved: 'Resolved',
+/** Generic per-kind icon + noun for the popup's municipality summary. */
+const KIND_EMOJI: Record<ActivityKind, string> = {
+  reported: '📝',
+  verified: '👥',
+  cleanup: '📸',
+  resolved: '✅',
+}
+function kindNoun(kind: ActivityKind, n: number): string {
+  const plural = n === 1 ? '' : 's'
+  switch (kind) {
+    case 'reported':
+      return `new report${plural}`
+    case 'verified':
+      return `community confirmation${plural}`
+    case 'cleanup':
+      return `cleanup photo${plural}`
+    case 'resolved':
+      return n === 1 ? 'area resolved' : 'areas resolved'
+  }
 }
 
 interface Group {
@@ -24,6 +38,14 @@ interface Group {
   lat: number
   lng: number
   events: ActivityEvent[]
+}
+
+/** Count a group's events by kind, in display order. */
+function summarize(g: Group): { kind: ActivityKind; n: number }[] {
+  const order: ActivityKind[] = ['reported', 'verified', 'cleanup', 'resolved']
+  const counts = new Map<ActivityKind, number>()
+  for (const e of g.events) counts.set(e.kind, (counts.get(e.kind) ?? 0) + 1)
+  return order.filter((k) => counts.has(k)).map((k) => ({ kind: k, n: counts.get(k)! }))
 }
 
 /** Collapse consecutive same-place events into one place group. */
@@ -84,10 +106,11 @@ export default function RecentlyActive({ reports, now, onReport, onViewOnMap }: 
     return (
       <section className="bb-dash-section">
         <div className="bb-dash-eyebrow bb-dash-eyebrow-live">
-          <span className="bb-live-dot" /> Community Pulse
+          <span className="bb-live-dot" /> Live Community Pulse
         </div>
         <div className="bb-pulse-empty">
-          <p>No recent community activity yet.</p>
+          <p className="bb-pulse-empty-lede">Nothing new in the last 24 hours.</p>
+          <p>That&rsquo;s good news — fewer reports mean cleaner communities.</p>
           {onReport && (
             <button className="bb-pulse-empty-cta" onClick={onReport}>
               Report Waste
@@ -101,7 +124,7 @@ export default function RecentlyActive({ reports, now, onReport, onViewOnMap }: 
   return (
     <section className="bb-dash-section">
       <div className="bb-dash-eyebrow bb-dash-eyebrow-live">
-        <span className="bb-live-dot" /> Community Pulse
+        <span className="bb-live-dot" /> Live Community Pulse
       </div>
       <p className="bb-dash-section-lede">Live community activity, no names attached.</p>
       <Reveal>
@@ -120,13 +143,14 @@ export default function RecentlyActive({ reports, now, onReport, onViewOnMap }: 
                 </span>
                 <ul className="bb-pulse-events">
                   {g.events.map((e) => (
-                    <li className="bb-pulse-item" key={e.id}>
-                      <span className="bb-pulse-emoji" aria-hidden>
+                    <li className={`bb-pulse-item is-${e.kind}`} key={e.id}>
+                      <span className="bb-pulse-ico" aria-hidden>
                         {e.emoji}
                       </span>
-                      <span className="bb-pulse-label">{e.label}</span>
-                      <span className={`bb-pulse-pill is-${e.kind}`}>{PILL[e.kind]}</span>
-                      <span className="bb-pulse-time">🕒 {relativeTime(e.at, now)}</span>
+                      <span className="bb-pulse-main">
+                        <span className="bb-pulse-label">{e.label}</span>
+                        <span className="bb-pulse-when">{relativeTime(e.at, now)}</span>
+                      </span>
                     </li>
                   ))}
                 </ul>
@@ -148,10 +172,13 @@ export default function RecentlyActive({ reports, now, onReport, onViewOnMap }: 
                 <span className="bb-hotspots-preview-name">
                   <MapPin size={13} /> {preview.g.place}
                 </span>
-                <span className="bb-hotspots-preview-sub">Community overview</span>
-                <span className="bb-hotspots-preview-stat">
-                  {preview.g.events.length} recent{' '}
-                  {preview.g.events.length === 1 ? 'activity' : 'activities'}
+                <span className="bb-hotspots-preview-sub">Recent activity</span>
+                <span className="bb-pulse-summary">
+                  {summarize(preview.g).map((s) => (
+                    <span key={s.kind}>
+                      {KIND_EMOJI[s.kind]} {s.n} {kindNoun(s.kind, s.n)}
+                    </span>
+                  ))}
                 </span>
                 {onViewOnMap && (
                   <span className="bb-hotspots-preview-cta">

@@ -7112,6 +7112,10 @@
   box-shadow: 0 18px 44px rgba(20, 17, 15, 0.24);
 }
 .bb-hotspots-preview-cta svg { transition: transform 0.15s ease; }
+.bb-hotspots-preview.is-clickable:hover .bb-hotspots-preview-cta {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
 .bb-hotspots-preview.is-clickable:hover .bb-hotspots-preview-cta svg {
   transform: translateX(2px);
 }
@@ -7502,7 +7506,7 @@
 
 /* #19 — Community Pulse feed. */
 .bb-dash-eyebrow-live {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 7px;
 }
@@ -7544,48 +7548,71 @@
 .bb-pulse-place svg { color: #009336; flex: none; }
 .bb-pulse-events {
   list-style: none;
-  margin: 6px 0 0;
+  margin: 8px 0 0;
   padding: 0 0 0 20px;
 }
+/* Social-feed row: the activity icon is the hero, label + time stacked. */
 .bb-pulse-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 3px 0;
-  font-size: 13px;
+  gap: 12px;
+  padding: 7px 0;
+}
+.bb-pulse-ico {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 50%;
+  font-size: 15px;
+  line-height: 1;
+  background: #f2f0eb;
+}
+.bb-pulse-item.is-reported .bb-pulse-ico { background: rgba(227, 30, 47, 0.1); }
+.bb-pulse-item.is-verified .bb-pulse-ico { background: rgba(245, 158, 11, 0.14); }
+.bb-pulse-item.is-cleanup .bb-pulse-ico { background: rgba(59, 130, 246, 0.12); }
+.bb-pulse-item.is-resolved .bb-pulse-ico { background: rgba(35, 194, 102, 0.14); }
+.bb-pulse-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.bb-pulse-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #14110f;
+  line-height: 1.25;
+}
+.bb-pulse-when {
+  font-size: 12px;
+  color: #8a847c;
+}
+/* Popup municipality summary */
+.bb-pulse-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12.5px;
+  font-weight: 600;
   color: #55504a;
 }
-.bb-pulse-emoji { font-size: 14px; line-height: 1; flex: none; }
-.bb-pulse-label { flex: 1; min-width: 0; }
-.bb-pulse-pill {
-  flex: none;
-  padding: 2px 9px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.01em;
-}
-.bb-pulse-pill.is-reported { background: rgba(227, 30, 47, 0.12); color: #c01524; }
-.bb-pulse-pill.is-verified { background: rgba(245, 158, 11, 0.16); color: #b46c05; }
-.bb-pulse-pill.is-cleanup { background: rgba(59, 130, 246, 0.14); color: #2563eb; }
-.bb-pulse-pill.is-resolved { background: rgba(35, 194, 102, 0.16); color: #1f9d57; }
-.bb-pulse-time {
-  flex: none;
-  font-size: 11.5px;
-  font-weight: 600;
-  color: #8a847c;
-  white-space: nowrap;
-}
 .bb-pulse-empty {
-  padding: 22px;
+  padding: 26px 22px;
   border: 1px dashed #d7d2c8;
   border-radius: 16px;
   text-align: center;
   color: #8a847c;
-  font-size: 14px;
+  font-size: 13.5px;
+}
+.bb-pulse-empty-lede {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 800;
+  color: #14110f;
 }
 .bb-pulse-empty-cta {
-  margin-top: 12px;
+  margin-top: 14px;
   padding: 11px 22px;
   border: none;
   border-radius: 999px;
