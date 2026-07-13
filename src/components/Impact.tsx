@@ -594,7 +594,8 @@ function ImpactLive({ onNavigate, reports, now, onViewOnMap }: Props) {
           </div>
         </section>
 
-        {/* ---------- Organizer Toolkit ---------- */}
+        {/* ---------- Organizer Toolkit (hidden for now) ---------- */}
+        {false && (
         <section className="bb-imp-section">
           <div className="bb-imp-eyebrow">Organizer Toolkit</div>
           <h2 className="bb-imp-h2">Want to organize your own cleanup?</h2>
@@ -617,6 +618,7 @@ function ImpactLive({ onNavigate, reports, now, onViewOnMap }: Props) {
             })}
           </div>
         </section>
+        )}
       </div>
 
       {/* ---------- Join CTA band ---------- */}
@@ -1129,7 +1131,8 @@ function ImpactFounding({ onNavigate, reports }: Props) {
           </button>
         </section>
 
-        {/* ---------- Organizer Toolkit (kept — already valuable) ---------- */}
+        {/* ---------- Organizer Toolkit (hidden for now) ---------- */}
+        {false && (
         <section className="bb-imp-section">
           <div className="bb-imp-eyebrow">Organizer Toolkit</div>
           <h2 className="bb-imp-h2">Want to organize your own cleanup?</h2>
@@ -1152,6 +1155,7 @@ function ImpactFounding({ onNavigate, reports }: Props) {
             })}
           </div>
         </section>
+        )}
       </div>
 
       {/* ---------- Footer CTA band ---------- */}
