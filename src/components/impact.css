@@ -1124,14 +1124,18 @@
   border-left: 2px dashed #d8d3ca;
 }
 .bb-imp-ba-frame-tag {
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #b9b2a8;
 }
+.bb-imp-ba-frame-tag svg { color: #cdc7bc; }
 .bb-imp-ba-empty-copy h2 {
   margin: 0 0 14px;
 }
@@ -1365,10 +1369,12 @@
   cursor: pointer;
   transition: transform 0.16s ease, box-shadow 0.16s ease;
 }
+.bb-imp-challenge-cta svg { transition: transform 0.2s var(--ease, ease); }
 .bb-imp-challenge-cta:hover {
   transform: translateY(-2px);
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.25);
 }
+.bb-imp-challenge-cta:hover svg { transform: translateX(4px); }
 .bb-imp-challenge-cta:active {
   transform: scale(0.97);
 }
@@ -1919,5 +1925,345 @@
   .bb-imp-modal-card,
   .bb-imp-modal-scrim {
     animation: none;
+  }
+}
+
+/* ============================================================
+   Founding mode — honest "we're just getting started" states.
+   ============================================================ */
+
+/* Shared primary + ghost buttons for founding CTAs. */
+.bb-found-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  padding: 12px 22px;
+  border: none;
+  border-radius: 999px;
+  background: var(--imp-green);
+  color: #fff;
+  font-size: 14.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+.bb-found-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(31, 157, 87, 0.28);
+}
+.bb-found-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border: 1px solid var(--imp-line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--imp-ink);
+  font-size: 14.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease;
+}
+.bb-found-btn-ghost:hover {
+  background: #f6f4ef;
+  border-color: #d7d2c8;
+}
+.bb-found-btnrow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+/* Early-community banner. */
+.bb-found-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 34px 32px;
+  border: 1px solid #d8e8cf;
+  border-radius: var(--imp-radius);
+  background:
+    radial-gradient(120% 130% at 100% 0%, rgba(34, 197, 94, 0.16), transparent 55%),
+    radial-gradient(120% 130% at 0% 100%, rgba(31, 157, 87, 0.13), transparent 55%),
+    linear-gradient(135deg, #f2f7ee, #edf4f1);
+}
+.bb-found-banner-eyebrow {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--imp-green);
+}
+.bb-found-banner-title {
+  margin: 0;
+  font-size: clamp(22px, 3vw, 30px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--imp-ink);
+}
+.bb-found-banner-lede {
+  margin: 0 0 6px;
+  max-width: 60ch;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--imp-dim);
+}
+
+/* Featured-cleanup placeholder — no photo, a warm green wash instead. */
+.bb-found-spot-media {
+  background:
+    radial-gradient(120% 120% at 30% 20%, rgba(34, 197, 94, 0.5), transparent 60%),
+    linear-gradient(150deg, #1f9d57, #12633a);
+}
+
+/* Placeholder event cards. */
+.bb-found-card {
+  position: relative;
+  display: flex;
+  min-height: 200px;
+  border-style: dashed;
+  border-color: #c7dcc9;
+  background: #f9fcf7;
+}
+.bb-found-card-badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #eaf6ee;
+  border: 1px solid #cfebd7;
+  font-size: 11px;
+  font-weight: 800;
+  color: #1a8f43;
+}
+.bb-found-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  justify-content: center;
+  padding: 24px 22px;
+}
+.bb-found-card-note {
+  margin: 0;
+  font-size: 14px;
+  color: var(--imp-mute);
+}
+.bb-found-card-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--imp-green);
+  cursor: pointer;
+}
+.bb-found-card-cta:hover { gap: 9px; }
+
+/* Generic honest empty block (feed, calendar, etc.). */
+.bb-found-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 34px 24px;
+  border: 1px dashed var(--imp-line);
+  border-radius: var(--imp-radius);
+  background: #faf9f6;
+  text-align: center;
+}
+.bb-found-empty p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--imp-mute);
+}
+.bb-found-empty-lede {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--imp-ink) !important;
+}
+.bb-found-empty .bb-found-btn {
+  align-self: center;
+  margin-top: 14px;
+}
+.bb-found-empty--cal { margin-top: 14px; }
+
+/* Community leaders — reserved, forever. */
+.bb-found-leaders {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 40px 24px;
+  border: 1px solid var(--imp-line);
+  border-radius: var(--imp-radius);
+  background: var(--imp-card);
+  text-align: center;
+}
+.bb-found-leaders-emoji { font-size: 40px; }
+.bb-found-leaders p {
+  margin: 0;
+  max-width: 44ch;
+  font-size: 14px;
+  color: var(--imp-mute);
+}
+
+/* Founding partners we're courting. */
+.bb-found-partners {
+  list-style: none;
+  margin: 0 0 22px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.bb-found-partner {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 14px 20px;
+  border: 1px solid var(--imp-line);
+  border-radius: 16px;
+  background: var(--imp-card);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--imp-ink);
+  transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+}
+.bb-found-partner:hover {
+  transform: translateY(-2px);
+  border-color: #cfebd7;
+  box-shadow: 0 12px 26px rgba(20, 17, 15, 0.07);
+}
+.bb-found-partner-emoji { font-size: 20px; }
+.bb-found-partner-cta { margin-top: 2px; }
+.bb-found-partner-sub { margin: -4px 0 18px; }
+
+/* Early-community kicker line. */
+.bb-found-banner-kicker {
+  margin: 2px 0 4px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--imp-ink);
+}
+
+/* Featured-cleanup placeholder content, centred over the green wash. */
+.bb-found-spot-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  text-align: center;
+  color: #fff;
+}
+.bb-found-spot-emoji { font-size: 46px; }
+.bb-found-spot-ph-text {
+  max-width: 22ch;
+  font-size: 16px;
+  font-weight: 700;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.25);
+}
+.bb-found-spot-soon {
+  margin-top: 4px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Calendar — a soft dotted pulse on today, quietly "waiting". */
+.bb-imp-cal-cell.is-waiting {
+  border: 1.5px dashed var(--imp-green);
+  border-radius: 12px;
+  animation: bb-found-wait 2.2s ease-in-out infinite;
+}
+.bb-imp-cal-cell.is-waiting .bb-imp-cal-num { color: var(--imp-green); font-weight: 800; }
+@keyframes bb-found-wait {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(31, 157, 87, 0.35); }
+  50% { box-shadow: 0 0 0 5px rgba(31, 157, 87, 0); }
+}
+
+/* Live-feed placeholder — three rows breathing in a staggered loop. */
+.bb-found-feed-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 22px 22px 24px;
+  border: 1px solid var(--imp-line);
+  border-radius: var(--imp-radius);
+  background: var(--imp-card);
+}
+.bb-found-feed {
+  list-style: none;
+  margin: 0 0 6px;
+  padding: 0;
+  width: 100%;
+}
+.bb-found-feed-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 4px;
+  border-top: 1px solid #f0eee9;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--imp-dim);
+  animation: bb-found-breathe 2.8s ease-in-out infinite;
+  animation-delay: calc(var(--i, 0) * 0.5s);
+}
+.bb-found-feed-row:first-child { border-top: none; }
+.bb-found-feed-dot { color: #c7c1b8; flex: none; }
+@keyframes bb-found-breathe {
+  0%, 100% { opacity: 0.42; }
+  50% { opacity: 1; }
+}
+.bb-found-feed-note {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--imp-mute);
+}
+.bb-found-feed-card .bb-found-btn { margin-top: 16px; }
+
+/* ---- Scroll-unlock: each section rises 12px + fades as it enters ---- */
+.bb-founding .bb-imp-section,
+.bb-founding .bb-imp-cta-band {
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.6s var(--ease, cubic-bezier(0.22, 0.61, 0.36, 1)),
+    transform 0.6s var(--ease, cubic-bezier(0.22, 0.61, 0.36, 1));
+}
+.bb-founding .bb-imp-section.is-unlocked,
+.bb-founding .bb-imp-cta-band.is-unlocked {
+  opacity: 1;
+  transform: none;
+}
+
+/* Tighter rhythm right after the calendar and live feed. */
+.bb-founding .bb-found-flow + .bb-imp-section {
+  padding-top: 26px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bb-imp-cal-cell.is-waiting,
+  .bb-found-feed-row { animation: none; }
+  .bb-founding .bb-imp-section,
+  .bb-founding .bb-imp-cta-band {
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
 }

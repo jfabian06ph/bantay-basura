@@ -19,6 +19,8 @@ import {
   ClipboardList,
   ShieldCheck,
   Trophy,
+  Camera,
+  Circle,
 } from 'lucide-react'
 import Footer from './Footer'
 import Reveal from './Reveal'
@@ -34,6 +36,7 @@ import {
   CHALLENGE,
   SCHOOLS,
   PARTNERS,
+  FOUNDING_MODE,
   type Activity,
   type FeedItem,
 } from '../lib/impactData'
@@ -124,7 +127,16 @@ function useTodayInJuly() {
   }, [])
 }
 
-export default function Impact({ onNavigate, reports, now, onViewOnMap }: Props) {
+/**
+ * The Impact page. Until there are real organised cleanups and partners
+ * (FOUNDING_MODE), we show an honest founding-partner experience rather than
+ * illustrative activity data; otherwise the full live hub renders.
+ */
+export default function Impact(props: Props) {
+  return FOUNDING_MODE ? <ImpactFounding {...props} /> : <ImpactLive {...props} />
+}
+
+function ImpactLive({ onNavigate, reports, now, onViewOnMap }: Props) {
   const [selected, setSelected] = useState<Activity | null>(null)
   const [registered, setRegistered] = useState(false)
   const activitiesRef = useRef<HTMLDivElement>(null)
@@ -242,63 +254,10 @@ export default function Impact({ onNavigate, reports, now, onViewOnMap }: Props)
 
   return (
     <div className="bb-about bb-impact-page">
-      {/* ---------- Hero ---------- */}
-      <section className="bb-imp-hero">
-        {/* Boomerang clip: plays forward then reverses, so the loop never
-            hard-cuts back to frame one — it just breathes in and out. */}
-        <video
-          className="bb-imp-hero-video"
-          src="/impact-hero-loop.mp4"
-          poster="/impact-hero-poster.jpg"
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="metadata"
-        />
-        <div className="bb-imp-hero-scrim" />
-        {/* Live activity pins drifting over the drone footage — the video reads
-            as a place where things are happening, not just scenery. */}
-        <div className="bb-imp-hero-markers" aria-hidden="true">
-          {HERO_MARKERS.map((m) => (
-            <span
-              key={m.label}
-              className="bb-imp-marker"
-              style={
-                {
-                  '--my': m.top,
-                  '--mx': m.left,
-                  '--tone': m.tone,
-                  '--delay': `${m.delay}ms`,
-                  '--dur': m.dur,
-                  '--sx': m.sx,
-                  '--sy': m.sy,
-                } as React.CSSProperties
-              }
-            >
-              <span className="bb-imp-marker-dot" />
-              <span className="bb-imp-marker-label">{m.label}</span>
-            </span>
-          ))}
-        </div>
-        <div className="bb-imp-hero-inner">
-          <div className="bb-imp-hero-eyebrow">Impact</div>
-          <h1 className="bb-imp-hero-title">
-            <span className="bb-imp-hl bb-imp-hl-1">
-              Communities don&rsquo;t become cleaner by reports alone.
-            </span>
-            <span className="bb-imp-hl bb-imp-hl-2">
-              They become cleaner when people decide to act.
-            </span>
-          </h1>
-          <button
-            className="bb-imp-hero-cta"
-            onClick={() => activitiesRef.current?.scrollIntoView({ behavior: 'smooth' })}
-          >
-            Find an activity <ArrowRight className="size-4" />
-          </button>
-        </div>
-      </section>
+      <ImpactHero
+        ctaLabel="Find an activity"
+        onCta={() => activitiesRef.current?.scrollIntoView({ behavior: 'smooth' })}
+      />
 
       <div className="bb-page bb-page-wide">
         {/* ---------- Event Spotlight — one big story, straight after the hero ---------- */}
@@ -813,6 +772,405 @@ export default function Impact({ onNavigate, reports, now, onViewOnMap }: Props)
   )
 }
 
+/** The shared cinematic hero — identical for the live and founding pages. */
+function ImpactHero({ onCta, ctaLabel }: { onCta: () => void; ctaLabel: string }) {
+  return (
+    <section className="bb-imp-hero">
+      {/* Boomerang clip: plays forward then reverses, so the loop never
+          hard-cuts back to frame one — it just breathes in and out. */}
+      <video
+        className="bb-imp-hero-video"
+        src="/impact-hero-loop.mp4"
+        poster="/impact-hero-poster.jpg"
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="metadata"
+      />
+      <div className="bb-imp-hero-scrim" />
+      {/* Live activity pins drifting over the drone footage — the video reads
+          as a place where things are happening, not just scenery. */}
+      <div className="bb-imp-hero-markers" aria-hidden="true">
+        {HERO_MARKERS.map((m) => (
+          <span
+            key={m.label}
+            className="bb-imp-marker"
+            style={
+              {
+                '--my': m.top,
+                '--mx': m.left,
+                '--tone': m.tone,
+                '--delay': `${m.delay}ms`,
+                '--dur': m.dur,
+                '--sx': m.sx,
+                '--sy': m.sy,
+              } as React.CSSProperties
+            }
+          >
+            <span className="bb-imp-marker-dot" />
+            <span className="bb-imp-marker-label">{m.label}</span>
+          </span>
+        ))}
+      </div>
+      <div className="bb-imp-hero-inner">
+        <div className="bb-imp-hero-eyebrow">Impact</div>
+        <h1 className="bb-imp-hero-title">
+          <span className="bb-imp-hl bb-imp-hl-1">
+            Communities don&rsquo;t become cleaner by reports alone.
+          </span>
+          <span className="bb-imp-hl bb-imp-hl-2">
+            They become cleaner when people decide to act.
+          </span>
+        </h1>
+        <button className="bb-imp-hero-cta" onClick={onCta}>
+          {ctaLabel} <ArrowRight className="size-4" />
+        </button>
+      </div>
+    </section>
+  )
+}
+
+const FOUNDING_PARTNERS = [
+  { emoji: '🏫', label: 'Schools' },
+  { emoji: '🏘', label: 'Barangays' },
+  { emoji: '🌱', label: 'NGOs' },
+  { emoji: '🏢', label: 'Companies' },
+  { emoji: '🎓', label: 'Universities' },
+]
+
+/**
+ * Founding-mode Impact page. Same beautiful hero, but every section is an
+ * honest invitation to become one of the first, rather than illustrative
+ * activity data. Real before/after pairs still surface the moment they exist.
+ */
+function ImpactFounding({ onNavigate, reports }: Props) {
+  const eventsRef = useRef<HTMLDivElement>(null)
+
+  // Real before/after pairs only — surfaces the first documented cleanup the
+  // moment it lands, even in founding mode. No stock or generated examples.
+  const galleries = useMemo(() => {
+    const out: { before: string; after: string; place: string }[] = []
+    for (const r of reports) {
+      if (r.status !== 'resolved') continue
+      const before = r.photoUrl ?? r.photoUrls?.[0]
+      const after = r.afterImageUrl ?? r.resolvedPhotoUrls?.[0]
+      if (before && after) out.push({ before, after, place: r.municipality ?? 'A community' })
+    }
+    return out
+  }, [reports])
+
+  // An empty, month-navigable calendar — the grid still renders, dates just
+  // have no events yet.
+  const CAL_YEAR = 2026
+  const CAL_BASE_MONTH = 6 // July
+  const [monthOffset, setMonthOffset] = useState(0)
+  const grid = useMonthGrid(CAL_YEAR, CAL_BASE_MONTH + monthOffset, new Set<number>())
+  const monthLabel = new Date(CAL_YEAR, CAL_BASE_MONTH + monthOffset, 1).toLocaleDateString(
+    'en-US',
+    { month: 'long', year: 'numeric' },
+  )
+  const today = useTodayInJuly()
+  const isBaseMonth = monthOffset === 0
+
+  const reachOut = () => {
+    window.location.href =
+      'mailto:partners@bantaybasura.org?subject=Becoming%20a%20Bantay%20Basura%20founding%20partner'
+  }
+
+  // Each section gently rises + fades as it scrolls into view (Apple/Linear
+  // feel). One observer over every section beats wrapping each in a component.
+  const pageRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const root = pageRef.current
+    if (!root) return
+    const sections = root.querySelectorAll<HTMLElement>('.bb-imp-section, .bb-imp-cta-band')
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            e.target.classList.add('is-unlocked')
+            io.unobserve(e.target)
+          }
+        }
+      },
+      { rootMargin: '0px 0px -12% 0px', threshold: 0.08 },
+    )
+    sections.forEach((s) => io.observe(s))
+    return () => io.disconnect()
+  }, [])
+
+  return (
+    <div className="bb-about bb-impact-page bb-founding" ref={pageRef}>
+      <ImpactHero ctaLabel="Start a cleanup" onCta={() => onNavigate('map')} />
+
+      <div className="bb-page bb-page-wide">
+        {/* ---------- Early Community banner ---------- */}
+        <section className="bb-imp-section">
+          <div className="bb-found-banner">
+            <div className="bb-found-banner-eyebrow">🚀 Early Community</div>
+            <h2 className="bb-found-banner-title">You&rsquo;re early.</h2>
+            <p className="bb-found-banner-lede">
+              <b>Bantay Basura is just getting started.</b> We&rsquo;re building a community of
+              volunteers, schools, barangays and organizations who believe cleaner communities
+              begin with people.
+            </p>
+            <p className="bb-found-banner-kicker">Become one of our founding supporters.</p>
+            <button className="bb-found-btn" onClick={reachOut}>
+              <Mail className="size-4" /> Reach Out
+            </button>
+          </div>
+        </section>
+
+        {/* ---------- Featured Cleanup (placeholder) ---------- */}
+        <section className="bb-imp-section bb-imp-spot-section">
+          <article className="bb-imp-spotlight bb-found-spotlight">
+            <div className="bb-imp-spot-media bb-found-spot-media">
+              <span className="bb-imp-spot-badge">🌱 Featured Cleanup</span>
+              <div className="bb-found-spot-placeholder" aria-hidden>
+                <span className="bb-found-spot-emoji">📍</span>
+                <span className="bb-found-spot-ph-text">Your first cleanup will appear here.</span>
+                <span className="bb-found-spot-soon">Coming soon</span>
+              </div>
+            </div>
+            <div className="bb-imp-spot-body">
+              <h2 className="bb-imp-spot-title">🌱 Your community cleanup could be here.</h2>
+              <p className="bb-imp-spot-sub">
+                We&rsquo;re looking for volunteers, schools, barangays and organizations to become
+                our first community partners.
+              </p>
+              <div className="bb-found-btnrow">
+                <button className="bb-imp-spot-cta" onClick={reachOut}>
+                  Become a Partner <ArrowRight className="size-4" />
+                </button>
+                <button className="bb-found-btn-ghost" onClick={() => onNavigate('map')}>
+                  Host a Cleanup
+                </button>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        {/* ---------- Placeholder event cards ---------- */}
+        <section className="bb-imp-section bb-imp-tight" ref={eventsRef}>
+          <div className="bb-imp-eyebrow">Upcoming Cleanups</div>
+          <h2 className="bb-imp-h2">The first events start with you</h2>
+          <div className="bb-imp-cards">
+            {[0, 1, 2].map((i) => (
+              <Reveal key={i} delay={i * 60}>
+                <article className="bb-imp-card bb-found-card">
+                  <span className="bb-found-card-badge">✨ Founding Event</span>
+                  <div className="bb-found-card-body">
+                    <h3 className="bb-imp-card-title">Community Cleanup</h3>
+                    <p className="bb-found-card-note">Looking for organizers</p>
+                    <button className="bb-found-card-cta" onClick={reachOut}>
+                      Become the first <ArrowRight className="size-4" />
+                    </button>
+                  </div>
+                </article>
+              </Reveal>
+            ))}
+          </div>
+        </section>
+
+        {/* ---------- Community Calendar (renders empty) ---------- */}
+        <section className="bb-imp-section bb-imp-tight bb-found-flow">
+          <div className="bb-imp-cal-header">
+            <div className="bb-imp-eyebrow">Community Calendar</div>
+            <div className="bb-imp-cal-nav">
+              <button
+                className="bb-imp-cal-navbtn"
+                onClick={() => setMonthOffset((o) => o - 1)}
+                aria-label="Previous month"
+              >
+                <ChevronLeft className="size-4" />
+              </button>
+              <span className="bb-imp-cal-month">{monthLabel}</span>
+              <button
+                className="bb-imp-cal-navbtn"
+                onClick={() => setMonthOffset((o) => o + 1)}
+                aria-label="Next month"
+              >
+                <ChevronRight className="size-4" />
+              </button>
+            </div>
+          </div>
+          <div className="bb-imp-cal">
+            <div className="bb-imp-cal-head">
+              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
+                <span key={d}>{d}</span>
+              ))}
+            </div>
+            <div className="bb-imp-cal-grid">
+              {grid.flat().map((c, i) => {
+                const waiting = isBaseMonth && c.day != null && c.day === today
+                return (
+                  <div
+                    key={i}
+                    className={`bb-imp-cal-cell ${c.day == null ? 'is-empty' : ''} ${
+                      waiting ? 'is-waiting' : ''
+                    }`}
+                  >
+                    {c.day && <span className="bb-imp-cal-num">{c.day}</span>}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+          <div className="bb-found-empty bb-found-empty--cal">
+            <p className="bb-found-empty-lede">No community events scheduled yet.</p>
+            <p>Be the first organization to host one.</p>
+            <button className="bb-found-btn" onClick={reachOut}>
+              Host an Event
+            </button>
+          </div>
+        </section>
+
+        {/* ---------- Live Community Feed (waiting) ---------- */}
+        <section className="bb-imp-section bb-found-flow">
+          <div className="bb-imp-eyebrow bb-imp-live">
+            <span className="bb-live-dot" /> Live Community Feed
+          </div>
+          <div className="bb-found-feed-card">
+            <ul className="bb-found-feed">
+              {['Community report', 'Waiting for verification', 'Waiting for first cleanup…'].map(
+                (t, i) => (
+                  <li
+                    key={t}
+                    className="bb-found-feed-row"
+                    style={{ '--i': i } as React.CSSProperties}
+                  >
+                    <Circle className="size-4 bb-found-feed-dot" />
+                    <span>{t}</span>
+                  </li>
+                ),
+              )}
+            </ul>
+            <p className="bb-found-feed-note">
+              When the community starts organizing, real activity will appear here.
+            </p>
+            <button className="bb-found-btn" onClick={() => onNavigate('map')}>
+              Start a cleanup
+            </button>
+          </div>
+        </section>
+
+        {/* ---------- Founding Challenge ---------- */}
+        <section className="bb-imp-section">
+          <div className="bb-imp-challenge">
+            <div className="bb-imp-challenge-head">
+              <div className="bb-imp-eyebrow bb-imp-eyebrow-light">🚀 Founding Challenge</div>
+              <h2 className="bb-imp-challenge-title">
+                Help launch Bantay Basura&rsquo;s first documented cleanup.
+              </h2>
+              <p className="bb-imp-challenge-lede">
+                Report an issue, rally your neighbours, and document the before &amp; after. The
+                first completed cleanup becomes our founding story.
+              </p>
+            </div>
+            <button className="bb-imp-challenge-cta" onClick={() => onNavigate('map')}>
+              Start a cleanup <ArrowRight className="size-4" />
+            </button>
+          </div>
+        </section>
+
+        {/* ---------- Before & After (real cleanups only) ---------- */}
+        <section className="bb-imp-section">
+          <div className="bb-imp-eyebrow">Before &amp; After</div>
+          {galleries.length > 0 ? (
+            <div className="bb-imp-gallery-wrap">
+              <div className="bb-imp-gallery">
+                {galleries.map((g, i) => (
+                  <figure className="bb-imp-ba-card" key={i}>
+                    <BeforeAfter before={g.before} after={g.after} />
+                    <figcaption>{g.place}</figcaption>
+                  </figure>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <GalleryEmpty />
+          )}
+        </section>
+
+        {/* ---------- Community Leaders (Founding Leaderboard) ---------- */}
+        <section className="bb-imp-section">
+          <div className="bb-imp-eyebrow">Community Leaders</div>
+          <div className="bb-found-leaders">
+            <span className="bb-found-leaders-emoji" aria-hidden>🏆</span>
+            <p className="bb-found-empty-lede">Founding Leaderboard</p>
+            <p>
+              The first volunteer, school, organization, or barangay to complete a cleanup will be
+              remembered here &mdash; forever.
+            </p>
+            <button className="bb-found-btn" onClick={() => onNavigate('map')}>
+              Become #1
+            </button>
+          </div>
+        </section>
+
+        {/* ---------- Founding Partners ---------- */}
+        <section className="bb-imp-section">
+          <div className="bb-imp-eyebrow">Founding Partners</div>
+          <h2 className="bb-imp-h2">Become a Founding Partner</h2>
+          <p className="bb-imp-panel-sub bb-found-partner-sub">
+            Help shape Bantay Basura from the beginning.
+          </p>
+          <ul className="bb-found-partners">
+            {FOUNDING_PARTNERS.map((p) => (
+              <li key={p.label} className="bb-found-partner">
+                <span className="bb-found-partner-emoji" aria-hidden>{p.emoji}</span>
+                {p.label}
+              </li>
+            ))}
+          </ul>
+          <button className="bb-imp-spot-cta bb-found-partner-cta" onClick={reachOut}>
+            Become a Founding Partner <ArrowRight className="size-4" />
+          </button>
+        </section>
+
+        {/* ---------- Organizer Toolkit (kept — already valuable) ---------- */}
+        <section className="bb-imp-section">
+          <div className="bb-imp-eyebrow">Organizer Toolkit</div>
+          <h2 className="bb-imp-h2">Want to organize your own cleanup?</h2>
+          <div className="bb-imp-toolkit">
+            {TOOLKIT.map((t) => {
+              const Icon = t.icon
+              return (
+                <button key={t.title} className="bb-imp-tool">
+                  <span className="bb-imp-tool-time">
+                    <Clock className="size-3.5" /> {t.time}
+                  </span>
+                  <Icon className="size-6" />
+                  <span className="bb-imp-tool-title">{t.title}</span>
+                  <span className="bb-imp-tool-note">{t.note}</span>
+                  <span className="bb-imp-tool-dl">
+                    <Download className="size-4" /> Download
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        </section>
+      </div>
+
+      {/* ---------- Footer CTA band ---------- */}
+      <section className="bb-imp-cta-band">
+        <h2>This movement starts with people.</h2>
+        <p>
+          Bantay Basura doesn&rsquo;t grow because of us. It grows because communities choose to
+          act. Become one of the first.
+        </p>
+        <button className="bb-imp-cta-btn" onClick={reachOut}>
+          Become a Founding Partner <ArrowRight className="size-4" />
+        </button>
+      </section>
+
+      <Footer onNavigate={onNavigate} />
+    </div>
+  )
+}
+
 /**
  * The before/after gallery's honest empty state. We never show stock or
  * generated cleanups — until a real one is documented, this space says so.
@@ -821,8 +1179,14 @@ function GalleryEmpty() {
   return (
     <div className="bb-imp-ba-empty">
       <div className="bb-imp-ba-frame" aria-hidden>
-        <span className="bb-imp-ba-frame-tag">Before</span>
-        <span className="bb-imp-ba-frame-tag">After</span>
+        <span className="bb-imp-ba-frame-tag">
+          <Camera className="size-6" />
+          Before
+        </span>
+        <span className="bb-imp-ba-frame-tag">
+          <Camera className="size-6" />
+          After
+        </span>
       </div>
       <div className="bb-imp-ba-empty-copy">
         <h2 className="bb-imp-h2">The first success story starts here.</h2>
