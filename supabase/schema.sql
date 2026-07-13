@@ -207,3 +207,39 @@ create policy "report photos public read" on storage.objects
 drop policy if exists "report photos anon insert" on storage.objects;
 create policy "report photos anon insert" on storage.objects
   for insert with check (bucket_id = 'report-photos');
+
+-- ============================================================
+-- Image moderation gate
+-- Anonymous uploads go to a PRIVATE quarantine bucket and are only copied into
+-- the public bucket above once the `moderate-photo` Edge Function approves them.
+-- Anyone can upload (write-only); only the service role can read/list/delete.
+-- ============================================================
+insert into storage.buckets (id, name, public)
+values ('report-quarantine', 'report-quarantine', false)
+on conflict (id) do nothing;
+
+drop policy if exists "quarantine anon insert" on storage.objects;
+create policy "quarantine anon insert" on storage.objects
+  for insert with check (bucket_id = 'report-quarantine');
+-- No select/update/delete policy for anon: the private bucket is invisible to
+-- the public; the Edge Function touches it with the service-role key.
+
+-- Audit + review queue: one row per moderation decision. No raw PII (IP is
+-- hashed). Operators can read it; only the service role writes.
+create table if not exists public.moderation_events (
+  id          uuid primary key default gen_random_uuid(),
+  report_id   uuid references public.reports on delete cascade,
+  kind        text not null default 'report' check (kind in ('report', 'after')),
+  status      text not null check (status in ('approved', 'rejected', 'review')),
+  scores      jsonb,
+  ip_hash     text,
+  created_at  timestamptz not null default now()
+);
+create index if not exists moderation_events_status_idx on public.moderation_events (status);
+create index if not exists moderation_events_ip_idx on public.moderation_events (ip_hash, created_at desc);
+
+alter table public.moderation_events enable row level security;
+drop policy if exists moderation_read on public.moderation_events;
+create policy moderation_read on public.moderation_events
+  for select using (auth.role() = 'authenticated');
+-- Writes happen only via the service role (Edge Function), which bypasses RLS.

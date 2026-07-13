@@ -286,6 +286,8 @@ export default function ReportSheet({
               )}
               <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
                 Photos help neighbors and LGUs verify the report faster. Add up to {MAX_PHOTOS}.
+                Photos are checked before they appear publicly. Please upload only images
+                related to the reported waste issue.
               </p>
             </Section>
           )}

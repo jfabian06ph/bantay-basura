@@ -6,8 +6,7 @@ import { DONE_STATUSES, type LatLng, type Report } from '../types'
 import {
   insertReport,
   isBackendConnected,
-  setAfterPhoto,
-  uploadReportPhotos,
+  moderatePhotos,
   voteReport,
 } from '../supabase'
 import type { Mismatch } from '../components/LocationMismatchModal'
@@ -98,12 +97,27 @@ export function useReportFlow({
       ),
     )
     if (isBackendConnected && !isLocalId(id)) {
-      const [url] = await uploadReportPhotos([dataUrl])
-      await setAfterPhoto(id, url, 'volunteer')
-      // Swap the heavy inline data URL for the hosted one once it's up.
-      if (url !== dataUrl) {
+      // After photos go through the same moderation gate. The Edge Function sets
+      // after_image_url on approval; here we mirror the outcome locally.
+      const mod = await moderatePhotos(id, [dataUrl], 'after')
+      if (mod.approved[0]) {
+        const url = mod.approved[0]
         setReports((prev) =>
           prev.map((r) => (r.id === id ? { ...r, afterImageUrl: url } : r)),
+        )
+      } else {
+        // Rejected or held — pull the optimistic after photo back down.
+        setReports((prev) =>
+          prev.map((r) =>
+            r.id === id
+              ? { ...r, afterImageUrl: undefined, afterUploadedAt: undefined, afterUploadedBy: undefined }
+              : r,
+          ),
+        )
+        setCelebrateMsg(
+          mod.rejected > 0
+            ? "That photo couldn't be added. It may contain sensitive or unrelated content."
+            : 'Your photo is being checked before it appears publicly.',
         )
       }
     }
@@ -202,23 +216,49 @@ export function useReportFlow({
       )
     }
 
-    // Persist once the backend is live: upload photos to Storage, insert the
-    // row, then reconcile the optimistic pin with the real DB id.
+    // Persist once the backend is live. The report is created WITHOUT photos —
+    // nothing reaches the public map until moderation approves it. Approved
+    // photos are attached to the report server-side by the Edge Function.
     if (!isBackendConnected) return
-    const photos = await uploadReportPhotos(
-      draft.photoUrls ?? (draft.photoUrl ? [draft.photoUrl] : []),
-    )
     const saved = await insertReport({
       ...draft,
       ...locality,
-      photoUrls: photos,
-      photoUrl: photos[0],
+      photoUrls: [],
+      photoUrl: undefined,
     })
     if (saved) {
-      setReports((prev) => prev.map((r) => (r.id === localId ? saved : r)))
+      // Reconcile the temp id, but keep the reporter's own photos in their local
+      // view while moderation runs (others won't see them until approved).
+      setReports((prev) =>
+        prev.map((r) =>
+          r.id === localId
+            ? { ...saved, photoUrl: report.photoUrl, photoUrls: report.photoUrls }
+            : r,
+        ),
+      )
       setSubmitted((s) =>
         s && s.report.id === localId ? { report: saved, refId: s.refId } : s,
       )
+
+      const photos = draft.photoUrls ?? (draft.photoUrl ? [draft.photoUrl] : [])
+      if (photos.length) {
+        const mod = await moderatePhotos(saved.id, photos, 'report')
+        // Reflect the outcome locally: only approved photos remain.
+        setReports((prev) =>
+          prev.map((r) =>
+            r.id === saved.id
+              ? { ...r, photoUrls: mod.approved, photoUrl: mod.approved[0] }
+              : r,
+          ),
+        )
+        if (mod.rejected > 0) {
+          setCelebrateMsg(
+            "A photo couldn't be added. It may contain sensitive or unrelated content.",
+          )
+        } else if (mod.review > 0) {
+          setCelebrateMsg('Your photo is being checked and will appear once approved.')
+        }
+      }
     }
   }
 

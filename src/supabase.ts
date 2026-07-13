@@ -165,52 +165,79 @@ export async function voteReport(
   if (error) console.warn('[bantay-basura] failed to record confirmation:', error)
 }
 
-/** Attach the "after" photo that completes a cleanup (via SECURITY DEFINER RPC). */
-export async function setAfterPhoto(
-  id: string,
-  url: string,
-  byRole: ReportSource,
-): Promise<void> {
-  if (!supabase) return
-  const { error } = await supabase.rpc('set_after_photo', {
-    rid: id,
-    url,
-    by_role: byRole,
-  })
-  if (error) console.warn('[bantay-basura] failed to save after photo:', error)
+/**
+ * Verify an image's real type by magic bytes (never trust the extension). The
+ * Edge Function re-checks this server-side; this is the cheap first layer.
+ */
+export function sniffImageType(
+  bytes: Uint8Array,
+): 'image/jpeg' | 'image/png' | 'image/webp' | null {
+  if (bytes.length < 12) return null
+  if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'image/jpeg'
+  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return 'image/png'
+  if (
+    bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 &&
+    bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50
+  )
+    return 'image/webp'
+  return null
+}
+
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024 // 10 MB
+
+export interface ModerationResult {
+  /** Public URLs of images that passed moderation. */
+  approved: string[]
+  /** Count rejected outright (explicit/unrelated) or failing local validation. */
+  rejected: number
+  /** Count held for a human moderator (uncertain) — not published yet. */
+  review: number
 }
 
 /**
- * Upload data-URL photos to the public `report-photos` bucket and return their
- * public URLs. Any entry that isn't a data URL (already hosted) is passed
- * through untouched, and any upload that fails falls back to its data URL so a
- * flaky network never blocks a report from being filed.
+ * The image moderation gate. Each photo is uploaded to the PRIVATE quarantine
+ * bucket and passed to the `moderate-photo` Edge Function, which validates,
+ * re-encodes (stripping EXIF/GPS), runs SafeSearch, and only publishes approved
+ * images (attaching them to the report server-side). Nothing here reaches the
+ * public map until it is approved.
  */
-export async function uploadReportPhotos(dataUrls: string[]): Promise<string[]> {
-  if (!supabase || !dataUrls.length) return dataUrls
-  const out: string[] = []
+export async function moderatePhotos(
+  reportId: string,
+  dataUrls: string[],
+  kind: 'report' | 'after' = 'report',
+): Promise<ModerationResult> {
+  const out: ModerationResult = { approved: [], rejected: 0, review: 0 }
+  if (!supabase || !dataUrls.length) return out
   for (const src of dataUrls) {
-    if (!src.startsWith('data:')) {
-      out.push(src)
-      continue
-    }
     try {
       const blob = await (await fetch(src)).blob()
-      const ext = (blob.type.split('/')[1] || 'jpg').split('+')[0]
-      const path = `${crypto.randomUUID()}.${ext}`
-      const { error } = await supabase.storage
-        .from('report-photos')
-        .upload(path, blob, { contentType: blob.type || 'image/jpeg' })
-      if (error) {
-        console.warn('[bantay-basura] photo upload failed, keeping inline:', error)
-        out.push(src)
+      const bytes = new Uint8Array(await blob.arrayBuffer())
+      const type = sniffImageType(bytes)
+      if (!type || bytes.byteLength > MAX_UPLOAD_BYTES) {
+        out.rejected++
         continue
       }
-      const { data } = supabase.storage.from('report-photos').getPublicUrl(path)
-      out.push(data.publicUrl)
+      const path = `${crypto.randomUUID()}.${type.split('/')[1]}`
+      const up = await supabase.storage
+        .from('report-quarantine')
+        .upload(path, blob, { contentType: type })
+      if (up.error) {
+        out.review++
+        continue
+      }
+      const { data, error } = await supabase.functions.invoke('moderate-photo', {
+        body: { reportId, path, kind },
+      })
+      if (error) {
+        out.review++
+        continue
+      }
+      if (data?.status === 'approved' && data.url) out.approved.push(data.url as string)
+      else if (data?.status === 'rejected') out.rejected++
+      else out.review++
     } catch (e) {
-      console.warn('[bantay-basura] photo upload threw, keeping inline:', e)
-      out.push(src)
+      console.warn('[bantay-basura] moderation call failed, holding photo:', e)
+      out.review++
     }
   }
   return out
