@@ -4499,6 +4499,23 @@
   display: flex;
   gap: 10px;
 }
+/* Shown in place of the vote buttons once this device has confirmed (24h). */
+.bb-verify-locked {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 13px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.bb-verify-locked svg {
+  color: var(--green, #22c55e);
+}
 .bb-verify-btn {
   flex: 1;
   display: inline-flex;

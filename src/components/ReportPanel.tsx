@@ -71,6 +71,30 @@ const loadTracked = (): string[] => {
   }
 }
 
+// One confirmation per report per device, with a 24h cooldown — otherwise a
+// single person could manufacture consensus in either direction. (Real
+// abuse-resistance needs a server check; this is the honest client guard.)
+const VOTE_KEY = 'bb-voted'
+const VOTE_COOLDOWN_MS = 86_400_000
+const loadVoteLog = (): Record<string, number> => {
+  try {
+    return JSON.parse(localStorage.getItem(VOTE_KEY) || '{}')
+  } catch {
+    return {}
+  }
+}
+const recentlyVoted = (id: string): boolean =>
+  Date.now() - (loadVoteLog()[id] ?? 0) < VOTE_COOLDOWN_MS
+const recordVote = (id: string): void => {
+  try {
+    const log = loadVoteLog()
+    log[id] = Date.now()
+    localStorage.setItem(VOTE_KEY, JSON.stringify(log))
+  } catch {
+    /* ignore */
+  }
+}
+
 const DAY = 86_400_000
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
@@ -98,9 +122,14 @@ export default function ReportPanel({
   // After "Looks clean", invite an optional photo — one upload feeds the
   // cleanup evidence, transparency, and the monthly challenge.
   const [photoPrompt, setPhotoPrompt] = useState(false)
+  // Whether this device has already confirmed this report within the cooldown.
+  const [voted, setVoted] = useState(false)
 
   function handleConfirm(kind: 'stillHere' | 'cleared') {
+    if (voted) return
     onConfirm(report.id, kind)
+    recordVote(report.id)
+    setVoted(true)
     setAck(kind === 'cleared' ? 'cleared' : 'still')
     if (kind === 'cleared') setPhotoPrompt(true)
     window.clearTimeout(ackTimer.current)
@@ -111,6 +140,7 @@ export default function ReportPanel({
   useEffect(() => {
     setPhotoPrompt(false)
     setAck(null)
+    setVoted(recentlyVoted(report.id))
   }, [report.id])
 
   // The floating "Verify this report" CTA (shown while a report is open) asks
@@ -167,6 +197,12 @@ export default function ReportPanel({
   // Community verification split — powers the consensus tally under the buttons.
   const votes = report.stillHere + report.cleared
   const stillPct = votes ? Math.round((report.stillHere / votes) * 100) : 50
+  // Most recent signal on the report — makes the activity block feel alive.
+  const lastUpdatedMs = Math.max(
+    new Date(report.createdAt).getTime(),
+    report.resolvedAt ? new Date(report.resolvedAt).getTime() : 0,
+    report.afterUploadedAt ? new Date(report.afterUploadedAt).getTime() : 0,
+  )
 
   // Derived verification: an official touched it, or the crowd backed it.
   // The subtitle carries the credibility — who stands behind this report.
@@ -189,7 +225,7 @@ export default function ReportPanel({
   const green = STATUS_COLORS.resolved
   const timeline = [
     { label: 'Reported', icon: '📍', date: fmtDate(report.createdAt) },
-    { label: 'Verified', icon: '👥', date: inReviewDone ? (resolved ? 'Done' : 'In progress') : 'Pending' },
+    { label: 'Community Verification', icon: '👥', date: inReviewDone ? (resolved ? 'Done' : 'In progress') : 'Pending' },
     { label: 'Cleaned', icon: '🧹', date: report.resolvedAt ? fmtDate(report.resolvedAt) : 'Pending' },
     {
       label: 'Evidence Published',
@@ -215,12 +251,12 @@ export default function ReportPanel({
       date: fmtDate(report.createdAt),
     },
   ]
-  if (report.stillHere > 0)
+  if (votes > 0)
     activity.push({
       icon: <Users className="size-3.5" />,
       text: (
         <>
-          <b>{report.stillHere}</b> {report.stillHere === 1 ? 'resident' : 'residents'} confirmed
+          <b>{votes}</b> community {votes === 1 ? 'confirmation' : 'confirmations'}
         </>
       ),
       date: '',
@@ -506,8 +542,7 @@ export default function ReportPanel({
               <div className="bb-impact-row">
                 <Users className="size-4" />
                 <span>
-                  <b>{report.stillHere}</b>{' '}
-                  {report.stillHere === 1 ? 'resident' : 'residents'} confirmed the issue
+                  <b>{votes}</b> community {votes === 1 ? 'confirmation' : 'confirmations'}
                 </span>
               </div>
               <div className="bb-impact-row">
@@ -519,6 +554,10 @@ export default function ReportPanel({
                       ? 'LGU is responding'
                       : 'Visible to LGU responders'}
                 </span>
+              </div>
+              <div className="bb-impact-row">
+                <Clock className="size-4" />
+                <span>Last updated {relativeTime(lastUpdatedMs, now)}</span>
               </div>
               <div className="bb-impact-row">
                 <CalendarDays className="size-4" />
@@ -584,20 +623,27 @@ export default function ReportPanel({
 
             <div ref={verifyRef} className={`bb-verify ${verifyFlash ? 'bb-verify-flash' : ''}`}>
               <span className="bb-verify-q">Is this still here?</span>
-              <div className="bb-verify-btns">
-                <button
-                  className="bb-verify-btn"
-                  onClick={() => handleConfirm('stillHere')}
-                >
-                  <ThumbsUp className="size-4" /> Still here
-                </button>
-                <button
-                  className="bb-verify-btn bb-verify-btn-ok"
-                  onClick={() => handleConfirm('cleared')}
-                >
-                  <CheckCircle2 className="size-4" /> Looks clean
-                </button>
-              </div>
+              {voted ? (
+                <div className="bb-verify-locked" role="status">
+                  <CheckCircle2 className="size-4 shrink-0" />
+                  <span>You&rsquo;ve weighed in on this report. You can vote again tomorrow.</span>
+                </div>
+              ) : (
+                <div className="bb-verify-btns">
+                  <button
+                    className="bb-verify-btn"
+                    onClick={() => handleConfirm('stillHere')}
+                  >
+                    <ThumbsUp className="size-4" /> Still here
+                  </button>
+                  <button
+                    className="bb-verify-btn bb-verify-btn-ok"
+                    onClick={() => handleConfirm('cleared')}
+                  >
+                    <CheckCircle2 className="size-4" /> Looks clean
+                  </button>
+                </div>
+              )}
 
               {ack && (
                 <div
@@ -610,7 +656,7 @@ export default function ReportPanel({
                       <>
                         <Sparkles className="size-4 shrink-0" />
                         <span>
-                          <b>Community consensus reached.</b> This spot is verified clean 🎉
+                          <b>Community consensus reached.</b> The community agrees this spot is clean 🎉
                         </span>
                       </>
                     ) : (
@@ -664,29 +710,26 @@ export default function ReportPanel({
 
               {votes > 0 && (
                 <div className="bb-verify-tally">
+                  <span className="bb-verify-tally-k">Community Opinion</span>
                   <div className="bb-votes">
                     <div className="bb-vote-row is-clean">
                       <ThumbsUp className="size-[18px] shrink-0" />
                       <span>
-                        <b>{report.cleared}</b>{' '}
-                        {report.cleared === 1 ? 'resident says' : 'residents say'}{' '}
-                        <em>&ldquo;It&rsquo;s clean&rdquo;</em>
+                        <b>{report.cleared}</b> say it&rsquo;s clean
                       </span>
                     </div>
                     <div className="bb-vote-row is-still">
                       <ThumbsDown className="size-[18px] shrink-0" />
                       <span>
-                        <b>{report.stillHere}</b>{' '}
-                        {report.stillHere === 1 ? 'resident says' : 'residents say'}{' '}
-                        <em>&ldquo;It&rsquo;s still here&rdquo;</em>
+                        <b>{report.stillHere}</b> say it&rsquo;s still here
                       </span>
                     </div>
                   </div>
 
                   <div className="bb-consensus">
-                    <span className="bb-verify-tally-k">Community consensus</span>
+                    <span className="bb-verify-tally-k">Community Consensus</span>
                     <div className="bb-consensus-verdict">
-                      <b>{100 - stillPct}%</b> Cleaned
+                      <b>{100 - stillPct}%</b> say it&rsquo;s clean
                     </div>
                     <div className="bb-verify-bar">
                       <span className="bb-verify-seg is-still" style={{ width: `${stillPct}%` }} />
