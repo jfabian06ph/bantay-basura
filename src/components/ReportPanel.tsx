@@ -26,6 +26,7 @@ import { nearestMunicipality } from '../municipalities'
 import { distanceMeters, formatDistance } from '../lib/geo'
 import { relativeTime } from '../lib/stats'
 import { formatRef } from '../lib/ref'
+import { isAuthored, recentlyVoted, recordVote } from '../lib/votes'
 import ShareSheet from './ShareSheet'
 import BeforeAfter from './BeforeAfter'
 import { CATEGORY_ICON } from '../lib/categoryIcons'
@@ -33,7 +34,6 @@ import {
   CATEGORY_LABELS,
   STATUS_COLORS,
   STATUS_LABELS,
-  cleanupStage,
   awaitingAfterPhoto,
   communityConfirmed,
   confirmationsNeeded,
@@ -47,6 +47,7 @@ interface Props {
   userPos: UserLocation | null
   onConfirm: (id: string, kind: 'stillHere' | 'cleared') => void
   onUploadAfter: (id: string, dataUrl: string) => void
+  onUploadStill: (id: string, dataUrl: string) => void
   onClose: () => void
 }
 
@@ -71,31 +72,10 @@ const loadTracked = (): string[] => {
   }
 }
 
-// One confirmation per report per device, with a 24h cooldown — otherwise a
-// single person could manufacture consensus in either direction. (Real
-// abuse-resistance needs a server check; this is the honest client guard.)
-const VOTE_KEY = 'bb-voted'
-const VOTE_COOLDOWN_MS = 86_400_000
-const loadVoteLog = (): Record<string, number> => {
-  try {
-    return JSON.parse(localStorage.getItem(VOTE_KEY) || '{}')
-  } catch {
-    return {}
-  }
-}
-const recentlyVoted = (id: string): boolean =>
-  Date.now() - (loadVoteLog()[id] ?? 0) < VOTE_COOLDOWN_MS
-const recordVote = (id: string): void => {
-  try {
-    const log = loadVoteLog()
-    log[id] = Date.now()
-    localStorage.setItem(VOTE_KEY, JSON.stringify(log))
-  } catch {
-    /* ignore */
-  }
-}
-
 const DAY = 86_400_000
+// Confirmations needed before a consensus percentage is trustworthy enough to
+// show — fewer than this reads as false statistical confidence.
+const CONSENSUS_MIN = 5
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 
@@ -105,6 +85,7 @@ export default function ReportPanel({
   userPos,
   onConfirm,
   onUploadAfter,
+  onUploadStill,
   onClose,
 }: Props) {
   const [tracked, setTracked] = useState(false)
@@ -114,16 +95,19 @@ export default function ReportPanel({
   const [shareOpen, setShareOpen] = useState(false)
   const [lightbox, setLightbox] = useState<number | null>(null)
   const afterFileRef = useRef<HTMLInputElement>(null)
+  const stillFileRef = useRef<HTMLInputElement>(null)
   const verifyRef = useRef<HTMLDivElement>(null)
   const [verifyFlash, setVerifyFlash] = useState(false)
   // Confirmation acknowledgement — the little "received / N more needed" beat.
   const [ack, setAck] = useState<null | 'still' | 'cleared'>(null)
   const ackTimer = useRef<number | undefined>(undefined)
-  // After "Looks clean", invite an optional photo — one upload feeds the
-  // cleanup evidence, transparency, and the monthly challenge.
-  const [photoPrompt, setPhotoPrompt] = useState(false)
+  // After a confirmation, invite an optional photo. "Looks clean" asks for a
+  // cleanup shot; "Still here" asks for fresh evidence the waste is still there.
+  const [photoPromptKind, setPhotoPromptKind] = useState<'after' | 'still' | null>(null)
   // Whether this device has already confirmed this report within the cooldown.
   const [voted, setVoted] = useState(false)
+  // Whether this device authored the report — a permanent self-verify block.
+  const [owned, setOwned] = useState(false)
 
   function handleConfirm(kind: 'stillHere' | 'cleared') {
     if (voted) return
@@ -131,16 +115,18 @@ export default function ReportPanel({
     recordVote(report.id)
     setVoted(true)
     setAck(kind === 'cleared' ? 'cleared' : 'still')
-    if (kind === 'cleared') setPhotoPrompt(true)
+    setPhotoPromptKind(kind === 'cleared' ? 'after' : 'still')
     window.clearTimeout(ackTimer.current)
     ackTimer.current = window.setTimeout(() => setAck(null), 3600)
   }
   useEffect(() => () => window.clearTimeout(ackTimer.current), [])
   // Fresh prompt state whenever a different report is opened.
   useEffect(() => {
-    setPhotoPrompt(false)
+    setPhotoPromptKind(null)
     setAck(null)
-    setVoted(recentlyVoted(report.id))
+    const mine = isAuthored(report.id)
+    setOwned(mine)
+    setVoted(mine || recentlyVoted(report.id))
   }, [report.id])
 
   // The floating "Verify this report" CTA (shown while a report is open) asks
@@ -191,8 +177,35 @@ export default function ReportPanel({
   // afterImageUrl is canonical; fall back to legacy resolvedPhotoUrls.
   const beforePhoto = photos[0]
   const afterPhoto = report.afterImageUrl ?? report.resolvedPhotoUrls?.[0]
-  const showBeforeAfter = resolved && Boolean(beforePhoto && afterPhoto)
+  // Only ever compare REAL, approved photos — a moderated public URL, never a
+  // pending local data-URL. Otherwise we'd be faking a before/after.
+  const isApproved = (u?: string) => Boolean(u && !u.startsWith('data:'))
+  const canCompare = isApproved(beforePhoto) && isApproved(afterPhoto)
+  const showBeforeAfter = resolved && canCompare
+  // A cleanup photo can land before the report is formally resolved (someone
+  // marked it clean and attached evidence). The resolved "celebrate" block owns
+  // the comparison once done; until then surface it on its own so the timeline's
+  // "Cleanup evidence submitted" entry has something to show.
+  const showPendingAfter = Boolean(afterPhoto) && !resolved
   const awaitingAfter = awaitingAfterPhoto(report)
+
+  // "Still here" evidence snapshots, oldest first (as stored).
+  const updatePhotos = report.updatePhotos ?? []
+  // The lightbox gallery: original report photos first, then the update photos.
+  // Hero + thumbnails still key off `photos` (originals only); the timeline
+  // opens update photos at their offset index.
+  const galleryPhotos: { url: string; date: string; meta: string }[] = [
+    ...photos.map((url) => ({
+      url,
+      date: report.createdAt,
+      meta: `${area} · Added by a resident`,
+    })),
+    ...updatePhotos.map((p) => ({
+      url: p.url,
+      date: p.at,
+      meta: `${area} · "Still here" update`,
+    })),
+  ]
 
   // Community verification split — powers the consensus tally under the buttons.
   const votes = report.stillHere + report.cleared
@@ -217,37 +230,60 @@ export default function ReportPanel({
           }
         : null
 
-  // Four-step cleanup journey (report → review → clean → document). The active
-  // stage is derived; steps at or before it read as done.
-  const inReviewDone = report.status !== 'pending'
-  const stage = cleanupStage(report)
-  const stageIndex = { reported: 0, in_review: 1, cleaned: 2, documented: 3 }[stage]
+  // Four-step lifecycle: Reported → Community Verification → Cleanup Evidence
+  // → Resolved. The uploaded cleanup photo is the *evidence* that leads toward
+  // resolution, so it sits before "Resolved" — not as a final milestone after.
+  const hasCleanupEvidence = Boolean(afterPhoto)
+  const timelineStage = resolved ? 3 : hasCleanupEvidence ? 2 : 1
+  // Fully documented = resolved AND backed by a cleanup photo.
+  const fullyDocumented = resolved && hasCleanupEvidence
   const green = STATUS_COLORS.resolved
   const timeline = [
     { label: 'Reported', icon: '📍', date: fmtDate(report.createdAt) },
-    { label: 'Community Verification', icon: '👥', date: inReviewDone ? (resolved ? 'Done' : 'In progress') : 'Pending' },
-    { label: 'Cleaned', icon: '🧹', date: report.resolvedAt ? fmtDate(report.resolvedAt) : 'Pending' },
     {
-      label: 'Evidence Published',
-      icon: '📸',
+      label: 'Community Verification',
+      icon: '👥',
+      date: timelineStage > 1 ? 'Done' : 'In progress',
+    },
+    {
+      label: 'Cleanup Evidence',
+      icon: '📷',
       date: report.afterUploadedAt
         ? fmtDate(report.afterUploadedAt)
         : awaitingAfter
           ? 'Your turn'
           : 'Pending',
     },
+    {
+      label: 'Resolved',
+      icon: '✅',
+      date: report.resolvedAt ? fmtDate(report.resolvedAt) : 'Pending',
+    },
   ].map((s, i) => ({
     ...s,
-    done: i <= stageIndex,
-    tone: i < stageIndex ? green : i === stageIndex ? (resolved ? green : STATUS_COLORS.in_review) : null,
+    done: i <= timelineStage,
+    tone:
+      i < timelineStage
+        ? green
+        : i === timelineStage
+          ? resolved
+            ? green
+            : STATUS_COLORS.in_review
+          : null,
   }))
 
   // Community Activity Timeline — turns a static record into a living story.
   // Built from the report's known timestamps + community signals.
-  const activity: { icon: ReactNode; text: ReactNode; date: string }[] = [
+  const activity: {
+    icon: ReactNode
+    text: ReactNode
+    date: string
+    /** A maximizable snapshot; index points into the lightbox gallery. */
+    thumb?: { url: string; index: number }
+  }[] = [
     {
       icon: <MapPin className="size-3.5" />,
-      text: <>Reported by a <b>resident</b></>,
+      text: <>Report submitted</>,
       date: fmtDate(report.createdAt),
     },
   ]
@@ -256,11 +292,22 @@ export default function ReportPanel({
       icon: <Users className="size-3.5" />,
       text: (
         <>
-          <b>{votes}</b> community {votes === 1 ? 'confirmation' : 'confirmations'}
+          <b>{votes}</b> community {votes === 1 ? 'confirmation' : 'confirmations'} received
         </>
       ),
       date: '',
     })
+  // "Still here" evidence snapshots — each as its own dated, maximizable entry.
+  // The lightbox gallery is [original photos, ...update photos], so an update
+  // photo's index is offset by the original photo count.
+  updatePhotos.forEach((p, i) =>
+    activity.push({
+      icon: <Camera className="size-3.5" />,
+      text: <>Still-here photo submitted</>,
+      date: fmtDate(p.at),
+      thumb: { url: p.url, index: photos.length + i },
+    }),
+  )
   if (report.status !== 'pending')
     activity.push({
       icon: <ShieldCheck className="size-3.5" />,
@@ -276,7 +323,7 @@ export default function ReportPanel({
   if (report.afterUploadedAt)
     activity.push({
       icon: <Camera className="size-3.5" />,
-      text: <>After photo uploaded</>,
+      text: <>Cleanup evidence submitted</>,
       date: fmtDate(report.afterUploadedAt),
     })
 
@@ -287,7 +334,22 @@ export default function ReportPanel({
     reader.onload = () => {
       if (typeof reader.result === 'string') {
         onUploadAfter(report.id, reader.result)
-        setPhotoPrompt(false)
+        setPhotoPromptKind(null)
+        showToast('Photo added. Thank you for helping verify! 🙌')
+      }
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
+
+  function handleStillFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        onUploadStill(report.id, reader.result)
+        setPhotoPromptKind(null)
         showToast('Photo added. Thank you for helping verify! 🙌')
       }
     }
@@ -335,7 +397,9 @@ export default function ReportPanel({
   }
 
   const stepLightbox = (dir: 1 | -1) =>
-    setLightbox((i) => (i === null ? i : (i + dir + photos.length) % photos.length))
+    setLightbox((i) =>
+      i === null ? i : (i + dir + galleryPhotos.length) % galleryPhotos.length,
+    )
 
   // Arrow-key + Esc navigation while the lightbox is open.
   useEffect(() => {
@@ -348,7 +412,7 @@ export default function ReportPanel({
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lightbox, photos.length])
+  }, [lightbox, galleryPhotos.length])
 
   return (
     <>
@@ -381,7 +445,12 @@ export default function ReportPanel({
                 <MapPin className="size-3.5 bb-photo-place-icon" />
                 <span className="bb-photo-place-text">
                   {area}
-                  {dist && <span className="bb-photo-dist"> · {dist}</span>}
+                  {/* Freshness leads; distance is secondary (people care more
+                      about when it happened than how far away it is). */}
+                  <span className="bb-photo-dist">
+                    {' · '}Reported {relativeTime(new Date(report.createdAt).getTime(), now)}
+                    {dist ? ` · ${dist}` : ''}
+                  </span>
                 </span>
               </span>
               <div className="bb-photo-badges">
@@ -391,8 +460,8 @@ export default function ReportPanel({
                 <span className="bb-photo-reported">
                   {hasPhoto ? <Camera className="size-3.5" /> : <Clock className="size-3.5" />}
                   {hasPhoto
-                    ? `${photos.length} ${photos.length === 1 ? 'Photo' : 'Photos'} · ${relativeTime(new Date(report.createdAt).getTime(), now)}`
-                    : `Reported ${relativeTime(new Date(report.createdAt).getTime(), now)}`}
+                    ? `${photos.length} ${photos.length === 1 ? 'Photo' : 'Photos'}`
+                    : 'No photo yet'}
                 </span>
               </div>
             </div>
@@ -435,14 +504,37 @@ export default function ReportPanel({
                   Resolved by <b>{area} LGU</b>
                   {report.resolvedAt ? ` · ${fmtDate(report.resolvedAt)}` : ''}
                 </p>
-                {showBeforeAfter && (
+                {showBeforeAfter ? (
                   <div className="bb-celebrate-ba">
                     <span className="bb-rsheet-k">Before → After</span>
                     <BeforeAfter before={beforePhoto} after={afterPhoto!} />
                   </div>
+                ) : (
+                  afterPhoto && (
+                    <div className="bb-celebrate-ba">
+                      <span className="bb-rsheet-k">Cleanup evidence</span>
+                      <img className="bb-after-pending-img" src={afterPhoto} alt="Cleanup evidence" />
+                    </div>
+                  )
                 )}
                 <p className="bb-celebrate-thanks">
                   Salamat sa pagtulong na panatilihing malinis ang ating komunidad. 💚
+                </p>
+              </div>
+            )}
+
+            {showPendingAfter && (
+              <div className="bb-after-pending">
+                <span className="bb-rsheet-k">Cleanup Evidence Submitted</span>
+                {canCompare ? (
+                  <BeforeAfter before={beforePhoto} after={afterPhoto!} />
+                ) : (
+                  <img className="bb-after-pending-img" src={afterPhoto!} alt="Cleanup evidence" />
+                )}
+                <p className="bb-after-pending-note">
+                  A community member submitted a cleanup photo. It&rsquo;s awaiting
+                  confirmation from the community before this report is marked as
+                  resolved.
                 </p>
               </div>
             )}
@@ -561,7 +653,15 @@ export default function ReportPanel({
               </div>
               <div className="bb-impact-row">
                 <CalendarDays className="size-4" />
-                <span>{resolved ? `Resolved in ${daysOpen} days` : `Open for ${daysOpen} days`}</span>
+                <span>
+                  {resolved
+                    ? `Resolved in ${daysOpen} ${daysOpen === 1 ? 'day' : 'days'}`
+                    : daysOpen === 0
+                      ? 'Reported today'
+                      : daysOpen === 1
+                        ? 'Reported yesterday'
+                        : `Reported ${daysOpen} days ago`}
+                </span>
               </div>
             </div>
 
@@ -569,8 +669,8 @@ export default function ReportPanel({
             <div className="bb-rsheet-section">
               <span className="bb-rsheet-krow">
                 <span className="bb-rsheet-k">Cleanup progress</span>
-                <span className={`bb-cl-badge ${stage === 'documented' ? 'is-earned' : ''}`}>
-                  <Award className="size-3.5" /> {stage === 'documented' ? 'Documented' : 'In progress'}
+                <span className={`bb-cl-badge ${fullyDocumented ? 'is-earned' : ''}`}>
+                  <Award className="size-3.5" /> {fullyDocumented ? 'Documented' : 'In progress'}
                 </span>
               </span>
               <ol className="bb-timeline">
@@ -614,7 +714,7 @@ export default function ReportPanel({
                 </div>
               )}
 
-              {stage === 'documented' && (
+              {fullyDocumented && (
                 <div className="bb-after-done">
                   <Award className="size-4" /> Cleanup fully documented by the community. Thank you!
                 </div>
@@ -626,7 +726,11 @@ export default function ReportPanel({
               {voted ? (
                 <div className="bb-verify-locked" role="status">
                   <CheckCircle2 className="size-4 shrink-0" />
-                  <span>You&rsquo;ve weighed in on this report. You can vote again tomorrow.</span>
+                  <span>
+                    {owned
+                      ? 'You reported this, so you count as the first resident confirming it. Others can now verify it.'
+                      : 'You’ve weighed in on this report. You can vote again tomorrow.'}
+                  </span>
                 </div>
               ) : (
                 <div className="bb-verify-btns">
@@ -676,31 +780,41 @@ export default function ReportPanel({
                     <>
                       <ThumbsUp className="size-4 shrink-0" />
                       <span>
-                        Thanks, you marked this <b>still here</b>
+                        Your confirmation has been recorded.
+                        <small className="bb-ack-sub">
+                          You can update your confirmation again tomorrow.
+                        </small>
                       </span>
                     </>
                   )}
                 </div>
               )}
 
-              {photoPrompt && (
+              {photoPromptKind && (
                 <div className="bb-photo-prompt">
                   <div className="bb-photo-prompt-head">
-                    <Camera className="size-4 shrink-0" /> Can you add a photo?
+                    <Camera className="size-4 shrink-0" />{' '}
+                    {photoPromptKind === 'after'
+                      ? 'Add a cleanup photo'
+                      : 'Help others verify this report'}
                   </div>
                   <p className="bb-photo-prompt-body">
-                    Optional: a quick snap helps everyone verify the cleanup.
+                    {photoPromptKind === 'after'
+                      ? 'Upload a recent photo showing the area has been cleaned. Your photo will be reviewed before it becomes public.'
+                      : 'Upload a recent photo showing that the waste is still here. Your photo will be reviewed before it becomes public.'}
                   </p>
                   <div className="bb-photo-prompt-actions">
                     <button
                       className="bb-photo-prompt-upload"
-                      onClick={() => afterFileRef.current?.click()}
+                      onClick={() =>
+                        (photoPromptKind === 'after' ? afterFileRef : stillFileRef).current?.click()
+                      }
                     >
                       <Upload className="size-4" /> Add photo
                     </button>
                     <button
                       className="bb-photo-prompt-skip"
-                      onClick={() => setPhotoPrompt(false)}
+                      onClick={() => setPhotoPromptKind(null)}
                     >
                       Not now
                     </button>
@@ -710,7 +824,7 @@ export default function ReportPanel({
 
               {votes > 0 && (
                 <div className="bb-verify-tally">
-                  <span className="bb-verify-tally-k">Community Opinion</span>
+                  <span className="bb-verify-tally-k">Community Check</span>
                   <div className="bb-votes">
                     <div className="bb-vote-row is-clean">
                       <ThumbsUp className="size-[18px] shrink-0" />
@@ -726,21 +840,32 @@ export default function ReportPanel({
                     </div>
                   </div>
 
-                  <div className="bb-consensus">
-                    <span className="bb-verify-tally-k">Community Consensus</span>
-                    <div className="bb-consensus-verdict">
-                      <b>{100 - stillPct}%</b> say it&rsquo;s clean
+                  {/* A percentage from a handful of votes reads as false
+                      precision — only show consensus once there's a real basis. */}
+                  {votes >= CONSENSUS_MIN ? (
+                    <div className="bb-consensus">
+                      <span className="bb-verify-tally-k">Community Consensus</span>
+                      <div className="bb-consensus-verdict">
+                        <b>{100 - stillPct}%</b> say it&rsquo;s clean
+                      </div>
+                      <div className="bb-verify-bar">
+                        <span className="bb-verify-seg is-still" style={{ width: `${stillPct}%` }} />
+                        <span
+                          className="bb-verify-seg is-cleared"
+                          style={{ width: `${100 - stillPct}%` }}
+                        />
+                      </div>
+                      <span className="bb-verify-basis">
+                        Based on {votes} community confirmations
+                      </span>
                     </div>
-                    <div className="bb-verify-bar">
-                      <span className="bb-verify-seg is-still" style={{ width: `${stillPct}%` }} />
-                      <span
-                        className="bb-verify-seg is-cleared"
-                        style={{ width: `${100 - stillPct}%` }}
-                      />
+                  ) : (
+                    <div className="bb-consensus">
+                      <span className="bb-consensus-pending">
+                        Not enough community confirmations yet
+                      </span>
                     </div>
-                  </div>
-
-                  <span className="bb-verify-basis">Based on {votes} community confirmations</span>
+                  )}
                 </div>
               )}
             </div>
@@ -754,6 +879,14 @@ export default function ReportPanel({
               hidden
               onChange={handleAfterFile}
             />
+            {/* Hidden picker for a "still here" evidence snapshot. */}
+            <input
+              ref={stillFileRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={handleStillFile}
+            />
 
             {/* Community Activity — the report as a living story */}
             <div className="bb-rsheet-section">
@@ -765,7 +898,19 @@ export default function ReportPanel({
                       <span className="bb-activity-dot">{a.icon}</span>
                       {i < activity.length - 1 && <span className="bb-activity-line" />}
                     </span>
-                    <span className="bb-activity-text">{a.text}</span>
+                    <span className="bb-activity-text">
+                      {a.text}
+                      {a.thumb && (
+                        <button
+                          type="button"
+                          className="bb-activity-thumb"
+                          onClick={() => setLightbox(a.thumb!.index)}
+                          aria-label="View photo"
+                        >
+                          <img src={a.thumb.url} alt="Still here evidence" />
+                        </button>
+                      )}
+                    </span>
                     {a.date && <span className="bb-activity-date">{a.date}</span>}
                   </li>
                 ))}
@@ -793,7 +938,7 @@ export default function ReportPanel({
           </button>
 
           <div className="bb-lightbox-stage" onClick={(e) => e.stopPropagation()}>
-            {photos.length > 1 && (
+            {galleryPhotos.length > 1 && (
               <button
                 className="bb-lightbox-nav"
                 onClick={() => stepLightbox(-1)}
@@ -807,7 +952,7 @@ export default function ReportPanel({
               className="bb-lightbox-figure"
               onTouchStart={(e) => (touchX.current = e.touches[0].clientX)}
               onTouchEnd={(e) => {
-                if (touchX.current === null || photos.length < 2) return
+                if (touchX.current === null || galleryPhotos.length < 2) return
                 const dx = e.changedTouches[0].clientX - touchX.current
                 if (Math.abs(dx) > 40) stepLightbox(dx < 0 ? 1 : -1)
                 touchX.current = null
@@ -815,22 +960,23 @@ export default function ReportPanel({
             >
               <img
                 className="bb-lightbox-img"
-                src={photos[lightbox]}
-                alt={`Photo ${lightbox + 1} of ${photos.length}`}
+                src={galleryPhotos[lightbox]?.url}
+                alt={`Photo ${lightbox + 1} of ${galleryPhotos.length}`}
               />
               <figcaption className="bb-lightbox-cap">
                 <span className="bb-lightbox-cap-date">
-                  {new Date(report.createdAt).toLocaleDateString(undefined, {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                  })}
+                  {new Date(galleryPhotos[lightbox]?.date ?? report.createdAt).toLocaleDateString(
+                    undefined,
+                    { year: 'numeric', month: 'short', day: 'numeric' },
+                  )}
                 </span>
-                <span className="bb-lightbox-cap-meta">{area} · Added by a resident</span>
+                <span className="bb-lightbox-cap-meta">
+                  {galleryPhotos[lightbox]?.meta ?? `${area} · Added by a resident`}
+                </span>
               </figcaption>
             </figure>
 
-            {photos.length > 1 && (
+            {galleryPhotos.length > 1 && (
               <button
                 className="bb-lightbox-nav"
                 onClick={() => stepLightbox(1)}
@@ -841,9 +987,9 @@ export default function ReportPanel({
             )}
           </div>
 
-          {photos.length > 1 && (
+          {galleryPhotos.length > 1 && (
             <div className="bb-lightbox-count">
-              Photo {lightbox + 1} of {photos.length}
+              Photo {lightbox + 1} of {galleryPhotos.length}
             </div>
           )}
         </div>

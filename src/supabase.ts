@@ -43,6 +43,8 @@ interface ReportRow {
   after_image_url: string | null
   after_uploaded_at: string | null
   after_uploaded_by: ReportSource | null
+  /** Embedded evidence photos (see report_photos). Present on loads, not inserts. */
+  report_photos?: { url: string; kind: string; created_at: string }[] | null
 }
 
 /** Columns selected for a full report — shared by loads and insert-returns. */
@@ -74,6 +76,10 @@ function fromRow(row: ReportRow): Report {
     afterImageUrl: row.after_image_url ?? undefined,
     afterUploadedAt: row.after_uploaded_at ?? undefined,
     afterUploadedBy: row.after_uploaded_by ?? undefined,
+    updatePhotos: (row.report_photos ?? [])
+      .filter((p) => p.kind === 'still_here')
+      .map((p) => ({ url: p.url, at: p.created_at }))
+      .sort((a, b) => a.at.localeCompare(b.at)),
   }
 }
 
@@ -86,13 +92,56 @@ export async function loadReports(): Promise<Report[] | null> {
   if (!supabase) return null
   const { data, error } = await supabase
     .from('reports')
-    .select(REPORT_COLS)
+    .select(`${REPORT_COLS}, report_photos(url, kind, created_at)`)
     .order('created_at', { ascending: false })
   if (error || !data) {
     console.warn('[bantay-basura] failed to load reports from Supabase:', error)
     return null
   }
   return (data as unknown as ReportRow[]).map(fromRow)
+}
+
+/**
+ * Live updates. Subscribe to the report tables so the map reflects other
+ * residents' actions without a refresh: new reports (INSERT), confirmations /
+ * status / after-photo changes (UPDATE on reports), and approved "still here"
+ * evidence (INSERT on report_photos). Returns an unsubscribe function; a no-op
+ * when the backend isn't configured. Only rows the public-read RLS allows are
+ * delivered.
+ */
+export function subscribeReportChanges(handlers: {
+  onInsert: (report: Report) => void
+  onUpdate: (report: Report) => void
+  onStillPhoto: (reportId: string, photo: { url: string; at: string }) => void
+}): () => void {
+  if (!supabase) return () => {}
+  const client = supabase
+  const channel = client
+    .channel('report-changes')
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'reports' },
+      (payload) => handlers.onInsert(fromRow(payload.new as unknown as ReportRow)),
+    )
+    .on(
+      'postgres_changes',
+      { event: 'UPDATE', schema: 'public', table: 'reports' },
+      (payload) => handlers.onUpdate(fromRow(payload.new as unknown as ReportRow)),
+    )
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'report_photos' },
+      (payload) => {
+        const row = payload.new as { report_id: string; url: string; kind: string; created_at: string }
+        if (row.kind === 'still_here') {
+          handlers.onStillPhoto(row.report_id, { url: row.url, at: row.created_at })
+        }
+      },
+    )
+    .subscribe()
+  return () => {
+    void client.removeChannel(channel)
+  }
 }
 
 /** The fields a resident supplies when flagging waste (see `useReportFlow`). */
@@ -204,7 +253,7 @@ export interface ModerationResult {
 export async function moderatePhotos(
   reportId: string,
   dataUrls: string[],
-  kind: 'report' | 'after' = 'report',
+  kind: 'report' | 'after' | 'still_here' = 'report',
 ): Promise<ModerationResult> {
   const out: ModerationResult = { approved: [], rejected: 0, review: 0 }
   if (!supabase || !dataUrls.length) return out

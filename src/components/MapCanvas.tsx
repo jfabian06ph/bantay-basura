@@ -103,6 +103,7 @@ interface Props {
   selectedReport: Report | null
   onConfirmReport: (id: string, kind: 'stillHere' | 'cleared') => void
   onUploadAfter: (id: string, dataUrl: string) => void
+  onUploadStill: (id: string, dataUrl: string) => void
   onSelectReport: (r: Report) => void
   onCloseReport: () => void
   onJump: (target: Target) => void
@@ -151,6 +152,7 @@ export default function MapCanvas({
   selectedReport,
   onConfirmReport,
   onUploadAfter,
+  onUploadStill,
   onSelectReport,
   onCloseReport,
   onJump,
@@ -244,6 +246,7 @@ export default function MapCanvas({
           userPos={userPos}
           onConfirm={onConfirmReport}
           onUploadAfter={onUploadAfter}
+          onUploadStill={onUploadStill}
           onClose={onCloseReport}
         />
       )}

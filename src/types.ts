@@ -63,6 +63,20 @@ export interface Report {
   afterImageUrl?: string
   afterUploadedAt?: string
   afterUploadedBy?: ReportSource
+  /**
+   * Evidence snapshots added over the report's life — currently the photos
+   * residents attach when confirming a report is "still here". Each carries its
+   * own timestamp so they can sit on the activity timeline. (DB: report_photos
+   * rows with kind 'still_here'.)
+   */
+  updatePhotos?: ReportPhoto[]
+}
+
+/** One dated evidence photo attached to a report after it was created. */
+export interface ReportPhoto {
+  url: string
+  /** ISO timestamp the photo was added. */
+  at: string
 }
 
 /**

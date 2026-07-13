@@ -94,7 +94,7 @@ Deno.serve(async (req) => {
 
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY)
 
-  let body: { reportId?: string; path?: string; kind?: 'report' | 'after' }
+  let body: { reportId?: string; path?: string; kind?: 'report' | 'after' | 'still_here' }
   try {
     body = await req.json()
   } catch {
@@ -201,6 +201,10 @@ Deno.serve(async (req) => {
 
   if (kind === 'after') {
     await supabase.from('reports').update({ after_image_url: publicUrl, after_uploaded_at: new Date().toISOString(), after_uploaded_by: 'volunteer' }).eq('id', reportId)
+  } else if (kind === 'still_here') {
+    // Timeline evidence — a fresh snapshot showing the waste is still there.
+    // One row per photo (its own timestamp) so the app can place it in order.
+    await supabase.from('report_photos').insert({ report_id: reportId, url: publicUrl, kind: 'still_here' })
   } else {
     const { data: rep } = await supabase.from('reports').select('photo_url, photo_urls').eq('id', reportId).single()
     const urls = [...((rep?.photo_urls as string[] | null) ?? []), publicUrl]

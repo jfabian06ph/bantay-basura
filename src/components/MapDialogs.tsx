@@ -14,6 +14,9 @@ interface Props {
   pendingDetected: boolean
   onAdjustLocation: () => void
   onUseMyLocation: () => void
+  position: LatLng | null
+  locationAck: boolean
+  onRequestLocationNext: (coords: LatLng) => Promise<boolean>
 
   mismatch: Mismatch | null
   onMismatchUseCurrent: () => void
@@ -37,6 +40,9 @@ export default function MapDialogs({
   pendingDetected,
   onAdjustLocation,
   onUseMyLocation,
+  position,
+  locationAck,
+  onRequestLocationNext,
   mismatch,
   onMismatchUseCurrent,
   onMismatchKeepChosen,
@@ -57,6 +63,9 @@ export default function MapDialogs({
         detected={pendingDetected}
         onAdjustLocation={onAdjustLocation}
         onUseMyLocation={onUseMyLocation}
+        position={position}
+        locationAck={locationAck}
+        onRequestLocationNext={onRequestLocationNext}
       />
 
       <LocationMismatchModal
