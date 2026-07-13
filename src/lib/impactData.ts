@@ -2,6 +2,15 @@
  * Mock data for the Impact community hub. Kept in one place so it can later be
  * swapped for live Supabase queries without touching the page components.
  */
+
+/**
+ * Founding mode. While true, the Impact page shows an honest "we're just
+ * getting started — become a founding partner" experience instead of the
+ * activity/partner data below (which is illustrative until real communities
+ * and partners exist). Flip to false once there are real organised cleanups
+ * and partners to feature.
+ */
+export const FOUNDING_MODE = true
 import {
   Waves,
   Recycle,
