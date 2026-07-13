@@ -1,13 +1,13 @@
 /* ============================================================
-   Operations Center — dark civic console theme
+   Operations Center — light civic console theme
    ============================================================ */
 .ops {
   display: flex;
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
-  background: #0a111e;
-  color: #e8eef7;
+  background: #eef1f7;
+  color: #1b2a43;
   font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
 }
 
@@ -17,8 +17,8 @@
   flex: none;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(180deg, #0d1626, #0a1120);
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  background: #ffffff;
+  border-right: 1px solid #e4e9f1;
   padding: 18px 12px;
 }
 .ops-brand {
@@ -31,7 +31,8 @@
   width: 38px;
   height: 38px;
   border-radius: 10px;
-  background: #fff;
+  background: #eef2f7;
+  border: 1px solid #e4e9f1;
   padding: 3px;
 }
 .ops-brand-name {
@@ -42,7 +43,7 @@
 .ops-brand-sub {
   font-size: 11px;
   font-weight: 700;
-  color: #7f8ca3;
+  color: #8a95a8;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -61,7 +62,7 @@
   border-radius: 11px;
   background: transparent;
   border: none;
-  color: #aeb9cc;
+  color: #526079;
   font-size: 14px;
   font-weight: 600;
   text-align: left;
@@ -69,16 +70,17 @@
   transition: background 0.16s ease, color 0.16s ease;
 }
 .ops-nav-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: #fff;
+  background: #f1f4f9;
+  color: #1b2a43;
 }
-.ops-nav-active {
-  background: rgba(227, 30, 47, 0.14);
-  color: #fff;
+.ops-nav-active,
+.ops-nav-active:hover {
+  background: rgba(227, 30, 47, 0.1);
+  color: var(--primary);
   box-shadow: inset 3px 0 0 var(--primary);
 }
 .ops-sidebar-foot {
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid #e4e9f1;
   padding-top: 10px;
 }
 .ops-signout {
@@ -90,14 +92,14 @@
   border-radius: 11px;
   background: transparent;
   border: none;
-  color: #aeb9cc;
+  color: #526079;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
 }
 .ops-signout:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: #fff;
+  background: #f1f4f9;
+  color: #1b2a43;
 }
 
 /* ---- Main ---- */
@@ -112,8 +114,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 24px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(13, 22, 38, 0.6);
+  border-bottom: 1px solid #e4e9f1;
+  background: #ffffff;
 }
 .ops-title {
   font-size: 20px;
@@ -126,8 +128,8 @@
   margin-left: 10px;
   font-size: 11px;
   font-weight: 800;
-  color: #f5c451;
-  background: rgba(245, 196, 81, 0.14);
+  color: #b45309;
+  background: #fef3c7;
   padding: 3px 8px;
   border-radius: 999px;
   vertical-align: middle;
@@ -146,7 +148,7 @@
 }
 .ops-user-role {
   font-size: 11px;
-  color: #7f8ca3;
+  color: #8a95a8;
   text-transform: capitalize;
 }
 .ops-avatar {
@@ -172,10 +174,11 @@
   gap: 20px;
 }
 .ops-card {
-  background: #101b2e;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #ffffff;
+  border: 1px solid #e7ecf3;
   border-radius: 16px;
   padding: 18px;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.05);
 }
 .ops-card-head {
   display: flex;
@@ -192,13 +195,13 @@
 .ops-link {
   background: none;
   border: none;
-  color: #8fb4ff;
+  color: #2563eb;
   font-weight: 700;
   font-size: 13px;
   cursor: pointer;
 }
 .ops-empty {
-  color: #7f8ca3;
+  color: #8a95a8;
   font-size: 14px;
   padding: 14px 4px;
   text-align: center;
@@ -211,10 +214,11 @@
   gap: 12px;
 }
 .ops-kpi {
-  background: #101b2e;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #ffffff;
+  border: 1px solid #e7ecf3;
   border-radius: 14px;
   padding: 16px;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.05);
 }
 .ops-kpi-val {
   font-size: 30px;
@@ -241,7 +245,7 @@
   align-items: center;
   gap: 12px;
   padding: 11px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid #eef1f6;
 }
 .ops-list-row:last-child {
   border-bottom: none;
@@ -261,7 +265,7 @@
 }
 .ops-list-time {
   font-size: 12px;
-  color: #7f8ca3;
+  color: #8a95a8;
   white-space: nowrap;
 }
 
@@ -287,17 +291,17 @@
   gap: 7px;
   padding: 8px 14px;
   border-radius: 999px;
-  background: #101b2e;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #b4c0d3;
+  background: #ffffff;
+  border: 1px solid #dbe3ee;
+  color: #475569;
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
 }
 .ops-chip-on {
-  background: rgba(227, 30, 47, 0.16);
-  border-color: rgba(227, 30, 47, 0.4);
-  color: #fff;
+  background: rgba(227, 30, 47, 0.1);
+  border-color: rgba(227, 30, 47, 0.35);
+  color: var(--primary);
 }
 .ops-chip-n {
   font-size: 11px;
@@ -320,14 +324,14 @@
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #7f8ca3;
+  color: #8a95a8;
   font-weight: 800;
   padding: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid #e7ecf3;
 }
 .ops-table td {
   padding: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid #eef1f6;
   vertical-align: middle;
 }
 .ops-row-busy {
@@ -345,13 +349,16 @@
 /* Inputs / buttons */
 .ops-input,
 .ops-select {
-  background: #0b1524;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #e8eef7;
+  background: #ffffff;
+  border: 1px solid #d8e0ea;
+  color: #1b2a43;
   border-radius: 10px;
   padding: 9px 12px;
   font-size: 13px;
   font-weight: 600;
+}
+.ops-input::placeholder {
+  color: #98a3b5;
 }
 .ops-search {
   min-width: 280px;
@@ -382,9 +389,9 @@
   cursor: not-allowed;
 }
 .ops-btn-sm {
-  background: rgba(255, 255, 255, 0.08);
-  color: #e8eef7;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #eef1f6;
+  color: #334155;
+  border: 1px solid #dbe3ee;
   border-radius: 8px;
   padding: 6px 11px;
   font-size: 12px;
@@ -392,12 +399,12 @@
   cursor: pointer;
 }
 .ops-btn-sm:hover {
-  background: rgba(255, 255, 255, 0.14);
+  background: #e2e8f0;
 }
 .ops-btn-ok {
-  background: rgba(34, 197, 94, 0.16);
+  background: #dcfce7;
   border-color: rgba(34, 197, 94, 0.4);
-  color: #86efac;
+  color: #15803d;
 }
 .ops-actions {
   display: flex;
@@ -427,7 +434,7 @@
   flex-direction: column;
   gap: 4px;
   font-size: 13px;
-  color: #aeb9cc;
+  color: #526079;
   margin-bottom: 14px;
 }
 
@@ -445,7 +452,7 @@
 }
 .ops-bar-label {
   font-size: 13px;
-  color: #cdd6e4;
+  color: #475569;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -453,7 +460,7 @@
 .ops-bar-track {
   height: 10px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.07);
+  background: #eef1f6;
   overflow: hidden;
 }
 .ops-bar-fill {
@@ -496,7 +503,7 @@
 }
 .ops-spark-label {
   font-size: 11px;
-  color: #7f8ca3;
+  color: #8a95a8;
 }
 
 /* Settings */
@@ -507,7 +514,7 @@
   display: flex;
   justify-content: space-between;
   padding: 10px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid #eef1f6;
   font-size: 14px;
 }
 .ops-kv span {
@@ -523,7 +530,7 @@
   align-items: center;
   gap: 10px;
   font-size: 13px;
-  color: #cdd6e4;
+  color: #475569;
 }
 
 /* Map section */
@@ -533,7 +540,7 @@
   min-height: 420px;
   border-radius: 16px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid #e7ecf3;
 }
 .ops-map .bb-map {
   position: absolute;
@@ -571,10 +578,10 @@
 }
 .ops-admin-count {
   font-size: 14px;
-  color: #aeb9cc;
+  color: #526079;
 }
 .ops-admin-count b {
-  color: #fff;
+  color: #1b2a43;
   font-size: 18px;
 }
 .ops-admin-actions {
@@ -587,26 +594,26 @@
   gap: 7px;
   padding: 8px 14px;
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: #101b2e;
-  color: #e8eef7;
+  border: 1px solid #dbe3ee;
+  background: #ffffff;
+  color: #334155;
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
 }
 .ops-admin-btn:hover:not(:disabled) {
-  background: #16233b;
+  background: #f1f4f9;
 }
 .ops-admin-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 .ops-admin-btn-danger {
-  color: #ff6b6b;
-  border-color: rgba(227, 30, 47, 0.4);
+  color: var(--primary);
+  border-color: rgba(227, 30, 47, 0.35);
 }
 .ops-admin-btn-danger:hover:not(:disabled) {
-  background: rgba(227, 30, 47, 0.12);
+  background: rgba(227, 30, 47, 0.08);
 }
 .ops-spin {
   animation: ops-spin 0.8s linear infinite;
@@ -618,9 +625,10 @@
 }
 .ops-admin-tablewrap {
   overflow-x: auto;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid #e7ecf3;
   border-radius: 14px;
-  background: #101b2e;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.05);
 }
 .ops-admin-table {
   width: 100%;
@@ -630,18 +638,18 @@
 .ops-admin-table th {
   text-align: left;
   padding: 12px 14px;
-  color: #7f8ca3;
+  color: #8a95a8;
   font-weight: 700;
   text-transform: uppercase;
   font-size: 11px;
   letter-spacing: 0.04em;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid #e7ecf3;
   white-space: nowrap;
 }
 .ops-admin-table td {
   padding: 11px 14px;
-  color: #dbe3f0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: #334155;
+  border-bottom: 1px solid #eef1f6;
   vertical-align: top;
 }
 .ops-admin-table tr:last-child td {
@@ -649,20 +657,20 @@
 }
 .ops-admin-place {
   font-weight: 700;
-  color: #fff;
+  color: #1b2a43;
 }
 .ops-admin-coords {
   font-size: 11px;
-  color: #7f8ca3;
+  color: #8a95a8;
   font-variant-numeric: tabular-nums;
 }
 .ops-admin-dim {
-  color: #7f8ca3;
+  color: #8a95a8;
 }
 .ops-admin-empty {
   padding: 22px 14px;
   text-align: center;
-  color: #7f8ca3;
+  color: #8a95a8;
 }
 .ops-admin-rowactions {
   display: flex;
@@ -675,25 +683,25 @@
   width: 30px;
   height: 30px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: transparent;
-  color: #aeb9cc;
+  border: 1px solid #dbe3ee;
+  background: #fff;
+  color: #526079;
   cursor: pointer;
 }
 .ops-admin-icon:hover:not(:disabled) {
-  background: #16233b;
-  color: #fff;
+  background: #f1f4f9;
+  color: #1b2a43;
 }
 .ops-admin-icon-danger:hover:not(:disabled) {
-  color: #ff6b6b;
-  border-color: rgba(227, 30, 47, 0.4);
+  color: var(--primary);
+  border-color: rgba(227, 30, 47, 0.35);
 }
 .ops-admin-modhead {
   display: flex;
   align-items: center;
   gap: 8px;
   font-weight: 800;
-  color: #fff;
+  color: #1b2a43;
   font-size: 14px;
 }
 .ops-admin-modhead .ops-admin-dim {
@@ -713,14 +721,14 @@
   align-items: center;
   gap: 10px;
   padding: 8px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid #e7ecf3;
   border-radius: 10px;
-  background: #101b2e;
+  background: #ffffff;
   font-size: 12.5px;
 }
 .ops-admin-modtime {
   margin-left: auto;
-  color: #7f8ca3;
+  color: #8a95a8;
 }
 .ops-admin-mod {
   text-transform: uppercase;
@@ -731,14 +739,14 @@
   border-radius: 999px;
 }
 .ops-admin-mod-approved {
-  color: #bbf7d0;
-  background: rgba(34, 197, 94, 0.16);
+  color: #15803d;
+  background: #dcfce7;
 }
 .ops-admin-mod-rejected {
-  color: #fecaca;
-  background: rgba(227, 30, 47, 0.16);
+  color: #b91c1c;
+  background: #fee2e2;
 }
 .ops-admin-mod-review {
-  color: #fde68a;
-  background: rgba(245, 184, 75, 0.16);
+  color: #b45309;
+  background: #fef3c7;
 }
