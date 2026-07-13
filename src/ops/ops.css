@@ -75,9 +75,9 @@
 }
 .ops-nav-active,
 .ops-nav-active:hover {
-  background: rgba(227, 30, 47, 0.1);
-  color: var(--primary);
-  box-shadow: inset 3px 0 0 var(--primary);
+  background: rgba(34, 197, 94, 0.12);
+  color: #15803d;
+  box-shadow: inset 3px 0 0 #22c55e;
 }
 .ops-sidebar-foot {
   border-top: 1px solid #e4e9f1;
@@ -299,9 +299,9 @@
   cursor: pointer;
 }
 .ops-chip-on {
-  background: rgba(227, 30, 47, 0.1);
-  border-color: rgba(227, 30, 47, 0.35);
-  color: var(--primary);
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.4);
+  color: #15803d;
 }
 .ops-chip-n {
   font-size: 11px;
