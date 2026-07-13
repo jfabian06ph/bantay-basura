@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Camera, Pencil, ChevronLeft, ChevronRight, Check, Plus, X, Flag } from 'lucide-react'
+import { Camera, Pencil, ChevronLeft, ChevronRight, Check, Plus, X, Flag, Crosshair } from 'lucide-react'
 import type { Category, Report } from '../types'
 import { CATEGORY_LABELS, CATEGORY_DESC, CATEGORY_ORDER } from '../types'
 import { CATEGORY_ICON } from '../lib/categoryIcons'
@@ -21,6 +21,7 @@ interface Props {
   coords: { lat: number; lng: number } | null
   detected: boolean
   onAdjustLocation: () => void
+  onUseMyLocation: () => void
 }
 
 // Conversational step names — feels like a friendly chat, not a form (item 8).
@@ -49,6 +50,7 @@ export default function ReportSheet({
   coords,
   detected,
   onAdjustLocation,
+  onUseMyLocation,
 }: Props) {
   const [step, setStep] = useState(0)
   const [category, setCategory] = useState<Category | null>(null)
@@ -184,9 +186,16 @@ export default function ReportSheet({
           {step === 0 && (
             <Section title="Where is the issue?">
               {LocationBox}
+              <button
+                type="button"
+                onClick={onUseMyLocation}
+                className="mt-2.5 flex w-full items-center justify-center gap-2 rounded-[14px] border border-white/10 bg-transparent py-2.5 text-sm font-bold text-[#8fb4ff] hover:bg-white/5"
+              >
+                <Crosshair className="size-4" /> Snap to my location
+              </button>
               <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-                Reports are pinned to a real location so clean-up teams can find
-                them. Tap above to move the pin on the map.
+                The pin sits where the map is centered. Drag the map (tap above)
+                to place it on the waste, or snap it back to where you are.
               </p>
             </Section>
           )}

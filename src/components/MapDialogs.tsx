@@ -13,6 +13,7 @@ interface Props {
   pendingCoords: LatLng | null
   pendingDetected: boolean
   onAdjustLocation: () => void
+  onUseMyLocation: () => void
 
   mismatch: Mismatch | null
   onMismatchUseCurrent: () => void
@@ -35,6 +36,7 @@ export default function MapDialogs({
   pendingCoords,
   pendingDetected,
   onAdjustLocation,
+  onUseMyLocation,
   mismatch,
   onMismatchUseCurrent,
   onMismatchKeepChosen,
@@ -54,6 +56,7 @@ export default function MapDialogs({
         coords={pendingCoords}
         detected={pendingDetected}
         onAdjustLocation={onAdjustLocation}
+        onUseMyLocation={onUseMyLocation}
       />
 
       <LocationMismatchModal

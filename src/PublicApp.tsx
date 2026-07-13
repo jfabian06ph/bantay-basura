@@ -248,7 +248,7 @@ export default function PublicApp({ onSignIn, ready = true }: Props) {
     return { lat: c.lat, lng: c.lng }
   }
 
-  const flow = useReportFlow({ reports, setReports, position, flyTo, getCenter })
+  const flow = useReportFlow({ reports, setReports, position, flyTo, getCenter, request })
 
   function handleLocate() {
     if (position) flyTo(position.lat, position.lng, 16)
@@ -293,6 +293,7 @@ export default function PublicApp({ onSignIn, ready = true }: Props) {
         onJump={(t) => flyTo(t.lat, t.lng, t.zoom)}
         onLocate={handleLocate}
         onReport={flow.openReport}
+        onUseMyLocation={flow.useMyLocation}
         firstTime={firstTime}
         quietVicinity={quietVicinity}
         composing={flow.sheetOpen}
@@ -317,6 +318,7 @@ export default function PublicApp({ onSignIn, ready = true }: Props) {
         pendingCoords={flow.pendingCoords}
         pendingDetected={flow.pendingDetected}
         onAdjustLocation={flow.adjustLocation}
+        onUseMyLocation={flow.useMyLocation}
         mismatch={flow.mismatch}
         onMismatchUseCurrent={flow.mismatchUseCurrent}
         onMismatchKeepChosen={flow.mismatchKeepChosen}

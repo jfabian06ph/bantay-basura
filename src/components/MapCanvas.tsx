@@ -108,6 +108,8 @@ interface Props {
   onJump: (target: Target) => void
   onLocate: () => void
   onReport: () => void
+  /** "Snap to my location" — resets the report pin to the user's GPS. */
+  onUseMyLocation: () => void
   /** True until this visitor files their first report — warms the empty state. */
   firstTime: boolean
   /** Zoomed into a community with no reports in the vicinity — cues the quiet toast. */
@@ -154,6 +156,7 @@ export default function MapCanvas({
   onJump,
   onLocate,
   onReport,
+  onUseMyLocation,
   firstTime,
   quietVicinity,
   composing,
@@ -200,7 +203,11 @@ export default function MapCanvas({
       <FlyClouds nonce={flyTarget?.nonce} />
 
       {placing ? (
-        <PlacingOverlay onCancel={onCancelPlacing} onConfirm={onConfirmPlacement} />
+        <PlacingOverlay
+          onCancel={onCancelPlacing}
+          onConfirm={onConfirmPlacement}
+          onUseMyLocation={onUseMyLocation}
+        />
       ) : (
         <>
           <FloatingControls

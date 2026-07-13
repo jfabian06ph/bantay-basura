@@ -474,11 +474,34 @@
   z-index: 1000;
 }
 .bb-place-hint {
-  margin: 0 0 12px;
+  margin: 0 0 10px;
   text-align: center;
   font-size: 13px;
   font-weight: 600;
   color: var(--text-dim);
+}
+.bb-place-locate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 9px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.12));
+  background: rgba(255, 255, 255, 0.06);
+  color: #8fb4ff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.bb-place-locate:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+}
+.bb-place-locate:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 .bb-place-actions {
   display: flex;

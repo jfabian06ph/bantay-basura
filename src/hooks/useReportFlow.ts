@@ -44,6 +44,8 @@ interface Params {
   flyTo: (lat: number, lng: number, zoom: number) => void
   /** Current map center, or null before the map is ready. */
   getCenter: () => LatLng | null
+  /** Prompt for the user's GPS location (used by "Snap to my location"). */
+  request: () => void
 }
 
 /**
@@ -58,6 +60,7 @@ export function useReportFlow({
   position,
   flyTo,
   getCenter,
+  request,
 }: Params) {
   const [mode, setMode] = useState<'idle' | 'placing'>('idle')
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -124,14 +127,29 @@ export function useReportFlow({
   }
 
   function openReport() {
-    const detected = Boolean(position)
+    // Pin starts where the map is centred (what you're looking at), not your
+    // GPS — search/drag deliberately set the report spot. "Snap to my location"
+    // resets it. Fall back to GPS, then the province, before the map is ready.
+    const center = getCenter()
     const coords =
+      center ||
       (position && { lat: position.lat, lng: position.lng }) ||
-      getCenter() ||
       { lat: ZAMBALES_OVERVIEW.lat, lng: ZAMBALES_OVERVIEW.lng }
     setPendingCoords(coords)
-    setPendingDetected(detected)
+    setPendingDetected(!center && Boolean(position))
     setSheetOpen(true)
+  }
+
+  /** "Snap to my location" — reset the pin to the user's GPS and fly there. */
+  function useMyLocation() {
+    if (position) {
+      const c = { lat: position.lat, lng: position.lng }
+      setPendingCoords(c)
+      setPendingDetected(true)
+      flyTo(c.lat, c.lng, 16)
+    } else {
+      request()
+    }
   }
 
   function startPlacing() {
@@ -307,6 +325,7 @@ export function useReportFlow({
     confirmReport,
     uploadAfterPhoto,
     openReport,
+    useMyLocation,
     startPlacing,
     cancelPlacing,
     confirmPlacement,

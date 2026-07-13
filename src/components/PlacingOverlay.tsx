@@ -1,14 +1,15 @@
 import { useRef, useState } from 'react'
-import { MapPin, X, Check } from 'lucide-react'
+import { MapPin, X, Check, Crosshair } from 'lucide-react'
 import { Button } from './ui/button'
 
 interface Props {
   onCancel: () => void
   onConfirm: () => void
+  onUseMyLocation: () => void
 }
 
 /** Shown while the user is dragging the map to place a pin on the trash. */
-export default function PlacingOverlay({ onCancel, onConfirm }: Props) {
+export default function PlacingOverlay({ onCancel, onConfirm, onUseMyLocation }: Props) {
   const [confirming, setConfirming] = useState(false)
   const done = useRef(false)
 
@@ -31,6 +32,14 @@ export default function PlacingOverlay({ onCancel, onConfirm }: Props) {
 
       <div className="bb-place-bar">
         <p className="bb-place-hint">Drag the map until the pin is over the waste.</p>
+        <button
+          type="button"
+          className="bb-place-locate"
+          onClick={onUseMyLocation}
+          disabled={confirming}
+        >
+          <Crosshair className="size-4" /> Snap to my location
+        </button>
         <div className="bb-place-actions">
           <Button
             variant="secondary"
