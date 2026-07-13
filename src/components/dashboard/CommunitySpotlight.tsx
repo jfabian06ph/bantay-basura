@@ -29,9 +29,8 @@ export default function CommunitySpotlight({ cleanups, onReadMore, onReport }: P
       <section className="bb-dash-section bb-dash-section-tight">
         <div className="bb-dash-eyebrow">Real Stories</div>
         <h3 className="bb-spotlight-headline">
-          One report.
-          <br />
-          Real change.
+          <span className="bb-spotlight-line bb-spotlight-line-1">One report.</span>
+          <span className="bb-spotlight-line bb-spotlight-line-2">Real change.</span>
         </h3>
         <SpotlightEmpty onReport={onReport} />
       </section>
@@ -205,7 +204,7 @@ function SpotlightEmpty({ onReport }: { onReport?: () => void }) {
   return (
     <div className="bb-spotlight-empty">
       <div className="bb-spotlight-empty-main">
-        <p className="bb-spotlight-empty-lede">Every success story starts with one report.</p>
+        <p className="bb-spotlight-empty-lede">The first success story starts with your report.</p>
         <p className="bb-spotlight-empty-sub">The first cleanup story hasn&rsquo;t happened yet.</p>
         <p className="bb-spotlight-empty-nudge">Help us write it.</p>
         {onReport && (

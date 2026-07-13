@@ -11,7 +11,7 @@ export function Metric({
   accent,
 }: {
   value: React.ReactNode
-  label: string
+  label: React.ReactNode
   sub?: React.ReactNode
   foot?: React.ReactNode
   big?: boolean

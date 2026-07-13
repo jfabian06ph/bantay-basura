@@ -81,11 +81,15 @@ export function Donut({ items }: { items: CategoryShare[] }) {
           </span>
         </div>
       </div>
-      <ul className="bb-dash-donut-legend" onMouseLeave={() => setActive(null)}>
+      <ul
+        className={`bb-dash-donut-legend ${shown ? 'is-in' : ''}`}
+        onMouseLeave={() => setActive(null)}
+      >
         {items.map((c, i) => (
           <li
             key={c.category}
             className={active === i ? 'is-active' : ''}
+            style={{ '--i': i } as React.CSSProperties}
             onMouseEnter={() => setActive(i)}
           >
             <span
