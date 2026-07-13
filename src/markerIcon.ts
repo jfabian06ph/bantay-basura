@@ -1,5 +1,5 @@
 import L from 'leaflet'
-import { pinColor, type Report } from './types'
+import { pinColor, STATUS_COLORS, type Report } from './types'
 
 // One consistent pin size for every report — severity is conveyed in the
 // report detail, not by marker size (which read as "inconsistent" on the map).
@@ -23,12 +23,27 @@ export function pinIcon(report: Report, selected = false): L.DivIcon {
   })
 }
 
-/** A cluster bubble showing a count, colored by the dominant status group. */
-export function clusterIcon(count: number, color: string): L.DivIcon {
-  const size = count < 10 ? 38 : count < 50 ? 46 : 54
+/**
+ * A cluster bubble: a donut ring showing the real status MIX of the reports
+ * inside (red pending / orange verified+cleanup / green resolved), with the
+ * count in a dark center. A single colour would misleadingly read as "all
+ * urgent" when a cluster is actually a healthy mix.
+ */
+export function clusterIcon(
+  count: number,
+  seg: { open: number; review: number; done: number },
+): L.DivIcon {
+  const size = count < 10 ? 40 : count < 50 ? 48 : 56
+  const total = seg.open + seg.review + seg.done || 1
+  const p1 = (seg.open / total) * 100
+  const p2 = p1 + (seg.review / total) * 100
+  const ring =
+    `conic-gradient(${STATUS_COLORS.pending} 0 ${p1}%,` +
+    ` ${STATUS_COLORS.in_review} ${p1}% ${p2}%,` +
+    ` ${STATUS_COLORS.resolved} ${p2}% 100%)`
   return L.divIcon({
     className: 'bb-cluster',
-    html: `<div class="bb-cluster-bubble" style="width:${size}px;height:${size}px;background:${color}">${count}</div>`,
+    html: `<div class="bb-cluster-bubble" style="width:${size}px;height:${size}px;background:${ring}"><span class="bb-cluster-inner">${count}</span></div>`,
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
   })

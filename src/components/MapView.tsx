@@ -13,7 +13,7 @@ import Supercluster from 'supercluster'
 import { Plus, Minus, Layers, Maximize, Trash2, SlidersHorizontal, Sprout } from 'lucide-react'
 import 'leaflet/dist/leaflet.css'
 import type { Report } from '../types'
-import { CATEGORY_LABELS, STATUS_LABELS, STATUS_COLORS, DONE_STATUSES } from '../types'
+import { CATEGORY_LABELS, STATUS_LABELS, STATUS_COLORS, displayBucket } from '../types'
 import { CATEGORY_ICON } from '../lib/categoryIcons'
 import { pinIcon, clusterIcon, userLocationIcon } from '../markerIcon'
 import type { UserLocation } from '../hooks/useUserLocation'
@@ -67,14 +67,6 @@ const BASEMAPS: Record<BasemapKey, Basemap> = {
 }
 
 const BASEMAP_ORDER: BasemapKey[] = ['streets', 'satellite', 'light']
-
-const CLUSTER_COLORS = { open: '#e31e2f', review: '#f59e0b', done: '#22c55e' }
-
-function groupOf(status: Report['status']): 'open' | 'review' | 'done' {
-  if (DONE_STATUSES.includes(status)) return 'done'
-  if (status === 'pending') return 'open'
-  return 'review' // assigned, in_progress
-}
 
 function timeAgo(iso: string, now: number): string {
   const diff = now - new Date(iso).getTime()
@@ -297,15 +289,18 @@ function ClusterLayer({ reports, now, userPos, onConfirm, onSelect, selectedId }
     })
     idx.load(
       reports.map((r) => {
-        const g = groupOf(r.status)
+        // Group by the community-aware display bucket (same as the pins), so a
+        // cluster's donut reflects what you'd see zoomed in — not the raw DB
+        // status (which would keep community-resolved reports red).
+        const b = displayBucket(r)
         return {
           type: 'Feature' as const,
           properties: {
             cluster: false,
             report: r,
-            open: g === 'open' ? 1 : 0,
-            review: g === 'review' ? 1 : 0,
-            done: g === 'done' ? 1 : 0,
+            open: b === 'pending' ? 1 : 0,
+            review: b === 'in_review' ? 1 : 0,
+            done: b === 'resolved' ? 1 : 0,
           },
           geometry: { type: 'Point' as const, coordinates: [r.lng, r.lat] },
         }
@@ -327,18 +322,11 @@ function ClusterLayer({ reports, now, userPos, onConfirm, onSelect, selectedId }
 
         if (props.cluster) {
           const { open, review, done, point_count, cluster_id } = props
-          const group =
-            open >= review && open >= done
-              ? 'open'
-              : review >= done
-                ? 'review'
-                : 'done'
-          const color = CLUSTER_COLORS[group as keyof typeof CLUSTER_COLORS]
           return (
             <Marker
               key={`cluster-${cluster_id}`}
               position={[lat, lng]}
-              icon={clusterIcon(point_count, color)}
+              icon={clusterIcon(point_count, { open, review, done })}
               eventHandlers={{
                 click: () => {
                   const z = Math.min(

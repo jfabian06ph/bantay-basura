@@ -221,10 +221,12 @@ export default function ReportPanel({
     report.afterUploadedAt ? new Date(report.afterUploadedAt).getTime() : 0,
   )
 
-  // Derived verification: an official touched it, or the crowd backed it.
-  // The subtitle carries the credibility — who stands behind this report.
-  const verification =
-    report.status !== 'pending'
+  // Derived verification: an official touched it, or the crowd backed it. Once
+  // the report reads resolved, "Verified" is implied — the Resolved badge +
+  // celebrate card carry it, so this trust callout drops away.
+  const verification = resolvedForDisplay
+    ? null
+    : report.status !== 'pending'
       ? { title: 'LGU Verified', sub: 'Reviewed by the local government', tone: '#3b82f6' }
       : report.stillHere >= 3
         ? {
@@ -276,6 +278,7 @@ export default function ReportPanel({
   ].map((s, i) => ({
     ...s,
     done: i <= timelineStage,
+    current: i === timelineStage,
     tone:
       i < timelineStage
         ? green
@@ -448,7 +451,7 @@ export default function ReportPanel({
               <div className="bb-panel-noimg">
                 <MapPin className="bb-panel-noimg-icon" strokeWidth={1.5} />
                 <span className="bb-panel-noimg-title">Community report</span>
-                <span className="bb-panel-noimg-label">No photo available</span>
+                <span className="bb-panel-noimg-label">No photo was provided</span>
               </div>
             )}
 
@@ -545,9 +548,10 @@ export default function ReportPanel({
               <div className="bb-celebrate" style={{ order: 1 }}>
                 <div className="bb-celebrate-badge">🎉 Community Resolved</div>
                 <p className="bb-celebrate-by">
-                  {afterPhoto
-                    ? 'A community member shared a cleanup photo after the area was reported. Residents have confirmed the cleanup, and this report is now marked as resolved.'
-                    : 'Residents confirmed this area has been cleaned.'}
+                  {report.cleared > 0
+                    ? `${report.cleared} nearby ${report.cleared === 1 ? 'resident' : 'residents'} confirmed this location is now clean.`
+                    : 'Nearby residents confirmed this location is now clean.'}
+                  {afterPhoto ? ' A community member also shared a cleanup photo.' : ''}
                 </p>
                 {afterPhoto &&
                   (canCompare ? (
@@ -715,7 +719,10 @@ export default function ReportPanel({
               </span>
               <ol className="bb-timeline">
                 {timeline.map((t, i) => (
-                  <li key={t.label} className={`bb-tl-item ${t.done ? 'is-done' : ''}`}>
+                  <li
+                    key={t.label}
+                    className={`bb-tl-item ${t.done ? 'is-done' : ''} ${t.current ? 'is-current' : ''}`}
+                  >
                     <span className="bb-tl-marker">
                       <span
                         className="bb-tl-dot"
@@ -767,9 +774,11 @@ export default function ReportPanel({
               className={`bb-verify ${verifyFlash ? 'bb-verify-flash' : ''}`}
               style={{ order: 6 }}
             >
-              <span className="bb-verify-q">Is this still here?</span>
-              {voted ? (
-                <div className="bb-verify-locked" role="status">
+              {!resolvedForDisplay && (
+                <>
+                  <span className="bb-verify-q">Is this still here?</span>
+                  {voted ? (
+                    <div className="bb-verify-locked" role="status">
                   <CheckCircle2 className="size-4 shrink-0" />
                   {owned ? (
                     <span>
@@ -874,6 +883,8 @@ export default function ReportPanel({
                   </div>
                 </div>
               )}
+                </>
+              )}
 
               {votes > 0 && (
                 <div className="bb-verify-tally">
@@ -896,7 +907,7 @@ export default function ReportPanel({
                   <div className="bb-consensus">
                     <span className="bb-verify-tally-k">Community Consensus</span>
                     <div className="bb-consensus-verdict">
-                      <b>{100 - stillPct}%</b> believe this area is clean
+                      <b>{100 - stillPct}%</b> of residents say it&rsquo;s clean
                     </div>
                     <div className="bb-verify-bar">
                       <span className="bb-verify-seg is-still" style={{ width: `${stillPct}%` }} />
@@ -960,12 +971,14 @@ export default function ReportPanel({
               </ol>
             </div>
 
-            <p className="bb-rsheet-id" style={{ order: 10 }}>
-              Reference ID · {formatRef(report.id, report.createdAt)}
-            </p>
-            <p className="bb-panel-privacy" style={{ order: 10 }}>
-              🔒 Reported anonymously · identity protected
-            </p>
+            <div className="bb-panel-footer" style={{ order: 10 }}>
+              <p className="bb-rsheet-id">
+                Reference ID · {formatRef(report.id, report.createdAt)}
+              </p>
+              <p className="bb-panel-privacy">
+                🔒 Reported anonymously · identity protected
+              </p>
+            </div>
           </div>
         </div>
 
