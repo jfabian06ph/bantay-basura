@@ -7,6 +7,7 @@ import {
   Users,
   BarChart3,
   Contact,
+  Database,
   Settings as SettingsIcon,
   LogOut,
   type LucideIcon,
@@ -28,6 +29,7 @@ import AssignmentsSection from './sections/Assignments'
 import ResponseTeams from './sections/ResponseTeams'
 import Analytics from './sections/Analytics'
 import Residents from './sections/Residents'
+import AdminData from './sections/AdminData'
 import SettingsSection from './sections/Settings'
 import './ops.css'
 
@@ -39,6 +41,7 @@ const ICONS: Record<string, LucideIcon> = {
   Users,
   BarChart3,
   Contact,
+  Database,
   Settings: SettingsIcon,
 }
 
@@ -150,6 +153,7 @@ export default function OperationsCenter() {
           {section === 'teams' && <ResponseTeams data={data} />}
           {section === 'analytics' && <Analytics data={data} now={NOW} />}
           {section === 'residents' && <Residents data={data} />}
+          {section === 'admin' && <AdminData data={data} />}
           {section === 'settings' && <SettingsSection />}
         </main>
       </div>

@@ -49,6 +49,54 @@ export async function updateReportStatus(
   )
 }
 
+/** Delete a single report (authenticated operators only, per RLS). */
+export async function deleteReport(id: string): Promise<boolean> {
+  if (supabase) {
+    const { error } = await supabase.from('reports').delete().eq('id', id)
+    if (error) console.warn('[bantay-basura] delete failed:', error)
+    return !error
+  }
+  demo.reports = demo.reports.filter((r) => r.id !== id)
+  return true
+}
+
+/** Delete every report — used from the admin console for clearing test data. */
+export async function deleteAllReports(): Promise<boolean> {
+  if (supabase) {
+    // PostgREST requires a filter on delete; this one matches every row.
+    const { error } = await supabase.from('reports').delete().not('id', 'is', null)
+    if (error) console.warn('[bantay-basura] clear-all failed:', error)
+    return !error
+  }
+  demo.reports = []
+  return true
+}
+
+export interface ModerationEvent {
+  id: string
+  reportId: string | null
+  kind: string
+  status: 'approved' | 'rejected' | 'review'
+  createdAt: string
+}
+
+/** Recent moderation decisions, newest first — the admin moderation log. */
+export async function loadModerationEvents(limit = 50): Promise<ModerationEvent[]> {
+  if (!supabase) return []
+  const { data } = await supabase
+    .from('moderation_events')
+    .select('id, report_id, kind, status, created_at')
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  return (data ?? []).map((r) => ({
+    id: String(r.id),
+    reportId: (r.report_id as string) ?? null,
+    kind: String(r.kind),
+    status: r.status as ModerationEvent['status'],
+    createdAt: String(r.created_at),
+  }))
+}
+
 // ---- Teams -----------------------------------------------------------------
 function teamFromRow(r: Record<string, unknown>): Team {
   return {

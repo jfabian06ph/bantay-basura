@@ -131,6 +131,8 @@ drop policy if exists reports_insert on public.reports;
 create policy reports_insert on public.reports for insert with check (true);
 drop policy if exists reports_write on public.reports;
 create policy reports_write on public.reports for update using (auth.role() = 'authenticated');
+drop policy if exists reports_delete on public.reports;
+create policy reports_delete on public.reports for delete using (auth.role() = 'authenticated');
 
 -- Profiles: a user can read/update their own; everyone authenticated can read.
 drop policy if exists profiles_read on public.profiles;
