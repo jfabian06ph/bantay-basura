@@ -20,6 +20,9 @@ export type Category =
   | 'burning'
   | 'construction'
   | 'recycling'
+  | 'hazardous'
+  | 'bulky'
+  | 'dead_animal'
 
 export interface Report {
   id: string
@@ -109,7 +112,10 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   water: 'Water Pollution',
   burning: 'Open Burning',
   construction: 'Construction Debris',
-  recycling: 'Recycling Needed',
+  recycling: 'Improperly Disposed Recyclables',
+  hazardous: 'Hazardous Waste',
+  bulky: 'Bulky Waste',
+  dead_animal: 'Dead Animal',
 }
 
 export const CATEGORY_EMOJI: Record<Category, string> = {
@@ -119,6 +125,9 @@ export const CATEGORY_EMOJI: Record<Category, string> = {
   burning: '🔥',
   construction: '🚧',
   recycling: '♻️',
+  hazardous: '☣️',
+  bulky: '🛋️',
+  dead_animal: '🐾',
 }
 
 export const CATEGORY_DESC: Record<Category, string> = {
@@ -127,16 +136,22 @@ export const CATEGORY_DESC: Record<Category, string> = {
   water: 'Waste in rivers, creeks, shoreline',
   burning: 'Trash being burned in the open',
   construction: 'Rubble, debris, hollow blocks',
-  recycling: 'Plastic, bottles, cans piling up',
+  recycling: 'Plastic, bottles, cans, cardboard',
+  hazardous: 'Chemicals, batteries, oil, medical or electronic waste',
+  bulky: 'Furniture, appliances, oversized items',
+  dead_animal: 'Roadkill or animal remains',
 }
 
 export const CATEGORY_ORDER: Category[] = [
   'household',
   'dumping',
+  'recycling',
+  'hazardous',
+  'bulky',
+  'construction',
   'water',
   'burning',
-  'construction',
-  'recycling',
+  'dead_animal',
 ]
 
 export const STATUS_LABELS: Record<ReportStatus, string> = {

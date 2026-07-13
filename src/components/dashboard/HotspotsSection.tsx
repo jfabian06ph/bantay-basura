@@ -3,7 +3,6 @@ import { MapPin, ArrowRight, X, Search, ChevronDown } from 'lucide-react'
 import Reveal from '../Reveal'
 import AreaDrawer from './AreaDrawer'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '../ui/dialog'
-import { CATEGORY_COLORS } from './Charts'
 import { relativeTime, type Hotspot } from '../../lib/stats'
 import { CATEGORY_LABELS, CATEGORY_ORDER, type Category, type Report } from '../../types'
 
@@ -39,17 +38,6 @@ function HotspotRow({
             <MapPin size={16} className="bb-hotspot-pin" />
             {h.name}
           </div>
-          {h.topCategoryLabel && (
-            <div className="bb-hotspot-cat">
-              {h.topCategory && (
-                <span
-                  className="bb-hotspot-cat-dot"
-                  style={{ background: CATEGORY_COLORS[h.topCategory] }}
-                />
-              )}
-              {h.topCategoryLabel}
-            </div>
-          )}
           {meta.length > 0 && <div className="bb-hotspot-meta">{meta.join(' • ')}</div>}
         </div>
 

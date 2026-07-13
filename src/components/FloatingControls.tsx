@@ -2,7 +2,7 @@ import { Crosshair, ShieldCheck } from 'lucide-react'
 import LocationSearch, { type Target } from './LocationSearch'
 import { Button } from './ui/button'
 import type { GeoStatus, UserLocation } from '../hooks/useUserLocation'
-import type { Report } from '../types'
+import { displayStatus, type Report } from '../types'
 
 interface Props {
   locateStatus: GeoStatus
@@ -28,6 +28,8 @@ export default function FloatingControls({
   onReport,
   onVerify,
 }: Props) {
+  const key = selectedReport ? displayStatus(selectedReport).key : null
+  const canVerify = key !== null && key !== 'resolved' && key !== 'published'
   return (
     <>
       <div className="bb-toolbar">
@@ -43,11 +45,15 @@ export default function FloatingControls({
       </div>
 
       {selectedReport ? (
-        <div className="bb-cta bb-cta-verify">
-          <Button size="lg" className="bb-cta-btn bb-cta-btn-verify" onClick={onVerify}>
-            <ShieldCheck className="size-4" /> Verify this report
-          </Button>
-        </div>
+        // Verifying a resolved report is moot — hide the CTA once it reads
+        // resolved (community or LGU).
+        canVerify && (
+          <div className="bb-cta bb-cta-verify">
+            <Button size="lg" className="bb-cta-btn bb-cta-btn-verify" onClick={onVerify}>
+              <ShieldCheck className="size-4" /> Verify this report
+            </Button>
+          </div>
+        )
       ) : (
         <div className="bb-cta">
           <span className="bb-cta-label">See something that needs cleaning?</span>

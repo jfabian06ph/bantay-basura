@@ -398,6 +398,13 @@ export default function PublicApp({ onSignIn, ready = true }: Props) {
           flyTo(lat, lng, zoom)
           setView('map')
         }}
+        onOpenReport={(id) => {
+          const r = reports.find((x) => x.id === id)
+          if (!r) return
+          setSelectedId(id)
+          flyTo(r.lat, r.lng, 16)
+          setView('map')
+        }}
       />
       </div>
 

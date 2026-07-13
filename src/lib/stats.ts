@@ -2,9 +2,9 @@ import { nearestMunicipality } from '../municipalities'
 import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
-  DONE_STATUSES,
   OPEN_STATUSES,
   SOURCE_ORDER,
+  displayBucket,
   type Category,
   type Report,
   type ReportSource,
@@ -13,8 +13,14 @@ import {
 
 const DAY_MS = 86_400_000
 
+/**
+ * Community-aware resolution: a report counts as resolved when the crowd has
+ * confirmed the cleanup OR an LGU marked it resolved — the same notion the map
+ * and report panel use. (Not just the raw DB `status`, which would leave
+ * community-resolved reports uncounted and the resolved rate stuck at 0%.)
+ */
 function isResolved(r: Report): boolean {
-  return DONE_STATUSES.includes(r.status)
+  return displayBucket(r) === 'resolved'
 }
 
 /** When a report was cleared, if known — falls back to createdAt. */
@@ -86,6 +92,8 @@ export interface CategoryShare {
 export interface RecentCleanup {
   id: string
   lgu: string
+  lat: number
+  lng: number
   category: Category
   when: number // ms timestamp (resolved time)
   photo?: string // thumbnail — prefers the "after" (resolved) photo
@@ -265,6 +273,8 @@ export function computeDashboard(reports: Report[], now: number): DashboardStats
     latestCleanup = {
       id: latest.id,
       lgu: lguOf(latest),
+      lat: latest.lat,
+      lng: latest.lng,
       category: latest.category,
       when: resolvedTime(latest),
     }
@@ -306,6 +316,8 @@ export function computeDashboard(reports: Report[], now: number): DashboardStats
       return {
         id: r.id,
         lgu: lguOf(r),
+        lat: r.lat,
+        lng: r.lng,
         category: r.category,
         when: resolvedTime(r),
         photo: afterPhotos[0] ?? beforePhotos[0],
@@ -466,6 +478,10 @@ function monthDelta(cur: number | null, prev: number | null): number | null {
 function computeWasteTrends(reports: Report[], total: number): CategoryShare[] {
   const counts = new Map<Category, number>()
   for (const r of reports) counts.set(r.category, (counts.get(r.category) ?? 0) + 1)
+  // Include every waste type — even ones with no reports yet — so the legend
+  // shows the full set for visibility. Reported types lead (by count); the
+  // zero-count ones trail in CATEGORY_ORDER. Zero-length arcs aren't drawn (see
+  // Donut), so they appear only in the legend at 0%.
   return CATEGORY_ORDER.map((category) => {
     const count = counts.get(category) ?? 0
     return {
@@ -474,9 +490,7 @@ function computeWasteTrends(reports: Report[], total: number): CategoryShare[] {
       count,
       share: pct(count, total),
     }
-  })
-    .filter((c) => c.count > 0)
-    .sort((a, b) => b.count - a.count)
+  }).sort((a, b) => b.count - a.count)
 }
 
 function emptyBySource(): Record<ReportSource, number> {

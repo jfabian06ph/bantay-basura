@@ -713,7 +713,6 @@ export default function ReportPanel({
               <span className="bb-rsheet-krow">
                 <span className="bb-rsheet-k">Cleanup progress</span>
                 <span className={`bb-cl-badge ${resolvedForDisplay ? 'is-earned' : ''}`}>
-                  <Award className="size-3.5" />{' '}
                   {fullyDocumented ? 'Documented' : resolvedForDisplay ? 'Resolved' : 'In progress'}
                 </span>
               </span>

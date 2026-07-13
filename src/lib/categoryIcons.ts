@@ -5,6 +5,9 @@ import {
   Flame,
   Construction,
   Recycle,
+  Biohazard,
+  Sofa,
+  PawPrint,
   type LucideIcon,
 } from 'lucide-react'
 import type { Category } from '../types'
@@ -20,4 +23,7 @@ export const CATEGORY_ICON: Record<Category, LucideIcon> = {
   burning: Flame,
   construction: Construction,
   recycling: Recycle,
+  hazardous: Biohazard,
+  bulky: Sofa,
+  dead_animal: PawPrint,
 }
