@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { FileText, Users, Camera, CheckCircle2 } from 'lucide-react'
+import { FileText, Users, Camera, CheckCircle2, ArrowUp, ArrowDown } from 'lucide-react'
 import Reveal from '../Reveal'
 import CountUp from '../CountUp'
 import { useReveal } from '../../hooks/useReveal'
@@ -20,10 +20,10 @@ export default function CommunityMomentum({ reports, now }: Props) {
   const { ref, shown } = useReveal<HTMLDivElement>()
 
   const cells = [
-    { icon: FileText, tone: '#2f9e54', value: m.reports, label: 'Reports', sub: 'this week' },
-    { icon: Users, tone: '#237878', value: m.confirmations, label: 'Community confirmations', sub: 'this week' },
-    { icon: Camera, tone: '#3b82f6', value: m.photos, label: 'Cleanup photos', sub: 'shared' },
-    { icon: CheckCircle2, tone: '#009336', value: m.cleaned, label: 'Places', sub: 'cleaned' },
+    { icon: FileText, tone: '#2f9e54', value: m.reports, label: 'Reports this week', delta: m.reportsDelta },
+    { icon: Users, tone: '#237878', value: m.confirmations, label: 'Residents confirmed reports', delta: m.confirmationsDelta },
+    { icon: Camera, tone: '#3b82f6', value: m.photos, label: 'Cleanup photos shared', delta: m.photosDelta },
+    { icon: CheckCircle2, tone: '#009336', value: m.cleaned, label: 'Places cleaned', delta: m.cleanedDelta },
   ]
 
   return (
@@ -47,7 +47,21 @@ export default function CommunityMomentum({ reports, now }: Props) {
                   <CountUp value={c.value} active={shown} />
                 </span>
                 <span className="bb-momentum-label">{c.label}</span>
-                <span className="bb-momentum-sub">{c.sub}</span>
+                <span
+                  className={`bb-momentum-delta ${c.delta > 0 ? 'is-up' : c.delta < 0 ? 'is-down' : ''}`}
+                >
+                  {c.delta > 0 ? (
+                    <>
+                      <ArrowUp size={12} aria-hidden /> +{c.delta} from last week
+                    </>
+                  ) : c.delta < 0 ? (
+                    <>
+                      <ArrowDown size={12} aria-hidden /> {c.delta} from last week
+                    </>
+                  ) : (
+                    'No change from last week'
+                  )}
+                </span>
               </div>
             )
           })}

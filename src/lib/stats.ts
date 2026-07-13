@@ -873,36 +873,50 @@ export function impactTotals(reports: Report[]): ImpactTotals {
 const WEEK_MS = 7 * DAY_MS
 
 /** "This week" community momentum — every figure is derived from real reports
- *  and their real timestamps, so an empty week honestly reads as zeros. */
+ *  and their real timestamps, so an empty week honestly reads as zeros. Each
+ *  metric also carries `*Delta` — the change versus the *previous* 7 days. */
 export interface Momentum {
   reports: number // reports created in the last 7 days
   confirmations: number // community confirmations on those new reports
   photos: number // after / evidence photos added in the last 7 days
   cleaned: number // distinct places resolved in the last 7 days
+  reportsDelta: number
+  confirmationsDelta: number
+  photosDelta: number
+  cleanedDelta: number
 }
 
-export function communityMomentum(reports: Report[], now: number): Momentum {
-  const since = now - WEEK_MS
+/** Raw counts for one [start, end) window. */
+function momentumWindow(reports: Report[], start: number, end: number) {
   let created = 0
   let confirmations = 0
   let photos = 0
   const cleanedPlaces = new Set<string>()
-
+  const within = (ms: number) => ms >= start && ms < end
   for (const r of reports) {
-    const createdMs = new Date(r.createdAt).getTime()
-    if (createdMs >= since) {
+    if (within(new Date(r.createdAt).getTime())) {
       created++
       confirmations += r.stillHere + r.cleared
     }
-    // Evidence + "after" photos carry their own timestamps.
-    if (r.afterUploadedAt && new Date(r.afterUploadedAt).getTime() >= since) photos++
+    if (r.afterUploadedAt && within(new Date(r.afterUploadedAt).getTime())) photos++
     for (const p of r.updatePhotos ?? []) {
-      if (new Date(p.at).getTime() >= since) photos++
+      if (within(new Date(p.at).getTime())) photos++
     }
-    if (isResolved(r) && resolvedTime(r) >= since) cleanedPlaces.add(lguOf(r))
+    if (isResolved(r) && within(resolvedTime(r))) cleanedPlaces.add(lguOf(r))
   }
-
   return { reports: created, confirmations, photos, cleaned: cleanedPlaces.size }
+}
+
+export function communityMomentum(reports: Report[], now: number): Momentum {
+  const cur = momentumWindow(reports, now - WEEK_MS, now + 1)
+  const prev = momentumWindow(reports, now - 2 * WEEK_MS, now - WEEK_MS)
+  return {
+    ...cur,
+    reportsDelta: cur.reports - prev.reports,
+    confirmationsDelta: cur.confirmations - prev.confirmations,
+    photosDelta: cur.photos - prev.photos,
+    cleanedDelta: cur.cleaned - prev.cleaned,
+  }
 }
 
 /** Which kind of moment a Community Pulse entry captures. */
@@ -912,6 +926,7 @@ export type ActivityKind = 'reported' | 'verified' | 'cleanup' | 'resolved'
  *  person. Each event is a real, timestamped moment in a report's life. */
 export interface ActivityEvent {
   id: string
+  reportId: string // the report this moment belongs to — opens its detail
   place: string
   lat: number
   lng: number
@@ -926,7 +941,7 @@ export interface ActivityEvent {
 export function recentActivity(reports: Report[], now: number, limit = 6): ActivityEvent[] {
   const events: ActivityEvent[] = []
   for (const r of reports) {
-    const base = { place: lguOf(r), lat: r.lat, lng: r.lng }
+    const base = { reportId: r.id, place: lguOf(r), lat: r.lat, lng: r.lng }
     events.push({
       ...base,
       id: `${r.id}-new`,

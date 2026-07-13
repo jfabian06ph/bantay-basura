@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { ChevronDown, Trophy, Flame, MapPin, Info } from 'lucide-react'
+import { Trophy, Flame, MapPin, Info, Sparkles, ArrowRight } from 'lucide-react'
 import Reveal from '../Reveal'
 import CountUp from '../CountUp'
 import { Metric } from './primitives'
@@ -20,13 +20,6 @@ function InfoTip({ text }: { text: string }) {
     </span>
   )
 }
-
-const PERIODS = [
-  { value: 'month', label: 'This Month' },
-  { value: 'last', label: 'Last Month' },
-  { value: 'quarter', label: 'Last 3 Months' },
-  { value: 'all', label: 'All Time' },
-]
 
 /** A data-backed "award" tucked under each KPI. */
 function Highlight({
@@ -67,7 +60,7 @@ function Highlight({
       </div>
       {onAction && (
         <button className="bb-dash-link" onClick={onAction}>
-          {actionLabel ?? 'View details →'}
+          {actionLabel ?? 'View details'} <ArrowRight size={13} aria-hidden />
         </button>
       )}
     </div>
@@ -76,8 +69,6 @@ function Highlight({
 
 /** The "This Month" headline grid — the accountability numbers up top. */
 export default function HeadlineStats({ s, now, onOpenReport }: Props) {
-  const [period, setPeriod] = useState('month')
-
   const leader = s.cleanestLgus[0]
   const active = s.activeAreas[0]
 
@@ -96,21 +87,6 @@ export default function HeadlineStats({ s, now, onOpenReport }: Props) {
 
   return (
     <section className="bb-dash-section bb-dash-section-lead">
-      <div className="bb-dash-period">
-        <select
-          className="bb-dash-period-select"
-          value={period}
-          onChange={(e) => setPeriod(e.target.value)}
-          aria-label="Time period"
-        >
-          {PERIODS.map((p) => (
-            <option key={p.value} value={p.value}>
-              {p.label}
-            </option>
-          ))}
-        </select>
-        <ChevronDown className="bb-dash-period-chev" size={13} aria-hidden />
-      </div>
       <Reveal>
         <div className="bb-dash-grid">
           <Metric
@@ -134,7 +110,7 @@ export default function HeadlineStats({ s, now, onOpenReport }: Props) {
                 <CountUp value={s.resolvedRate} suffix="%" />
                 {spark && (
                   <span className="bb-spark" aria-hidden>
-                    ✨
+                    <Sparkles size={16} />
                   </span>
                 )}
               </>
@@ -163,7 +139,9 @@ export default function HeadlineStats({ s, now, onOpenReport }: Props) {
                 Latest cleanup
                 {s.latestCleanup && (
                   <span className="bb-dash-confirmed">
-                    {' · '}✨ {s.latestCleanup.confirmed ? 'Community confirmed' : 'Verified cleanup'}
+                    {' · '}
+                    <Sparkles size={12} aria-hidden />{' '}
+                    {s.latestCleanup.confirmed ? 'Community confirmed' : 'Verified cleanup'}
                   </span>
                 )}
               </>
@@ -179,7 +157,7 @@ export default function HeadlineStats({ s, now, onOpenReport }: Props) {
                       ? () => onOpenReport(s.latestCleanup!.id)
                       : undefined
                   }
-                  actionLabel="See before & after →"
+                  actionLabel="See before & after"
                 />
               ) : undefined
             }

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useReveal } from '../../hooks/useReveal'
+import CountUp from '../CountUp'
 import { SOURCE_LABELS, SOURCE_ORDER, type Category, type ReportSource } from '../../types'
 import { CATEGORY_ICON } from '../../lib/categoryIcons'
 import type { CategoryShare, TrendPoint } from '../../lib/stats'
@@ -74,7 +75,7 @@ export function Donut({ items }: { items: CategoryShare[] }) {
         </svg>
         <div className="bb-dash-donut-center">
           <span className="bb-dash-donut-center-num">
-            {focus ? `${focus.share}%` : total}
+            {focus ? `${focus.share}%` : <CountUp value={total} active={shown} />}
           </span>
           <span className="bb-dash-donut-center-label">
             {focus ? focus.label : total === 1 ? 'report' : 'reports'}
@@ -101,6 +102,12 @@ export function Donut({ items }: { items: CategoryShare[] }) {
           </li>
         ))}
       </ul>
+      {items.length > 0 && (
+        <p className="bb-dash-insight">
+          Most reported: <b>{items[0].label}</b>
+          <span className="bb-dash-insight-sub">{items[0].share}% of all reports</span>
+        </p>
+      )}
     </div>
   )
 }

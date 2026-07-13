@@ -222,7 +222,7 @@ function SpotlightEmpty({ onReport }: { onReport?: () => void }) {
           Did a report lead to a cleanup in your community?
         </p>
         <p className="bb-spotlight-empty-share-cta">
-          Tell us about it →{' '}
+          Tell us about it <ArrowRight size={13} aria-hidden />{' '}
           <a href="mailto:stories@bantaybasura.org?subject=Community%20cleanup%20story">
             stories@bantaybasura.org
           </a>

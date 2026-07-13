@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { BarChart3, Check } from 'lucide-react'
+import { BarChart3, Check, Lock } from 'lucide-react'
 import Footer from './Footer'
 import Reveal from './Reveal'
 import HeadlineStats from './dashboard/HeadlineStats'
@@ -176,6 +176,7 @@ export default function Dashboard({
                   <CleanupTimeline
                     report={latestReport}
                     place={s.latestCleanup!.lgu}
+                    now={now}
                     onOpenReport={onOpenReport}
                   />
                 </Reveal>
@@ -189,34 +190,42 @@ export default function Dashboard({
               onViewOnMap={onViewOnMap}
             />
 
-            <section className="bb-dash-section">
-              <div className="bb-dash-eyebrow">Community Highlights</div>
-
-              <CommunitySection cleanest={s.cleanestLgus} active={s.activeAreas} />
-            </section>
+            <CommunitySection
+              reports={reports}
+              now={now}
+              mostImproved={s.mostImproved?.name}
+              onViewOnMap={onViewOnMap}
+            />
 
             <RecentlyActive
               reports={reports}
               now={now}
               onReport={() => onNavigate('map')}
+              onViewAll={() => onNavigate('reports')}
               onViewOnMap={onViewOnMap}
+              onOpenReport={onOpenReport}
             />
 
             <section className="bb-dash-section bb-dash-section-tight">
-              <div className="bb-dash-eyebrow">Waste Profile</div>
+              <div className="bb-dash-eyebrow">Community Insights</div>
 
               <div className="bb-dash-grid3">
                 <WasteTrend trends={s.wasteTrends} />
                 <Card title="Reports Over Time" hint="Last 6 months">
                   <StackedBars points={s.monthlySeries} />
                 </Card>
-                <RecentCleanup cleanups={s.recentCleanups} now={now} />
+                <RecentCleanup
+                  cleanups={s.recentCleanups}
+                  now={now}
+                  onReport={() => onNavigate('map')}
+                  onOpenReport={onOpenReport}
+                />
               </div>
 
               <Reveal>
                 <p className="bb-dash-privacy">
-                  🔒 All figures are aggregated by area. No names, contacts, or personal
-                  information are ever shown. Accountability without exposure.
+                  <Lock size={13} aria-hidden /> All figures are aggregated by area. No names,
+                  contacts, or personal information are ever shown. Accountability without exposure.
                 </p>
               </Reveal>
             </section>

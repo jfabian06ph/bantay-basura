@@ -1,18 +1,21 @@
+import { Users, MapPin, FileText, ShieldCheck, Camera, Sprout, type LucideIcon } from 'lucide-react'
 import { useReveal } from '../../hooks/useReveal'
 import { communityConfirmed, CATEGORY_LABELS, type Report } from '../../types'
+import { relativeTime } from '../../lib/stats'
 import MapThumb from './MapThumb'
 
 interface Props {
   report: Report
   place: string
+  now: number
   onOpenReport?: (id: string) => void
 }
 
-const STEPS = [
-  { emoji: '📝', label: 'Report submitted' },
-  { emoji: '🛡️', label: 'Community verified' },
-  { emoji: '📸', label: 'Cleanup evidence' },
-  { emoji: '🌱', label: 'Cleanup completed' },
+const STEPS: { Icon: LucideIcon; label: string; desc: string }[] = [
+  { Icon: FileText, label: 'Report submitted', desc: 'The issue was reported by a resident.' },
+  { Icon: ShieldCheck, label: 'Community verified', desc: 'Nearby residents confirmed the report is real.' },
+  { Icon: Camera, label: 'Cleanup evidence', desc: 'Someone has shared a cleanup photo.' },
+  { Icon: Sprout, label: 'Cleanup completed', desc: 'Residents confirmed the area is clean.' },
 ]
 
 /** Clock time like "10:14 AM". */
@@ -60,7 +63,7 @@ function analyse(r: Report) {
   let completed = 0
   while (completed < raw.length && raw[completed].done) completed++
 
-  return { raw, completed, created, resolved }
+  return { raw, completed, created, resolved, conf, verified }
 }
 
 /**
@@ -69,16 +72,16 @@ function analyse(r: Report) {
  * honest — unfinished journeys show what's still pending rather than pretending
  * to be complete. Clicking opens the underlying report.
  */
-export default function CleanupTimeline({ report, place, onOpenReport }: Props) {
+export default function CleanupTimeline({ report, place, now, onOpenReport }: Props) {
   const { ref, shown } = useReveal<HTMLDivElement>()
-  const { raw, completed, created, resolved } = analyse(report)
+  const { raw, completed, created, resolved, conf, verified } = analyse(report)
 
   const finished = completed === STEPS.length
   const footer = finished
     ? resolved
       ? `Completed in ${humanDuration(resolved - created)}.`
       : 'This cleanup is complete.'
-    : `Currently waiting for ${STEPS[completed].label.toLowerCase()}.`
+    : `The community is now waiting for ${STEPS[completed].label.toLowerCase()}.`
 
   const clickable = Boolean(onOpenReport)
 
@@ -103,20 +106,28 @@ export default function CleanupTimeline({ report, place, onOpenReport }: Props) 
       <div className="bb-journey-head">
         <MapThumb lat={report.lat} lng={report.lng} size={46} zoom={13} />
         <div className="bb-journey-head-text">
-          <div className="bb-journey-place">📍 {place}</div>
+          <div className="bb-journey-place"><MapPin size={14} aria-hidden /> {place}</div>
           <div className="bb-journey-cat">{CATEGORY_LABELS[report.category]}</div>
+          <div className="bb-journey-reported">Reported {relativeTime(created, now)}</div>
         </div>
-        <span className="bb-journey-progress">{completed}/4</span>
+        <span className="bb-journey-progress">Step {Math.min(completed || 1, 4)} of 4</span>
       </div>
 
-      <ol className={`bb-journey ${shown ? 'is-in' : ''}`}>
+      <ol
+        className={`bb-journey ${shown ? 'is-in' : ''}`}
+        style={{ '--p': Math.min(1, completed / (STEPS.length - 1)) } as React.CSSProperties}
+      >
         {STEPS.map((step, i) => {
           const state = i < completed ? 'done' : i === completed ? 'current' : 'upcoming'
           const info = raw[i]
           return (
-            <li key={step.label} className={`bb-journey-step is-${state}`} style={{ '--i': i } as React.CSSProperties}>
-              <span className="bb-journey-node" aria-hidden>
-                {step.emoji}
+            <li
+              key={step.label}
+              className={`bb-journey-step is-${state}`}
+              style={{ '--i': i } as React.CSSProperties}
+            >
+              <span className="bb-journey-node" title={step.desc}>
+                <step.Icon size={16} aria-hidden />
               </span>
               <span className="bb-journey-label">{step.label}</span>
               <span className="bb-journey-when">
@@ -127,7 +138,24 @@ export default function CleanupTimeline({ report, place, onOpenReport }: Props) 
         })}
       </ol>
 
-      <p className={`bb-journey-footer ${finished ? 'is-done' : ''}`}>{footer}</p>
+      <div className="bb-journey-foot">
+        {verified && conf > 0 && (
+          <span className="bb-journey-people-ico" aria-hidden>
+            <Users size={14} />
+          </span>
+        )}
+        <span className={`bb-journey-foot-text ${finished ? 'is-done' : ''}`}>
+          {verified && conf > 0 && (
+            <>
+              <b>
+                {conf} resident{conf === 1 ? '' : 's'} helped verify
+              </b>{' '}
+              ·{' '}
+            </>
+          )}
+          {footer}
+        </span>
+      </div>
     </div>
   )
 }

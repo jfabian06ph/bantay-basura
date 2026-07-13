@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
-import { MapPin, ArrowRight, X, Search, ChevronDown } from 'lucide-react'
+import { MapPin, ArrowRight, X, Search, ChevronDown, PartyPopper } from 'lucide-react'
 import Reveal from '../Reveal'
 import AreaDrawer from './AreaDrawer'
 import MapThumb from './MapThumb'
@@ -228,7 +228,8 @@ export default function HotspotsSection({ hotspots, reports, now, onViewOnMap }:
         </Reveal>
       ) : (
         <p className="bb-dash-empty">
-          No open reports right now. Every flagged area has been cleared. 🎉
+          No open reports right now. Every flagged area has been cleared.{' '}
+          <PartyPopper size={15} aria-hidden />
         </p>
       )}
 
