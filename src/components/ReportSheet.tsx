@@ -4,6 +4,7 @@ import type { Category, Report } from '../types'
 import { CATEGORY_LABELS, CATEGORY_DESC, CATEGORY_ORDER } from '../types'
 import { CATEGORY_ICON } from '../lib/categoryIcons'
 import { reverseGeocode, type ReverseResult } from '../lib/geocode'
+import { distanceMeters, locationTier } from '../lib/geo'
 import { cn } from '@/lib/utils'
 import {
   Sheet,
@@ -22,6 +23,12 @@ interface Props {
   detected: boolean
   onAdjustLocation: () => void
   onUseMyLocation: () => void
+  /** Reporter's GPS, for the "far from you" nudge. Null if unknown. */
+  position: { lat: number; lng: number } | null
+  /** Has the reporter already acknowledged a location warning this draft? */
+  locationAck: boolean
+  /** Guard the location step's "Next" — resolves false to stay put. */
+  onRequestLocationNext: (coords: { lat: number; lng: number }) => Promise<boolean>
 }
 
 // Conversational step names — feels like a friendly chat, not a form (item 8).
@@ -51,6 +58,9 @@ export default function ReportSheet({
   detected,
   onAdjustLocation,
   onUseMyLocation,
+  position,
+  locationAck,
+  onRequestLocationNext,
 }: Props) {
   const [step, setStep] = useState(0)
   const [category, setCategory] = useState<Category | null>(null)
@@ -133,6 +143,30 @@ export default function ReportSheet({
   const canNext = step === 0 ? !!coords : step === 1 ? !!category : true
   const last = step === STEPS.length - 1
 
+  // Gentle, non-blocking "far from you" cue on the location step. Shows for
+  // medium distances, and stays as a reminder once a bigger warning has been
+  // acknowledged (the blocking dialog itself is owned by the flow hook).
+  const gpsMeters =
+    position && coords ? distanceMeters(position, coords) : null
+  const gpsTier = gpsMeters != null ? locationTier(gpsMeters) : 'none'
+  const showBanner =
+    gpsTier === 'banner' ||
+    ((gpsTier === 'dialog' || gpsTier === 'strong') && locationAck)
+  const bannerKm =
+    gpsMeters == null
+      ? '0'
+      : gpsMeters >= 10_000
+        ? String(Math.round(gpsMeters / 1000))
+        : (gpsMeters / 1000).toFixed(1)
+
+  async function goNext() {
+    if (step === 0 && coords) {
+      const proceed = await onRequestLocationNext(coords)
+      if (!proceed) return
+    }
+    setStep((s) => s + 1)
+  }
+
   const LocationBox = (
     <button
       type="button"
@@ -197,6 +231,15 @@ export default function ReportSheet({
                 The pin sits where the map is centered. Drag the map (tap above)
                 to place it on the waste, or snap it back to where you are.
               </p>
+              {showBanner && (
+                <div className="mt-3 flex items-start gap-2.5 rounded-2xl border border-amber-400/25 bg-amber-400/10 px-3.5 py-3 text-xs leading-snug font-medium text-amber-100">
+                  <span aria-hidden>📍</span>
+                  <span>
+                    This spot is about <b>{bannerKm} km</b> from where you are
+                    now. Double-check the pin is on the actual waste.
+                  </span>
+                </div>
+              )}
             </Section>
           )}
 
@@ -439,7 +482,7 @@ export default function ReportSheet({
           ) : (
             <button
               type="button"
-              onClick={() => setStep((s) => s + 1)}
+              onClick={goNext}
               disabled={!canNext}
               className="flex flex-1 items-center justify-center gap-1 rounded-[18px] bg-gradient-to-b from-[#2fbf6b] to-[#16a34a] py-3 text-[15px] font-extrabold text-white shadow-[0_14px_28px_rgba(22,163,74,.28)] disabled:opacity-40"
             >

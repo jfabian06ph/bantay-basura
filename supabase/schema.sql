@@ -245,3 +245,60 @@ drop policy if exists moderation_read on public.moderation_events;
 create policy moderation_read on public.moderation_events
   for select using (auth.role() = 'authenticated');
 -- Writes happen only via the service role (Edge Function), which bypasses RLS.
+
+-- Allow the "still here" evidence kind through the audit constraint.
+alter table public.moderation_events drop constraint if exists moderation_events_kind_check;
+alter table public.moderation_events
+  add constraint moderation_events_kind_check
+  check (kind in ('report', 'after', 'still_here'));
+
+-- ============================================================
+-- Report photos — evidence attached to a report over its lifetime.
+-- Each row is ONE approved image with its own timestamp, so the app can lay
+-- them out on the report's activity timeline. Residents confirming a report is
+-- "still here" can attach a fresh snapshot; those land here as kind 'still_here'
+-- (the original report photos stay on reports.photo_urls, and the single
+-- cleanup photo stays on reports.after_image_url). Public can read (only
+-- approved images are ever inserted); writes happen only via the service-role
+-- Edge Function after moderation.
+-- ============================================================
+create table if not exists public.report_photos (
+  id          uuid primary key default gen_random_uuid(),
+  report_id   uuid not null references public.reports on delete cascade,
+  url         text not null,
+  kind        text not null default 'still_here'
+              check (kind in ('report', 'still_here', 'after')),
+  created_at  timestamptz not null default now()
+);
+create index if not exists report_photos_report_idx
+  on public.report_photos (report_id, created_at);
+
+alter table public.report_photos enable row level security;
+drop policy if exists report_photos_read on public.report_photos;
+create policy report_photos_read on public.report_photos for select using (true);
+-- No anon insert/update/delete: only the moderation Edge Function (service
+-- role) writes here, and only after an image is approved.
+
+-- ============================================================
+-- Realtime — stream new reports, confirmations (still_here/cleared updates),
+-- status changes, and approved evidence photos so the public map updates live
+-- without a manual refresh. Subscribers only receive what the public-read RLS
+-- policies above already allow. Idempotent: only adds tables not yet published.
+-- ============================================================
+do $$
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    if not exists (
+      select 1 from pg_publication_tables
+      where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'reports'
+    ) then
+      alter publication supabase_realtime add table public.reports;
+    end if;
+    if not exists (
+      select 1 from pg_publication_tables
+      where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'report_photos'
+    ) then
+      alter publication supabase_realtime add table public.report_photos;
+    end if;
+  end if;
+end $$;

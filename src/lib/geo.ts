@@ -23,3 +23,28 @@ export function formatDistance(meters: number): string {
   if (meters < 1000) return `≈ ${Math.round(meters)} m away`
   return `≈ ${(meters / 1000).toFixed(1)} km away`
 }
+
+/**
+ * How far a pinned report is from the reporter's GPS, bucketed into how loudly
+ * we should warn. This keeps someone standing across the street from being
+ * nagged, while still catching a pin dropped in the wrong city.
+ *
+ *   < 500 m   → 'none'   (say nothing)
+ *   500 m-5 km → 'banner' (gentle inline note, non-blocking)
+ *   5-50 km   → 'dialog' (blocking confirmation)
+ *   ≥ 50 km   → 'strong' (blocking confirmation, stronger tone)
+ */
+export const LOCATION_WARN_METERS = {
+  banner: 500,
+  dialog: 5_000,
+  strong: 50_000,
+} as const
+
+export type LocationTier = 'none' | 'banner' | 'dialog' | 'strong'
+
+export function locationTier(meters: number): LocationTier {
+  if (meters >= LOCATION_WARN_METERS.strong) return 'strong'
+  if (meters >= LOCATION_WARN_METERS.dialog) return 'dialog'
+  if (meters >= LOCATION_WARN_METERS.banner) return 'banner'
+  return 'none'
+}

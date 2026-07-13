@@ -11,7 +11,8 @@ import SubmitSuccess from './components/SubmitSuccess'
 import PageRouter from './components/PageRouter'
 import DevPanel from './components/DevPanel'
 import { MOCK_REPORTS } from './mockData'
-import { isBackendConnected, loadReports } from './supabase'
+import { isBackendConnected, loadReports, subscribeReportChanges } from './supabase'
+import { isAuthored } from './lib/votes'
 import { useUserLocation } from './hooks/useUserLocation'
 import { useReportFlow } from './hooks/useReportFlow'
 import type { LatLng, Report, ReportStatus } from './types'
@@ -108,6 +109,35 @@ export default function PublicApp({ onSignIn, ready = true }: Props) {
     return () => {
       alive = false
     }
+  }, [])
+
+  // Live updates — reflect other residents' actions without a refresh. Merges
+  // are guarded against our own optimistic rows: INSERTs we authored are already
+  // on-screen, and photo/field updates preserve locally-known evidence.
+  useEffect(() => {
+    if (!isBackendConnected) return
+    return subscribeReportChanges({
+      onInsert: (r) =>
+        setReports((prev) =>
+          prev.some((x) => x.id === r.id) || isAuthored(r.id) ? prev : [r, ...prev],
+        ),
+      onUpdate: (r) =>
+        setReports((prev) =>
+          prev.map((x) =>
+            // A realtime reports row carries no embedded photos, so keep the
+            // evidence we already loaded/streamed rather than clobbering it.
+            x.id === r.id ? { ...x, ...r, updatePhotos: x.updatePhotos } : x,
+          ),
+        ),
+      onStillPhoto: (reportId, photo) =>
+        setReports((prev) =>
+          prev.map((x) => {
+            if (x.id !== reportId) return x
+            if ((x.updatePhotos ?? []).some((p) => p.url === photo.url)) return x
+            return { ...x, updatePhotos: [...(x.updatePhotos ?? []), photo] }
+          }),
+        ),
+    })
   }, [])
 
   // Mobile: let the live status peek for a few seconds, then collapse it to the
@@ -288,6 +318,7 @@ export default function PublicApp({ onSignIn, ready = true }: Props) {
         selectedReport={selectedReport}
         onConfirmReport={flow.confirmReport}
         onUploadAfter={flow.uploadAfterPhoto}
+        onUploadStill={flow.uploadStillPhoto}
         onSelectReport={(r) => setSelectedId(r.id)}
         onCloseReport={() => setSelectedId(null)}
         onJump={(t) => flyTo(t.lat, t.lng, t.zoom)}
@@ -319,6 +350,9 @@ export default function PublicApp({ onSignIn, ready = true }: Props) {
         pendingDetected={flow.pendingDetected}
         onAdjustLocation={flow.adjustLocation}
         onUseMyLocation={flow.useMyLocation}
+        position={position ? { lat: position.lat, lng: position.lng } : null}
+        locationAck={flow.locationAck}
+        onRequestLocationNext={flow.guardLocationNext}
         mismatch={flow.mismatch}
         onMismatchUseCurrent={flow.mismatchUseCurrent}
         onMismatchKeepChosen={flow.mismatchKeepChosen}
