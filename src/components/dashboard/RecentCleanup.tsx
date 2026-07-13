@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from '../ui/dia
 import { relativeTime, type RecentCleanup as Cleanup } from '../../lib/stats'
 import { CATEGORY_LABELS } from '../../types'
 import { CATEGORY_ICON } from '../../lib/categoryIcons'
+import MapThumb from './MapThumb'
 
 interface Props {
   cleanups: Cleanup[]
@@ -41,12 +42,8 @@ function CleanupRow({
           {c.photo ? (
             <img src={c.photo} alt="" loading="lazy" />
           ) : (
-            <span className="bb-dash-event-emoji">
-              {(() => {
-                const Icon = CATEGORY_ICON[c.category]
-                return <Icon className="size-5" />
-              })()}
-            </span>
+            // No photo — show a mini map of the actual spot instead of an icon.
+            <MapThumb lat={c.lat} lng={c.lng} size={40} />
           )}
         </span>
         <span className="bb-cleanup-row-main">

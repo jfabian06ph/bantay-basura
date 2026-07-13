@@ -10,7 +10,10 @@ const prefersReduced =
  * reduced-motion it starts shown, so nothing is hidden from the user.
  */
 export function useReveal<T extends HTMLElement = HTMLDivElement>(
-  rootMargin = '0px 0px -10% 0px',
+  // Expand the trigger area 15% BELOW the viewport so content sitting at/just
+  // under the fold (e.g. "Areas Needing Attention") reveals on load instead of
+  // staying blank until the user scrolls. Truly far-down content still waits.
+  rootMargin = '0px 0px 15% 0px',
 ) {
   const ref = useRef<T | null>(null)
   const [shown, setShown] = useState(prefersReduced)
@@ -30,7 +33,7 @@ export function useReveal<T extends HTMLElement = HTMLDivElement>(
           io.disconnect()
         }
       },
-      { rootMargin, threshold: 0.15 },
+      { rootMargin, threshold: 0 },
     )
     io.observe(el)
     return () => io.disconnect()

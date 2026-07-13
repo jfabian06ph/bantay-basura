@@ -19,6 +19,9 @@ export const CATEGORY_COLORS: Record<Category, string> = {
   recycling: '#8ab84e',
   burning: '#d98a24',
   construction: '#8a7350',
+  hazardous: '#7c3aed',
+  bulky: '#4d7fb3',
+  dead_animal: '#7a8290',
 }
 
 /**
@@ -45,7 +48,8 @@ export function Donut({ items }: { items: CategoryShare[] }) {
     <div className="bb-dash-waste" ref={ref}>
       <div className="bb-dash-donut" onMouseLeave={() => setActive(null)}>
         <svg viewBox="0 0 36 36" className="bb-dash-donut-svg">
-          {segs.map(({ c, start, len }, i) => (
+          {segs.map(({ c, start, len }, i) =>
+            len <= 0 ? null : (
             <circle
               key={c.category}
               className="bb-dash-donut-seg"

@@ -23,27 +23,33 @@ export function pinIcon(report: Report, selected = false): L.DivIcon {
   })
 }
 
+/** One reports-by-status tally inside a cluster (matches the 4 status badges). */
+export interface ClusterSeg {
+  pending: number
+  verified: number
+  cleanup: number
+  resolved: number
+}
+
+/** The four status colours, in lifecycle order — shared by the ring + tooltip. */
+export const CLUSTER_STATUS = [
+  { key: 'pending', label: 'Pending', color: STATUS_COLORS.pending },
+  { key: 'verified', label: 'Verified', color: STATUS_COLORS.in_review },
+  { key: 'cleanup', label: 'Cleanup Submitted', color: '#3b82f6' },
+  { key: 'resolved', label: 'Resolved', color: STATUS_COLORS.resolved },
+] as const
+
 /**
- * A cluster bubble: a donut ring showing the real status MIX of the reports
- * inside (red pending / orange verified+cleanup / green resolved), with the
- * count in a dark center. A single colour would misleadingly read as "all
- * urgent" when a cluster is actually a healthy mix.
+ * A cluster bubble — a clean, minimal deep-navy map marker with the count. It
+ * reads as "a place with N reports" and stays out of the way, leaving the
+ * colored status pins as the primary visual language. (The per-status mix is
+ * surfaced in the hover tooltip instead — see the cluster Tooltip in MapView.)
  */
-export function clusterIcon(
-  count: number,
-  seg: { open: number; review: number; done: number },
-): L.DivIcon {
+export function clusterIcon(count: number): L.DivIcon {
   const size = count < 10 ? 40 : count < 50 ? 48 : 56
-  const total = seg.open + seg.review + seg.done || 1
-  const p1 = (seg.open / total) * 100
-  const p2 = p1 + (seg.review / total) * 100
-  const ring =
-    `conic-gradient(${STATUS_COLORS.pending} 0 ${p1}%,` +
-    ` ${STATUS_COLORS.in_review} ${p1}% ${p2}%,` +
-    ` ${STATUS_COLORS.resolved} ${p2}% 100%)`
   return L.divIcon({
     className: 'bb-cluster',
-    html: `<div class="bb-cluster-bubble" style="width:${size}px;height:${size}px;background:${ring}"><span class="bb-cluster-inner">${count}</span></div>`,
+    html: `<div class="bb-cluster-bubble" style="width:${size}px;height:${size}px">${count}</div>`,
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
   })

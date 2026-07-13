@@ -7,64 +7,48 @@ import type { RecentCleanup } from '../../lib/stats'
 interface Props {
   cleanups: RecentCleanup[]
   onReadMore?: () => void
+  /** Drops the visitor into the report flow — powers the empty-state CTA. */
+  onReport?: () => void
 }
-
-/** Social-proof story count — reads as "there are already this many wins". */
-const STORY_NO = 128
-
-/** Rotating resident/volunteer/LGU voices — browsable via the carousel. */
-const STORIES = [
-  {
-    quote:
-      'I never thought someone would actually respond. A few days later, our shoreline was completely clean.',
-    name: 'Maria D.',
-    role: 'Resident',
-  },
-  {
-    quote:
-      'We used to walk past this trash every morning. A week after reporting it, it was gone.',
-    name: 'John R.',
-    role: 'Resident',
-  },
-  {
-    quote:
-      'We organized a cleanup drive after five reports came in from the same spot. Neighbors just showed up.',
-    name: 'Ka Ernesto',
-    role: 'Barangay Volunteer',
-  },
-  {
-    quote:
-      'This platform shows us exactly where to send limited resources first. It changed how we prioritize.',
-    name: 'Capt. Reyes',
-    role: 'LGU Official',
-  },
-  {
-    quote:
-      'I reported it on my way to school. Seeing it cleaned a few days later made me feel like my voice mattered.',
-    name: 'Liza M.',
-    role: 'Student',
-  },
-]
 
 function fmtDate(ms: number): string {
   return new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-export default function CommunitySpotlight({ cleanups, onReadMore }: Props) {
+export default function CommunitySpotlight({ cleanups, onReadMore, onReport }: Props) {
+  // A "story" is a fully documented cleanup — real before + after photos. We
+  // never fabricate testimonials, so these are the only slides we ever show.
   const withPhotos = cleanups.filter((c) => c.beforePhotos?.[0] && c.afterPhotos?.[0])
-  const [idx, setIdx] = useState(() => Math.floor(Math.random() * STORIES.length))
+  const [idx, setIdx] = useState(0)
   const [lightbox, setLightbox] = useState(false)
 
-  const story = STORIES[idx]
-  const c = withPhotos.length ? withPhotos[idx % withPhotos.length] : undefined
-  const place = c?.lgu
-  const num = STORY_NO - idx
-  const before = c?.beforePhotos?.[0]
-  const after = c?.afterPhotos?.[0]
-  const resolveDays =
-    c && c.reportedAt != null ? Math.max(0, (c.when - c.reportedAt) / 86_400_000) : null
+  // No real cleanup has been documented yet — honestly say the first story is
+  // still waiting to be written rather than inventing one.
+  if (withPhotos.length === 0) {
+    return (
+      <section className="bb-dash-section bb-dash-section-tight">
+        <div className="bb-dash-eyebrow">Real Stories</div>
+        <h3 className="bb-spotlight-headline">
+          One report.
+          <br />
+          Real change.
+        </h3>
+        <SpotlightEmpty onReport={onReport} />
+      </section>
+    )
+  }
 
-  const go = (d: number) => setIdx((i) => (i + d + STORIES.length) % STORIES.length)
+  const safeIdx = idx % withPhotos.length
+  const c = withPhotos[safeIdx]
+  const place = c.lgu
+  // The resident's own note is the story — shown verbatim, never invented.
+  const quote = c.note?.trim() || null
+  const before = c.beforePhotos?.[0]
+  const after = c.afterPhotos?.[0]
+  const resolveDays =
+    c.reportedAt != null ? Math.max(0, (c.when - c.reportedAt) / 86_400_000) : null
+
+  const go = (d: number) => setIdx((i) => (i + d + withPhotos.length) % withPhotos.length)
 
   return (
     <section className="bb-dash-section bb-dash-section-tight">
@@ -77,8 +61,8 @@ export default function CommunitySpotlight({ cleanups, onReadMore }: Props) {
 
       <Reveal>
         {/* keyed on idx so each story fades in fresh */}
-        <figure className="bb-spotlight" key={idx}>
-          {c && before && after && (
+        <figure className="bb-spotlight" key={safeIdx}>
+          {before && after && (
             <div className="bb-spotlight-photos">
               <button className="bb-spotlight-photo is-before" onClick={() => setLightbox(true)}>
                 <img src={before} alt="Before cleanup" loading="lazy" />
@@ -99,7 +83,7 @@ export default function CommunitySpotlight({ cleanups, onReadMore }: Props) {
 
           <div className="bb-spotlight-body">
             <div className="bb-spotlight-head">
-              <span className="bb-spotlight-badge">Success Story #{num}</span>
+              <span className="bb-spotlight-badge">Success Story #{safeIdx + 1}</span>
               {place && (
                 <span className="bb-spotlight-loc">
                   <MapPin size={13} aria-hidden />
@@ -107,55 +91,56 @@ export default function CommunitySpotlight({ cleanups, onReadMore }: Props) {
                 </span>
               )}
             </div>
-            {c?.title && <div className="bb-spotlight-title">{c.title}</div>}
+            {c.title && <div className="bb-spotlight-title">{c.title}</div>}
 
-            <blockquote className="bb-spotlight-quote">
-              <span className="bb-spotlight-mark" aria-hidden>
-                &ldquo;
-              </span>
-              {story.quote}
-            </blockquote>
+            {quote && (
+              <blockquote className="bb-spotlight-quote">
+                <span className="bb-spotlight-mark" aria-hidden>
+                  &ldquo;
+                </span>
+                {quote}
+              </blockquote>
+            )}
 
+            {/* Places, not people: an anonymous community attribution — we never
+                surface individual reporters. */}
             <figcaption className="bb-spotlight-by">
               <span className="bb-spotlight-avatar" aria-hidden>
-                {story.name[0]}
+                <MapPin size={16} />
               </span>
               <span className="bb-spotlight-who">
-                <b>{story.name}</b>
+                <b>Reported by a resident</b>
                 <span className="bb-spotlight-role">
-                  {story.role}
-                  {place ? ` • ${place}` : ''}
+                  Verified cleanup{place ? ` • ${place}` : ''}
                 </span>
               </span>
             </figcaption>
 
-            {c && (
-              <ul className="bb-spotlight-proof">
-                {(c.confirmations ?? 0) > 0 && <li>{c.confirmations} residents confirmed</li>}
-                {resolveDays != null && <li>Resolved in {resolveDays.toFixed(1)} days</li>}
-                <li>Cleanup completed {fmtDate(c.when)}</li>
-              </ul>
-            )}
+            <ul className="bb-spotlight-proof">
+              {(c.confirmations ?? 0) > 0 && <li>{c.confirmations} residents confirmed</li>}
+              {resolveDays != null && <li>Resolved in {resolveDays.toFixed(1)} days</li>}
+              <li>Cleanup completed {fmtDate(c.when)}</li>
+            </ul>
           </div>
         </figure>
       </Reveal>
 
       <div className="bb-spotlight-bar">
         <span className="bb-spotlight-bar-count">
-          {STORY_NO} reports that became real cleanups
+          {withPhotos.length} report{withPhotos.length === 1 ? '' : 's'} that became real cleanups
         </span>
         <div className="bb-spotlight-nav">
           <button className="bb-spotlight-arrow" onClick={() => go(-1)} aria-label="Previous story">
             <ChevronLeft size={18} />
           </button>
           <div className="bb-spotlight-dots">
-            {STORIES.map((_, i) => (
+            {withPhotos.map((_, i) => (
               <button
                 key={i}
-                className={`bb-spotlight-dot ${i === idx ? 'is-active' : ''}`}
+                className={`bb-spotlight-dot ${i === safeIdx ? 'is-active' : ''}`}
                 onClick={() => setIdx(i)}
                 aria-label={`Story ${i + 1}`}
-                aria-current={i === idx}
+                aria-current={i === safeIdx}
               />
             ))}
           </div>
@@ -208,5 +193,45 @@ export default function CommunitySpotlight({ cleanups, onReadMore }: Props) {
         </DialogContent>
       </Dialog>
     </section>
+  )
+}
+
+/**
+ * Honest empty state for the Real Stories section — shown until a real cleanup
+ * exists. Invites the first report, and opens a channel for residents to share
+ * a story we can feature (with permission). No fabricated testimonials.
+ */
+function SpotlightEmpty({ onReport }: { onReport?: () => void }) {
+  return (
+    <div className="bb-spotlight-empty">
+      <div className="bb-spotlight-empty-main">
+        <p className="bb-spotlight-empty-lede">Every success story starts with one report.</p>
+        <p className="bb-spotlight-empty-sub">The first cleanup story hasn&rsquo;t happened yet.</p>
+        <p className="bb-spotlight-empty-nudge">Help us write it.</p>
+        {onReport && (
+          <button className="bb-spotlight-empty-cta" onClick={onReport}>
+            Report Waste
+          </button>
+        )}
+      </div>
+
+      <div className="bb-spotlight-empty-share">
+        <p className="bb-spotlight-empty-share-title">
+          <span aria-hidden>🌱</span> Have a story worth sharing?
+        </p>
+        <p className="bb-spotlight-empty-share-q">
+          Did a report lead to a cleanup in your community?
+        </p>
+        <p className="bb-spotlight-empty-share-cta">
+          Tell us about it →{' '}
+          <a href="mailto:stories@bantaybasura.org?subject=Community%20cleanup%20story">
+            stories@bantaybasura.org
+          </a>
+        </p>
+        <p className="bb-spotlight-empty-share-note">
+          We&rsquo;ll feature real community cleanups, with your permission, to inspire others.
+        </p>
+      </div>
+    </div>
   )
 }

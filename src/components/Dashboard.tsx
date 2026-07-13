@@ -20,6 +20,7 @@ interface Props {
   onClose: () => void
   onNavigate: (view: string) => void
   onViewOnMap?: (lat: number, lng: number, zoom: number) => void
+  onOpenReport?: (id: string) => void
 }
 
 /**
@@ -33,6 +34,7 @@ export default function Dashboard({
   onClose,
   onNavigate,
   onViewOnMap,
+  onOpenReport,
 }: Props) {
   const s = useMemo(() => computeDashboard(reports, now), [reports, now])
   const empty = reports.length === 0
@@ -92,8 +94,8 @@ export default function Dashboard({
               </p>
               <ul className="bb-dash-empty-list">
                 <li><Check className="size-4" /> How many reports were submitted</li>
-                <li><Check className="size-4" /> Average cleanup time</li>
                 <li><Check className="size-4" /> Resolution rate</li>
+                <li><Check className="size-4" /> Areas needing attention</li>
                 <li><Check className="size-4" /> Community verification</li>
               </ul>
               <p className="bb-dash-empty-foot">
@@ -106,7 +108,7 @@ export default function Dashboard({
           </section>
         ) : (
           <>
-            <HeadlineStats s={s} now={now} onViewDetails={onClose} />
+            <HeadlineStats s={s} now={now} onOpenReport={onOpenReport} />
 
             <HotspotsSection
               hotspots={s.hotspots}
@@ -143,6 +145,7 @@ export default function Dashboard({
             <CommunitySpotlight
               cleanups={s.recentCleanups}
               onReadMore={() => onNavigate('reports')}
+              onReport={() => onNavigate('map')}
             />
           </>
         )}

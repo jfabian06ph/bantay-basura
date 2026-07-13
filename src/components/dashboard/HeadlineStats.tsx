@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { ChevronDown, Trophy, Flame, Zap, MapPin } from 'lucide-react'
+import { ChevronDown, Trophy, Flame, MapPin } from 'lucide-react'
 import Reveal from '../Reveal'
 import CountUp from '../CountUp'
 import { Metric } from './primitives'
@@ -8,7 +8,7 @@ import { relativeTime, type DashboardStats } from '../../lib/stats'
 interface Props {
   s: DashboardStats
   now: number
-  onViewDetails?: () => void
+  onOpenReport?: (id: string) => void
 }
 
 const PERIODS = [
@@ -65,13 +65,11 @@ function Highlight({
 }
 
 /** The "This Month" headline grid — the accountability numbers up top. */
-export default function HeadlineStats({ s, now, onViewDetails }: Props) {
+export default function HeadlineStats({ s, now, onOpenReport }: Props) {
   const [period, setPeriod] = useState('month')
 
   const leader = s.cleanestLgus[0]
   const active = s.activeAreas[0]
-  const fastest = s.fastestLgu
-  const fastestStat = fastest?.value.replace(' days', '-day average')
 
   return (
     <section className="bb-dash-section bb-dash-section-lead">
@@ -122,25 +120,6 @@ export default function HeadlineStats({ s, now, onViewDetails }: Props) {
             }
           />
           <Metric
-            value={
-              s.avgResponseDays !== null ? (
-                <CountUp value={s.avgResponseDays} decimals={1} suffix=" days" />
-              ) : (
-                '-'
-              )
-            }
-            label="Average response"
-            foot={
-              <Highlight
-                icon={<Zap size={14} />}
-                iconColor="#2563eb"
-                label="Fastest Cleanup"
-                place={fastest?.name ?? '-'}
-                stat={fastestStat}
-              />
-            }
-          />
-          <Metric
             value={s.latestCleanup ? relativeTime(s.latestCleanup.when, now) : '-'}
             label="Latest cleanup"
             foot={
@@ -149,7 +128,11 @@ export default function HeadlineStats({ s, now, onViewDetails }: Props) {
                   icon={<MapPin size={14} />}
                   iconColor="#009336"
                   place={s.latestCleanup.lgu}
-                  onAction={onViewDetails}
+                  onAction={
+                    onOpenReport && s.latestCleanup
+                      ? () => onOpenReport(s.latestCleanup!.id)
+                      : undefined
+                  }
                   actionLabel="See before & after →"
                 />
               ) : undefined

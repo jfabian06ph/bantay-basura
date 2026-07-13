@@ -13,9 +13,9 @@ import Supercluster from 'supercluster'
 import { Plus, Minus, Layers, Maximize, Trash2, SlidersHorizontal, Sprout } from 'lucide-react'
 import 'leaflet/dist/leaflet.css'
 import type { Report } from '../types'
-import { CATEGORY_LABELS, STATUS_LABELS, STATUS_COLORS, displayBucket } from '../types'
+import { CATEGORY_LABELS, STATUS_LABELS, STATUS_COLORS, displayStatus } from '../types'
 import { CATEGORY_ICON } from '../lib/categoryIcons'
-import { pinIcon, clusterIcon, userLocationIcon } from '../markerIcon'
+import { pinIcon, clusterIcon, userLocationIcon, CLUSTER_STATUS } from '../markerIcon'
 import type { UserLocation } from '../hooks/useUserLocation'
 import { distanceMeters, formatDistance } from '../lib/geo'
 import type { StatusFilter } from '../PublicApp'
@@ -280,27 +280,34 @@ function ClusterLayer({ reports, now, userPos, onConfirm, onSelect, selectedId }
     const idx = new Supercluster<any, any>({
       radius: 60,
       maxZoom: 17,
-      map: (p) => ({ open: p.open, review: p.review, done: p.done }),
+      map: (p) => ({
+        pending: p.pending,
+        verified: p.verified,
+        cleanup: p.cleanup,
+        resolved: p.resolved,
+      }),
       reduce: (acc, p) => {
-        acc.open += p.open
-        acc.review += p.review
-        acc.done += p.done
+        acc.pending += p.pending
+        acc.verified += p.verified
+        acc.cleanup += p.cleanup
+        acc.resolved += p.resolved
       },
     })
     idx.load(
       reports.map((r) => {
-        // Group by the community-aware display bucket (same as the pins), so a
-        // cluster's donut reflects what you'd see zoomed in — not the raw DB
-        // status (which would keep community-resolved reports red).
-        const b = displayBucket(r)
+        // Count by the SAME derived status as the pins/badges, so the cluster
+        // ring is a true 4-status summary of what's inside (blue only when a
+        // Cleanup Submitted report is actually present).
+        const k = displayStatus(r).key
         return {
           type: 'Feature' as const,
           properties: {
             cluster: false,
             report: r,
-            open: b === 'pending' ? 1 : 0,
-            review: b === 'in_review' ? 1 : 0,
-            done: b === 'resolved' ? 1 : 0,
+            pending: k === 'pending' ? 1 : 0,
+            verified: k === 'in_review' ? 1 : 0,
+            cleanup: k === 'cleanup' ? 1 : 0,
+            resolved: k === 'resolved' || k === 'published' ? 1 : 0,
           },
           geometry: { type: 'Point' as const, coordinates: [r.lng, r.lat] },
         }
@@ -321,12 +328,13 @@ function ClusterLayer({ reports, now, userPos, onConfirm, onSelect, selectedId }
         const props = f.properties as Record<string, any>
 
         if (props.cluster) {
-          const { open, review, done, point_count, cluster_id } = props
+          const { pending, verified, cleanup, resolved, point_count, cluster_id } = props
+          const seg = { pending, verified, cleanup, resolved }
           return (
             <Marker
               key={`cluster-${cluster_id}`}
               position={[lat, lng]}
-              icon={clusterIcon(point_count, { open, review, done })}
+              icon={clusterIcon(point_count)}
               eventHandlers={{
                 click: () => {
                   const z = Math.min(
@@ -336,7 +344,22 @@ function ClusterLayer({ reports, now, userPos, onConfirm, onSelect, selectedId }
                   map.flyTo([lat, lng], z, { duration: 0.8 })
                 },
               }}
-            />
+            >
+              <Tooltip direction="top" offset={[0, -4]} opacity={1} className="bb-tip">
+                <div className="bb-cluster-tip">
+                  <div className="bb-cluster-tip-count">{point_count} reports</div>
+                  {CLUSTER_STATUS.map((s) =>
+                    seg[s.key] > 0 ? (
+                      <div key={s.key} className="bb-cluster-tip-row">
+                        <span className="bb-cluster-tip-dot" style={{ background: s.color }} />
+                        <b>{seg[s.key]}</b> {s.label}
+                      </div>
+                    ) : null,
+                  )}
+                  <div className="bb-cluster-tip-hint">Tap to zoom in</div>
+                </div>
+              </Tooltip>
+            </Marker>
           )
         }
 
