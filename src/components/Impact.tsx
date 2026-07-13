@@ -31,7 +31,6 @@ import {
   HERO_MARKERS,
   INCOMING_FEED,
   GROUPS,
-  GALLERY,
   CHALLENGE,
   SCHOOLS,
   PARTNERS,
@@ -133,6 +132,20 @@ export default function Impact({ onNavigate, reports, now, onViewOnMap }: Props)
   // Places, not people: rank communities by resolution rate from real reports.
   const communities = useMemo(() => communityRankings(reports, now), [reports, now])
   const totals = useMemo(() => impactTotals(reports), [reports])
+
+  // Real before/after pairs only — a resolved report that has both an original
+  // photo and an "after" photo. No stock images, no generated examples: an
+  // empty gallery honestly waits for the first real cleanup.
+  const galleries = useMemo(() => {
+    const out: { before: string; after: string; place: string }[] = []
+    for (const r of reports) {
+      if (r.status !== 'resolved') continue
+      const before = r.photoUrl ?? r.photoUrls?.[0]
+      const after = r.afterImageUrl ?? r.resolvedPhotoUrls?.[0]
+      if (before && after) out.push({ before, after, place: r.municipality ?? 'A community' })
+    }
+    return out
+  }, [reports])
 
   const byDay = useMemo(() => {
     const m = new Map<number, Activity>()
@@ -521,41 +534,47 @@ export default function Impact({ onNavigate, reports, now, onViewOnMap }: Props)
           </div>
         </section>
 
-        {/* ---------- Before & After Gallery (drag / swipe like Instagram) ---------- */}
+        {/* ---------- Before & After: real cleanups only, else an honest wait ---------- */}
         <section className="bb-imp-section">
           <div className="bb-imp-eyebrow">Before &amp; After</div>
-          <h2 className="bb-imp-h2">The difference a morning makes</h2>
-          <div className="bb-imp-gallery-wrap">
-            <button
-              className="bb-imp-gal-arrow bb-imp-gal-prev"
-              onClick={() => scrollGallery(-1)}
-              aria-label="Previous"
-            >
-              <ChevronLeft className="size-5" />
-            </button>
-            <div
-              className="bb-imp-gallery"
-              ref={galleryRef}
-              onPointerDown={onGalleryDown}
-              onPointerMove={onGalleryMove}
-              onPointerUp={endGalleryDrag}
-              onPointerLeave={endGalleryDrag}
-            >
-              {GALLERY.map((g, i) => (
-                <figure className="bb-imp-ba-card" key={i}>
-                  <BeforeAfter before={g.before} after={g.after} />
-                  <figcaption>{g.place}</figcaption>
-                </figure>
-              ))}
-            </div>
-            <button
-              className="bb-imp-gal-arrow bb-imp-gal-next"
-              onClick={() => scrollGallery(1)}
-              aria-label="Next"
-            >
-              <ChevronRight className="size-5" />
-            </button>
-          </div>
+          {galleries.length > 0 ? (
+            <>
+              <h2 className="bb-imp-h2">The difference a morning makes</h2>
+              <div className="bb-imp-gallery-wrap">
+                <button
+                  className="bb-imp-gal-arrow bb-imp-gal-prev"
+                  onClick={() => scrollGallery(-1)}
+                  aria-label="Previous"
+                >
+                  <ChevronLeft className="size-5" />
+                </button>
+                <div
+                  className="bb-imp-gallery"
+                  ref={galleryRef}
+                  onPointerDown={onGalleryDown}
+                  onPointerMove={onGalleryMove}
+                  onPointerUp={endGalleryDrag}
+                  onPointerLeave={endGalleryDrag}
+                >
+                  {galleries.map((g, i) => (
+                    <figure className="bb-imp-ba-card" key={i}>
+                      <BeforeAfter before={g.before} after={g.after} />
+                      <figcaption>{g.place}</figcaption>
+                    </figure>
+                  ))}
+                </div>
+                <button
+                  className="bb-imp-gal-arrow bb-imp-gal-next"
+                  onClick={() => scrollGallery(1)}
+                  aria-label="Next"
+                >
+                  <ChevronRight className="size-5" />
+                </button>
+              </div>
+            </>
+          ) : (
+            <GalleryEmpty />
+          )}
         </section>
 
         {/* ---------- Communities + Heroes: we celebrate places & teams, never
@@ -790,6 +809,31 @@ export default function Impact({ onNavigate, reports, now, onViewOnMap }: Props)
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+/**
+ * The before/after gallery's honest empty state. We never show stock or
+ * generated cleanups — until a real one is documented, this space says so.
+ */
+function GalleryEmpty() {
+  return (
+    <div className="bb-imp-ba-empty">
+      <div className="bb-imp-ba-frame" aria-hidden>
+        <span className="bb-imp-ba-frame-tag">Before</span>
+        <span className="bb-imp-ba-frame-tag">After</span>
+      </div>
+      <div className="bb-imp-ba-empty-copy">
+        <h2 className="bb-imp-h2">The first success story starts here.</h2>
+        <p>
+          Every before-and-after on Bantay Basura is a real cleanup completed by
+          a community. We don&rsquo;t use stock photos or generated examples.
+        </p>
+        <p className="bb-imp-ba-empty-foot">
+          When the first cleanup is documented, this space will proudly tell that story.
+        </p>
+      </div>
     </div>
   )
 }

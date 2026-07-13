@@ -1098,6 +1098,60 @@
   }
 }
 
+/* ---------- Before/After honest empty state (no stock photos) ---------- */
+.bb-imp-ba-empty {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 32px;
+  align-items: center;
+}
+.bb-imp-ba-frame {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--imp-radius);
+  border: 2px dashed #d8d3ca;
+  background: #faf9f7;
+  overflow: hidden;
+}
+.bb-imp-ba-frame::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 14px;
+  bottom: 14px;
+  border-left: 2px dashed #d8d3ca;
+}
+.bb-imp-ba-frame-tag {
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #b9b2a8;
+}
+.bb-imp-ba-empty-copy h2 {
+  margin: 0 0 14px;
+}
+.bb-imp-ba-empty-copy p {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--imp-mute);
+  margin: 0 0 12px;
+}
+.bb-imp-ba-empty-foot {
+  font-weight: 700;
+  color: var(--imp-ink) !important;
+}
+@media (max-width: 760px) {
+  .bb-imp-ba-empty {
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+}
+
 /* ---------- Communities Making Progress (places, not people) ---------- */
 .bb-imp-panel-sub {
   margin: -8px 0 14px;

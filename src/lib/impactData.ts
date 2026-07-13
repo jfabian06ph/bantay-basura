@@ -267,12 +267,9 @@ export const GROUPS: Group[] = [
 // hero counters are likewise real community totals (`impactTotals`), not vanity
 // numbers, so there is no static IMPACT_STATS here anymore.
 
-/** Before/after pairs for the gallery (local images stand in for real uploads). */
-export const GALLERY = [
-  { before: '/zambales-town.jpg', after: '/zambales-coast.jpg', place: 'San Felipe Beach' },
-  { before: '/zambales-coast.jpg', after: '/zambales-town.jpg', place: 'Iba Shoreline' },
-  { before: '/zambales-town.jpg', after: '/zambales-coast.jpg', place: 'Botolan Riverbank' },
-]
+// No mock GALLERY: the before/after gallery shows only real resolved reports
+// that have both an original and an "after" photo (see Impact.tsx). Until one
+// exists, an honest empty state waits for the first documented cleanup.
 
 export const CHALLENGE = {
   month: 'August',

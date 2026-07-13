@@ -641,7 +641,9 @@ export default function MapView({
             position={[userPos.lat, userPos.lng]}
             icon={userLocationIcon()}
             interactive={false}
-            zIndexOffset={1000}
+            // Sit beneath report pins — a report at your exact location must
+            // never be hidden (or made un-tappable) by the blue "you are here" dot.
+            zIndexOffset={-1000}
           />
         )}
 
