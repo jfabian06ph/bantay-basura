@@ -5278,6 +5278,10 @@
   justify-content: center;
   gap: 8px;
   height: 200px;
+  /* Keep the centered "no photo" content clear of the two-line place/badges
+     overlay anchored at the hero's bottom. */
+  padding-bottom: 60px;
+  box-sizing: border-box;
   background:
     radial-gradient(120% 100% at 50% 0%, #1e2f4d 0%, transparent 70%),
     linear-gradient(180deg, #16233b, #0d1728);
