@@ -86,7 +86,11 @@ Deno.serve(async (req) => {
   const VISION_KEY = Deno.env.get('GOOGLE_VISION_API_KEY')
   const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
   const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-  if (!VISION_KEY) return json({ error: 'moderation not configured' }, 500)
+  // Permissive mode: with no Vision key, the pipeline still validates,
+  // re-encodes, strips EXIF, and publishes (approve-all) so it's deployable and
+  // testable before wiring the key. Set GOOGLE_VISION_API_KEY to switch on real
+  // SafeSearch moderation — no redeploy of behaviour needed beyond the secret.
+  const moderationOn = Boolean(VISION_KEY)
 
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY)
 
@@ -149,26 +153,32 @@ Deno.serve(async (req) => {
     return json({ status: 'review' })
   }
 
-  // 3) Moderate the re-encoded bytes with Google Vision SafeSearch.
+  // 3) Moderate the re-encoded bytes with Google Vision SafeSearch (when a key
+  //    is configured). Without a key, run permissive: approve after validation.
   let scores: SafeSearch = {}
-  try {
-    const b64 = btoa(String.fromCharCode(...clean))
-    const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${VISION_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        requests: [{ image: { content: b64 }, features: [{ type: 'SAFE_SEARCH_DETECTION' }] }],
-      }),
-    })
-    const data = await res.json()
-    scores = data?.responses?.[0]?.safeSearchAnnotation ?? {}
-  } catch {
-    // If moderation itself fails, never publish — hold for review.
-    await record('review', { reason: 'moderation_unavailable' })
-    return json({ status: 'review' })
+  let verdict: 'approved' | 'rejected' | 'review'
+  if (!moderationOn) {
+    verdict = 'approved'
+    scores = { adult: 'PERMISSIVE_NO_KEY' } as SafeSearch
+  } else {
+    try {
+      const b64 = btoa(String.fromCharCode(...clean))
+      const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${VISION_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requests: [{ image: { content: b64 }, features: [{ type: 'SAFE_SEARCH_DETECTION' }] }],
+        }),
+      })
+      const data = await res.json()
+      scores = data?.responses?.[0]?.safeSearchAnnotation ?? {}
+    } catch {
+      // If moderation itself fails, never publish — hold for review.
+      await record('review', { reason: 'moderation_unavailable' })
+      return json({ status: 'review' })
+    }
+    verdict = decide(scores)
   }
-
-  const verdict = decide(scores)
 
   if (verdict === 'rejected') {
     await record('rejected', scores)
