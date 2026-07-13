@@ -4927,21 +4927,6 @@
 }
 
 /* ---- Report panel: richer detail bits ---- */
-.bb-photo-chip {
-  position: absolute;
-  right: 12px;
-  bottom: 12px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 10px;
-  border-radius: 999px;
-  background: rgba(10, 16, 28, 0.72);
-  backdrop-filter: blur(4px);
-  color: #eef2f8;
-  font-size: 11px;
-  font-weight: 700;
-}
 /* Airbnb-style hero overlay: place + status, with a gradient for legibility */
 .bb-panel-photo-scrim {
   position: absolute;
@@ -4955,18 +4940,18 @@
 .bb-photo-overlay {
   position: absolute;
   left: 12px;
+  right: 12px;
   bottom: 12px;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 8px;
-  /* Leave room for the reported-time chip on the right so the place + distance
-     truncate instead of running underneath it. */
-  max-width: calc(100% - 150px);
 }
 .bb-photo-place {
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  max-width: 100%;
   min-width: 0;
   color: #fff;
   font-size: 16px;
@@ -4987,9 +4972,17 @@
   color: rgba(255, 255, 255, 0.8);
   font-weight: 600;
 }
+/* Status + reported-time lozenges sit on their own line below the place, so
+   they never get cut off against the panel edge on a narrow drawer. */
+.bb-photo-badges {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
 .bb-photo-status {
   flex: none;
-  padding: 2px 9px;
+  padding: 3px 9px;
   border-radius: var(--radius-pill);
   color: #fff;
   font-size: 10.5px;
@@ -4997,6 +4990,18 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   backdrop-filter: blur(4px);
+}
+.bb-photo-reported {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(10, 16, 28, 0.72);
+  backdrop-filter: blur(4px);
+  color: #eef2f8;
+  font-size: 11px;
+  font-weight: 700;
 }
 /* Prominent, two-line verification badge */
 /* THE trust indicator — deliberately the most prominent block in the drawer. */

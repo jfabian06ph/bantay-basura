@@ -348,15 +348,17 @@ export default function ReportPanel({
                   {dist && <span className="bb-photo-dist"> · {dist}</span>}
                 </span>
               </span>
-              <span className="bb-photo-status" style={{ background: `${color}e6` }}>
-                {STATUS_LABELS[report.status]}
-              </span>
-            </div>
-            <div className="bb-photo-chip">
-              <Camera className="size-3.5" />
-              {hasPhoto
-                ? `${photos.length} ${photos.length === 1 ? 'Photo' : 'Photos'} · ${relativeTime(new Date(report.createdAt).getTime(), now)}`
-                : `Reported ${relativeTime(new Date(report.createdAt).getTime(), now)}`}
+              <div className="bb-photo-badges">
+                <span className="bb-photo-status" style={{ background: `${color}e6` }}>
+                  {STATUS_LABELS[report.status]}
+                </span>
+                <span className="bb-photo-reported">
+                  {hasPhoto ? <Camera className="size-3.5" /> : <Clock className="size-3.5" />}
+                  {hasPhoto
+                    ? `${photos.length} ${photos.length === 1 ? 'Photo' : 'Photos'} · ${relativeTime(new Date(report.createdAt).getTime(), now)}`
+                    : `Reported ${relativeTime(new Date(report.createdAt).getTime(), now)}`}
+                </span>
+              </div>
             </div>
           </div>
 
