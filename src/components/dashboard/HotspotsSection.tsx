@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { MapPin, ArrowRight, X, Search, ChevronDown } from 'lucide-react'
 import Reveal from '../Reveal'
 import AreaDrawer from './AreaDrawer'
+import MapThumb from './MapThumb'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '../ui/dialog'
 import { relativeTime, type Hotspot } from '../../lib/stats'
 import { CATEGORY_LABELS, CATEGORY_ORDER, type Category, type Report } from '../../types'
@@ -16,23 +17,35 @@ interface Props {
 /** How many areas to show before the "See all" modal. */
 const PREVIEW_COUNT = 5
 
-/** One tappable area row — opens the detail drawer. */
+/** One tappable area row. */
 function HotspotRow({
   h,
   now,
+  i = 0,
+  ctaLabel = 'View details',
   onSelect,
+  onHover,
 }: {
   h: Hotspot
   now: number
+  i?: number
+  ctaLabel?: string
   onSelect: (h: Hotspot) => void
+  onHover?: (h: Hotspot | null, e?: React.MouseEvent | React.FocusEvent) => void
 }) {
   const pending = h.open - h.inReview
   const meta: string[] = []
   if (h.lastReported) meta.push(`Reported ${relativeTime(h.lastReported, now)}`)
   if (h.confirmations > 0) meta.push(`Confirmed by ${h.confirmations} residents`)
   return (
-    <li>
-      <button className="bb-hotspot" onClick={() => onSelect(h)}>
+    <li style={{ '--i': i } as React.CSSProperties}>
+      <button
+        className="bb-hotspot"
+        onClick={() => onSelect(h)}
+        onMouseEnter={onHover ? (e) => onHover(h, e) : undefined}
+        onMouseLeave={onHover ? () => onHover(null) : undefined}
+        onFocus={onHover ? (e) => onHover(h, e) : undefined}
+      >
         <div className="bb-hotspot-main">
           <div className="bb-hotspot-area">
             <MapPin size={16} className="bb-hotspot-pin" />
@@ -57,7 +70,7 @@ function HotspotRow({
         </div>
 
         <span className="bb-hotspot-cta">
-          View area <ArrowRight size={14} />
+          {ctaLabel} <ArrowRight size={14} />
         </span>
       </button>
     </li>
@@ -75,8 +88,46 @@ export default function HotspotsSection({ hotspots, reports, now, onViewOnMap }:
   const [query, setQuery] = useState('')
   const [type, setType] = useState<'all' | Category>('all')
 
+  // Row-anchored hover preview: a mini-map popover that pops up above the row
+  // the cursor is on, with a tip pointing at it. A short hide-delay bridges the
+  // gap so you can move up onto the popover and click "Open on map".
+  const wrapRef = useRef<HTMLDivElement>(null)
+  const hideTimer = useRef<number | undefined>(undefined)
+  const showTimer = useRef<number | undefined>(undefined)
+  const [preview, setPreview] = useState<{ h: Hotspot; top: number; left: number } | null>(null)
+
+  const showPreview = (h: Hotspot | null, e?: React.MouseEvent | React.FocusEvent) => {
+    if (hideTimer.current) window.clearTimeout(hideTimer.current)
+    if (showTimer.current) window.clearTimeout(showTimer.current)
+    if (!h) {
+      hideTimer.current = window.setTimeout(() => setPreview(null), 150)
+      return
+    }
+    const wrap = wrapRef.current
+    const el = e?.currentTarget as HTMLElement | undefined
+    if (!wrap || !el) {
+      setPreview({ h, top: 0, left: 0 })
+      return
+    }
+    // Capture geometry now (the event is gone by the time the timer fires).
+    const wr = wrap.getBoundingClientRect()
+    const rr = el.getBoundingClientRect()
+    const half = 130
+    const clientX = e && 'clientX' in e ? e.clientX : rr.left + rr.width / 2
+    const pos = {
+      h,
+      top: rr.top - wr.top,
+      left: Math.max(half, Math.min(wr.width - half, clientX - wr.left)),
+    }
+    // Short delay so brushing past rows doesn't flicker the popover.
+    showTimer.current = window.setTimeout(() => setPreview(pos), 140)
+  }
+  const keepPreview = () => {
+    if (hideTimer.current) window.clearTimeout(hideTimer.current)
+  }
+
   const hasMore = hotspots.length > PREVIEW_COUNT
-  const preview = hotspots.slice(0, PREVIEW_COUNT)
+  const previewRows = hotspots.slice(0, PREVIEW_COUNT)
 
   const availableTypes = useMemo(() => {
     const set = new Set<Category>()
@@ -108,11 +159,65 @@ export default function HotspotsSection({ hotspots, reports, now, onViewOnMap }:
 
       {hotspots.length ? (
         <Reveal>
-          <ol className="bb-hotspots">
-            {preview.map((h) => (
-              <HotspotRow key={h.name} h={h} now={now} onSelect={setSelected} />
-            ))}
-          </ol>
+          <div
+            className={`bb-hotspots-wrap ${preview ? 'has-preview' : ''}`}
+            ref={wrapRef}
+            onMouseLeave={() => showPreview(null)}
+          >
+            <ol className="bb-hotspots">
+              {previewRows.map((h, i) => (
+                <HotspotRow
+                  key={h.name}
+                  h={h}
+                  i={i}
+                  now={now}
+                  onSelect={setSelected}
+                  onHover={showPreview}
+                />
+              ))}
+            </ol>
+
+            {/* #15 — hovering an area pops a live map snapshot up above that row,
+                with a tip pointing at it and an "Open on map" shortcut. */}
+            {preview && (
+              <button
+                className={`bb-hotspots-preview is-anchored ${onViewOnMap ? 'is-clickable' : ''}`}
+                style={{ top: preview.top, left: preview.left }}
+                onMouseEnter={keepPreview}
+                onMouseLeave={() => showPreview(null)}
+                onClick={
+                  onViewOnMap
+                    ? () => onViewOnMap(preview.h.lat, preview.h.lng, preview.h.zoom)
+                    : undefined
+                }
+                aria-label={onViewOnMap ? `Open ${preview.h.name} on the map` : undefined}
+              >
+                <MapThumb lat={preview.h.lat} lng={preview.h.lng} size={92} zoom={13} />
+                <span className="bb-hotspots-preview-info">
+                  <span className="bb-hotspots-preview-name">
+                    <MapPin size={13} /> {preview.h.name}
+                  </span>
+                  <span className="bb-hotspots-preview-sub">Community overview</span>
+                  <span className="bb-hotspots-preview-stat">
+                    {preview.h.open} active {preview.h.open === 1 ? 'report' : 'reports'}
+                    {preview.h.lastReported
+                      ? ` · Latest ${relativeTime(preview.h.lastReported, now)}`
+                      : ''}
+                  </span>
+                  <span className="bb-hotspots-dots" aria-hidden>
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <i key={i} className={i < Math.min(5, preview.h.open) ? 'on' : ''} />
+                    ))}
+                  </span>
+                  {onViewOnMap && (
+                    <span className="bb-hotspots-preview-cta">
+                      Open on map <ArrowRight size={12} />
+                    </span>
+                  )}
+                </span>
+              </button>
+            )}
+          </div>
 
           {hasMore && (
             <button className="bb-hotspots-more" onClick={() => setListOpen(true)}>

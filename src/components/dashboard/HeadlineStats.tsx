@@ -1,5 +1,5 @@
-import { useState, type ReactNode } from 'react'
-import { ChevronDown, Trophy, Flame, MapPin } from 'lucide-react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { ChevronDown, Trophy, Flame, MapPin, Info } from 'lucide-react'
 import Reveal from '../Reveal'
 import CountUp from '../CountUp'
 import { Metric } from './primitives'
@@ -9,6 +9,16 @@ interface Props {
   s: DashboardStats
   now: number
   onOpenReport?: (id: string) => void
+}
+
+/** A small ⓘ affordance with an on-hover/focus tooltip. */
+function InfoTip({ text }: { text: string }) {
+  return (
+    <span className="bb-tip" tabIndex={0} role="note" aria-label={text}>
+      <Info size={13} aria-hidden />
+      <span className="bb-tip-bubble">{text}</span>
+    </span>
+  )
 }
 
 const PERIODS = [
@@ -71,6 +81,19 @@ export default function HeadlineStats({ s, now, onOpenReport }: Props) {
   const leader = s.cleanestLgus[0]
   const active = s.activeAreas[0]
 
+  // #16 — a tiny green spark rewards a rising resolved rate.
+  const prevResolved = useRef(s.resolvedRate)
+  const [spark, setSpark] = useState(false)
+  useEffect(() => {
+    if (s.resolvedRate > prevResolved.current) {
+      setSpark(true)
+      const t = window.setTimeout(() => setSpark(false), 1400)
+      prevResolved.current = s.resolvedRate
+      return () => window.clearTimeout(t)
+    }
+    prevResolved.current = s.resolvedRate
+  }, [s.resolvedRate])
+
   return (
     <section className="bb-dash-section bb-dash-section-lead">
       <div className="bb-dash-period">
@@ -106,8 +129,22 @@ export default function HeadlineStats({ s, now, onOpenReport }: Props) {
           />
           <Metric
             big
-            value={<CountUp value={s.resolvedRate} suffix="%" />}
-            label="Resolved"
+            value={
+              <>
+                <CountUp value={s.resolvedRate} suffix="%" />
+                {spark && (
+                  <span className="bb-spark" aria-hidden>
+                    ✨
+                  </span>
+                )}
+              </>
+            }
+            label={
+              <>
+                Resolved{' '}
+                <InfoTip text="Confirmed clean by the community, or verified cleanup evidence." />
+              </>
+            }
             accent
             foot={
               <Highlight
@@ -121,7 +158,16 @@ export default function HeadlineStats({ s, now, onOpenReport }: Props) {
           />
           <Metric
             value={s.latestCleanup ? relativeTime(s.latestCleanup.when, now) : '-'}
-            label="Latest cleanup"
+            label={
+              <>
+                Latest cleanup
+                {s.latestCleanup && (
+                  <span className="bb-dash-confirmed">
+                    {' · '}✨ {s.latestCleanup.confirmed ? 'Community confirmed' : 'Verified cleanup'}
+                  </span>
+                )}
+              </>
+            }
             foot={
               s.latestCleanup ? (
                 <Highlight

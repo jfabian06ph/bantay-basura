@@ -1700,7 +1700,9 @@
   display: grid;
   grid-template-columns: 0.58fr 1.42fr;
   align-items: start;
-  min-height: clamp(420px, 52vh, 540px);
+  /* Taller floor so the top-aligned copy (ending in the live indicator) clears
+     the -90px overlap where the KPI section slides up over the hero. */
+  min-height: clamp(480px, 54vh, 560px);
   overflow: hidden;
 }
 .bb-dash-hero-copy {
@@ -1761,7 +1763,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 18px;
+  margin-top: 20px;
   font-size: 14px;
   font-weight: 600;
   color: #3a3630;
@@ -1842,14 +1844,17 @@
     box-shadow 180ms ease;
 }
 .bb-hotspot:hover {
-  background: #fafafa;
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.07);
+  background: #fafaf8;
+  box-shadow: inset 3px 0 0 var(--green), 0 6px 18px rgba(15, 23, 42, 0.07);
 }
 .bb-hotspot:hover .bb-hotspot-area {
   color: #000;
+  font-weight: 800;
 }
 .bb-hotspot:hover .bb-hotspot-pin {
   transform: scale(1.18);
+  color: #009336;
+  fill: rgba(0, 147, 54, 0.16);
 }
 .bb-hotspot:hover .bb-hotspot-stat {
   filter: saturate(1.18);
@@ -2166,9 +2171,21 @@
   background: rgba(255, 255, 255, 0.28);
 }
 .bb-area-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
   background: #0f1b2d;
   color: #fff;
   padding: 22px 52px 20px 24px;
+}
+.bb-area-head .bb-map-thumb {
+  border-radius: 12px;
+  overflow: hidden;
+  flex: none;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+.bb-area-head-text {
+  min-width: 0;
 }
 .bb-area-title {
   display: flex;
@@ -2301,6 +2318,208 @@
 }
 .bb-area-action:hover {
   background: #007a2c;
+}
+
+/* ---- Area drawer redesign: hero ring, health, waste mix, sparkline ---- */
+.bb-area-hero {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 20px;
+}
+.bb-area-ring {
+  position: relative;
+  width: 76px;
+  height: 76px;
+  flex: none;
+}
+.bb-area-ring svg {
+  width: 100%;
+  height: 100%;
+}
+.bb-area-ring-track {
+  fill: none;
+  stroke: #eceae5;
+  stroke-width: 6;
+}
+.bb-area-ring-fill {
+  fill: none;
+  stroke: var(--green, #23c266);
+  stroke-width: 6;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.9s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.bb-area-ring-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.bb-area-ring-num {
+  font-size: 18px;
+  font-weight: 800;
+  color: #14110f;
+}
+.bb-area-ring-cap {
+  margin-top: 2px;
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #8a847c;
+}
+.bb-area-hero-side {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.bb-area-health {
+  font-size: 14px;
+  font-weight: 800;
+}
+.bb-area-mix {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.bb-area-mix li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 90px auto;
+  align-items: center;
+  gap: 10px;
+}
+.bb-area-mix-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #14110f;
+  min-width: 0;
+}
+.bb-area-mix-name .bb-area-cat-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex: none;
+}
+.bb-area-mix-track {
+  height: 8px;
+  border-radius: 999px;
+  background: #f0eee9;
+  overflow: hidden;
+}
+.bb-area-mix-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.7s cubic-bezier(0.22, 0.61, 0.36, 1);
+  transition-delay: calc(var(--i, 0) * 90ms);
+}
+.bb-area-mix-n {
+  font-size: 13px;
+  font-weight: 800;
+  color: #14110f;
+}
+.bb-area-spark {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 40px;
+}
+.bb-area-spark span {
+  flex: 1;
+  min-width: 0;
+  border-radius: 3px 3px 0 0;
+  background: linear-gradient(180deg, #4fbf7f, #23c266);
+  opacity: 0.85;
+}
+.bb-area-people {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  margin: 4px 0;
+  border-top: 1px solid #f0eee9;
+  border-bottom: 1px solid #f0eee9;
+}
+.bb-area-people-icons {
+  display: inline-flex;
+  color: #2f9e54;
+}
+.bb-area-people-icons svg { margin-left: -5px; }
+.bb-area-people-icons svg:first-child { margin-left: 0; }
+.bb-area-people-text {
+  font-size: 13.5px;
+  color: #55504a;
+}
+.bb-area-people-text b { color: #14110f; font-weight: 800; }
+.bb-area-tip {
+  position: relative;
+  display: inline-flex;
+  vertical-align: middle;
+  margin-left: 5px;
+  color: #a7a199;
+  cursor: help;
+}
+.bb-area-tip-bubble {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  width: max-content;
+  max-width: 220px;
+  padding: 9px 11px;
+  border-radius: 10px;
+  background: #14110f;
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  z-index: 20;
+}
+.bb-area-tip:hover .bb-area-tip-bubble,
+.bb-area-tip:focus-visible .bb-area-tip-bubble {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+/* Microinteractions on open: body content lifts + the CTA slides up. */
+.bb-area-body .bb-area-block,
+.bb-area-body .bb-area-people,
+.bb-area-body .bb-area-stats,
+.bb-area-body .bb-area-action {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.4s var(--ease), transform 0.4s var(--ease);
+}
+.bb-area-body.is-in .bb-area-block,
+.bb-area-body.is-in .bb-area-people,
+.bb-area-body.is-in .bb-area-stats,
+.bb-area-body.is-in .bb-area-action {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bb-area-ring-fill,
+  .bb-area-mix-fill { transition: none; }
+  .bb-area-body .bb-area-block,
+  .bb-area-body .bb-area-people,
+  .bb-area-body .bb-area-stats,
+  .bb-area-body .bb-area-action {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
 }
 
 /* Period picker that replaces the "This Month" eyebrow — same look, now a dropdown. */
@@ -6700,4 +6919,762 @@
   .bb-map-wrap.bb-intro .bb-cta {
     animation: none;
   }
+}
+
+/* =====================================================================
+   Transparency page — premium motion pass (drone hero, live pulses,
+   staggered reveals, lifecycle timeline, momentum + activity feeds).
+   Every looping animation is disabled under prefers-reduced-motion.
+   ===================================================================== */
+
+/* #10 — a barely-there film grain over the page (2%), for richness. */
+.bb-dash { position: relative; }
+.bb-dash::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* #14 — thin scroll-progress bar pinned to the very top. */
+.bb-scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 60;
+  background: transparent;
+  pointer-events: none;
+}
+.bb-scroll-progress-fill {
+  display: block;
+  height: 100%;
+  width: 100%;
+  transform-origin: left;
+  transform: scaleX(0);
+  background: linear-gradient(90deg, #1f9d57, var(--green));
+  box-shadow: 0 0 8px rgba(35, 194, 102, 0.5);
+}
+
+/* #1 — hero: slow drone-like zoom + scroll parallax + soft light sweep. */
+.bb-dash-hero-img { overflow: hidden; }
+.bb-dash-hero-img::before { z-index: 2; } /* keep the cream scrim above the moving image */
+.bb-dash-hero-img-inner {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-size: cover;
+  background-position: center;
+  transform: scale(var(--hero-scale, 1.05)) translateY(var(--hero-shift, 0px));
+  animation: bb-hero-zoom 22s ease-in-out infinite alternate;
+  will-change: transform;
+}
+@property --hero-scale {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 1.05;
+}
+@keyframes bb-hero-zoom {
+  from { --hero-scale: 1.04; }
+  to { --hero-scale: 1.09; }
+}
+.bb-dash-hero-img-inner::after {
+  content: '';
+  position: absolute;
+  inset: -20%;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    105deg,
+    transparent 42%,
+    rgba(255, 255, 255, 0.16) 50%,
+    transparent 58%
+  );
+  animation: bb-hero-sweep 14s ease-in-out infinite;
+}
+@keyframes bb-hero-sweep {
+  0%, 100% { transform: translateX(-38%); opacity: 0; }
+  50% { transform: translateX(38%); opacity: 1; }
+}
+
+/* #2 — the live dot gently breathes on top of its existing ring pulse. */
+.bb-live-dot {
+  animation: bb-pulse 2s var(--ease) infinite, bb-breathe 2.4s ease-in-out infinite;
+}
+@keyframes bb-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.28); }
+}
+
+/* #20 — rotating reassurance label fades on each swap. */
+.bb-dash-live-rot {
+  display: inline-block;
+  animation: bb-fade-swap 0.5s var(--ease);
+}
+@keyframes bb-fade-swap {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* #16 — resolved-rate spark. */
+.bb-spark {
+  display: inline-block;
+  margin-left: 4px;
+  font-size: 0.5em;
+  vertical-align: super;
+  animation: bb-spark-pop 1.4s ease-out forwards;
+}
+@keyframes bb-spark-pop {
+  0% { opacity: 0; transform: scale(0.4) translateY(4px); }
+  25% { opacity: 1; transform: scale(1.15) translateY(0); }
+  100% { opacity: 0; transform: scale(1) translateY(-10px); }
+}
+
+/* #7 — dashboard cards lift with a growing green underline on hover.
+   The hover transition lives on :hover only, so the .bb-reveal entrance
+   (opacity + transform, 0.6s) is left untouched. */
+.bb-dash-card { position: relative; }
+.bb-dash-card::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 100%;
+  border-radius: 2px;
+  background: var(--green);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s var(--ease);
+}
+.bb-dash-card:hover {
+  transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
+  transform: translateY(-4px);
+  box-shadow: 0 18px 40px rgba(20, 17, 15, 0.1);
+}
+.bb-dash-card:hover::after { transform: scaleX(1); }
+
+/* #6 — area rows slide up one by one as the list reveals. */
+.bb-reveal:not(.bb-in) .bb-hotspots > li { opacity: 0; }
+.bb-reveal.bb-in .bb-hotspots > li {
+  animation: bb-row-up 0.5s var(--ease) both;
+  animation-delay: calc(var(--i, 0) * 55ms);
+}
+@keyframes bb-row-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* #15 — hovering an area reveals a live map snapshot of that exact spot. */
+.bb-hotspots-wrap { position: relative; }
+/* Dock the preview in the empty band just ABOVE the list, right-aligned, so it
+   never covers a row's status badges. Clickable shortcut to the map. */
+.bb-hotspots-preview {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px 10px 10px;
+  border: 1px solid #e7e3dc;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 14px 34px rgba(20, 17, 15, 0.16);
+  animation: bb-preview-in 180ms ease-out;
+  z-index: 5;
+  text-align: left;
+  pointer-events: none; /* base (Community Pulse) is a pure preview */
+}
+/* Row-anchored variant (Areas): sits directly above the hovered row, centred on
+   the cursor, with a downward tip. Interactive — clicking opens the map. */
+.bb-hotspots-preview.is-anchored {
+  bottom: auto;
+  right: auto;
+  transform: translate(-50%, -100%);
+  transform-origin: bottom center;
+  pointer-events: auto;
+  animation: bb-anchor-in 220ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  /* slide between rows as the hovered row changes */
+  transition: top 0.2s var(--ease), left 0.2s var(--ease), box-shadow 0.15s ease;
+}
+@keyframes bb-anchor-in {
+  from { opacity: 0; transform: translate(-50%, calc(-100% + 6px)) scale(0.96); }
+  to { opacity: 1; transform: translate(-50%, -100%) scale(1); }
+}
+.bb-hotspots-preview.is-clickable { cursor: pointer; }
+.bb-hotspots-preview.is-clickable:hover {
+  box-shadow: 0 18px 44px rgba(20, 17, 15, 0.24);
+}
+.bb-hotspots-preview-cta svg { transition: transform 0.15s ease; }
+.bb-hotspots-preview.is-clickable:hover .bb-hotspots-preview-cta svg {
+  transform: translateX(2px);
+}
+/* subtitle + tiny severity dots */
+.bb-hotspots-preview-sub {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #a7a199;
+}
+.bb-hotspots-dots {
+  display: inline-flex;
+  gap: 3px;
+  margin-top: 1px;
+}
+.bb-hotspots-dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #e3ddd3;
+}
+.bb-hotspots-dots i.on { background: #f5842b; }
+/* tip pointing down at the row */
+.bb-hotspots-preview.is-anchored::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 8px solid transparent;
+  border-top-color: #fff;
+}
+@keyframes bb-preview-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: none; }
+}
+.bb-hotspots-preview .bb-map-thumb {
+  border-radius: 12px;
+  overflow: hidden;
+  flex: none;
+}
+/* The pin is the hero — it pulses twice when the preview appears. */
+.bb-hotspots-preview .bb-map-thumb-pin::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 2px solid rgba(227, 30, 47, 0.7);
+  transform: translate(-50%, -50%);
+  animation: bb-pin-pulse 2s ease-out infinite;
+}
+@keyframes bb-pin-pulse {
+  0% { width: 8px; height: 8px; opacity: 0.85; }
+  70%, 100% { width: 30px; height: 30px; opacity: 0; }
+}
+.bb-hotspots-preview-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.bb-hotspots-preview-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #14110f;
+  white-space: nowrap;
+}
+.bb-hotspots-preview-name svg { color: #009336; }
+.bb-hotspots-preview-stat {
+  font-size: 12px;
+  font-weight: 600;
+  color: #8a847c;
+}
+.bb-hotspots-preview-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #009336;
+}
+@media (max-width: 900px) {
+  .bb-hotspots-preview { display: none; } /* no hover context on touch */
+}
+
+/* #8 — Real Stories headline reveals one line, then the next. */
+.bb-spotlight-line {
+  display: block;
+  opacity: 0;
+  animation: bb-line-in 0.7s var(--ease) forwards;
+}
+.bb-spotlight-line-1 { animation-delay: 0.15s; }
+.bb-spotlight-line-2 { animation-delay: 0.75s; }
+@keyframes bb-line-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* #9 — Report Waste button gains a soft pulsing glow on hover. */
+.bb-spotlight-empty-cta { position: relative; }
+.bb-spotlight-empty-cta::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.bb-spotlight-empty-cta:hover::after {
+  opacity: 1;
+  animation: bb-glow 1.6s ease-out infinite;
+}
+@keyframes bb-glow {
+  0% { box-shadow: 0 0 0 0 rgba(227, 30, 47, 0.45); }
+  100% { box-shadow: 0 0 0 14px rgba(227, 30, 47, 0); }
+}
+
+/* #4 — donut legend rows fade in after the slices finish drawing. */
+.bb-dash-donut-legend.is-in li {
+  animation: bb-fade-swap 0.4s var(--ease) both;
+  animation-delay: calc(300ms + var(--i, 0) * 70ms);
+}
+
+/* #12 — cleanup lifecycle journey (horizontal on desktop, GitHub-Actions style;
+   vertical on mobile). Progress is monotonic: done → current → upcoming. */
+.bb-journey-card {
+  padding: 24px 26px 22px;
+}
+.bb-journey-card.is-clickable { cursor: pointer; }
+.bb-journey-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+.bb-journey-head .bb-map-thumb {
+  border-radius: 10px;
+  overflow: hidden;
+  flex: none;
+}
+.bb-journey-head-text {
+  flex: 1;
+  min-width: 0;
+}
+.bb-journey-place {
+  font-size: 14px;
+  font-weight: 800;
+  color: #14110f;
+}
+.bb-journey-cat {
+  font-size: 12.5px;
+  color: #8a847c;
+  font-weight: 600;
+}
+.bb-journey-progress {
+  flex: none;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #f0eee9;
+  font-size: 12px;
+  font-weight: 800;
+  color: #55504a;
+}
+
+/* Horizontal track: nodes evenly spaced, connectors behind them. */
+.bb-journey {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: flex-start;
+}
+.bb-journey-step {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  opacity: 0;
+}
+/* Connector from the previous node's centre to this one's. */
+.bb-journey-step::before {
+  content: '';
+  position: absolute;
+  top: 19px;
+  right: 50%;
+  left: -50%;
+  height: 2px;
+  background: #e7e3dc;
+  z-index: 0;
+}
+.bb-journey-step:first-child::before { display: none; }
+.bb-journey-step.is-done::before,
+.bb-journey-step.is-current::before {
+  background: rgba(35, 194, 102, 0.55);
+}
+.bb-journey.is-in .bb-journey-step {
+  animation: bb-node-in 0.45s var(--ease) both;
+  animation-delay: calc(var(--i, 0) * 220ms);
+}
+@keyframes bb-node-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+.bb-journey-node {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  font-size: 17px;
+  line-height: 1;
+  background: #f0eee9;
+  border: 3px solid var(--imp-card, #fff);
+  box-shadow: 0 0 0 1px #e7e3dc;
+}
+.bb-journey-step.is-done .bb-journey-node {
+  background: rgba(35, 194, 102, 0.18);
+  box-shadow: 0 0 0 1px rgba(35, 194, 102, 0.4);
+}
+.bb-journey-step.is-current .bb-journey-node {
+  background: #fff;
+  box-shadow: 0 0 0 1px var(--green), 0 0 0 5px rgba(35, 194, 102, 0.16);
+  animation: bb-journey-wait 1.8s ease-in-out infinite;
+}
+@keyframes bb-journey-wait {
+  0%, 100% { box-shadow: 0 0 0 1px var(--green), 0 0 0 4px rgba(35, 194, 102, 0.16); }
+  50% { box-shadow: 0 0 0 1px var(--green), 0 0 0 9px rgba(35, 194, 102, 0); }
+}
+.bb-journey-step.is-upcoming .bb-journey-node {
+  opacity: 0.4;
+  filter: grayscale(0.5);
+}
+.bb-journey-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #14110f;
+  line-height: 1.2;
+}
+.bb-journey-step.is-upcoming .bb-journey-label { color: #a7a199; }
+.bb-journey-when {
+  font-size: 11.5px;
+  color: #8a847c;
+}
+.bb-journey-step.is-current .bb-journey-when { color: #1f9d57; font-weight: 700; }
+.bb-journey-footer {
+  margin: 22px 0 0;
+  padding-top: 16px;
+  border-top: 1px solid #f0eee9;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #55504a;
+  text-align: center;
+}
+.bb-journey-footer.is-done { color: #1f9d57; font-weight: 700; }
+
+/* Vertical fallback on small screens. */
+@media (max-width: 640px) {
+  .bb-journey { flex-direction: column; align-items: stretch; }
+  .bb-journey-step {
+    flex-direction: row;
+    align-items: center;
+    text-align: left;
+    gap: 14px;
+    padding: 10px 0;
+  }
+  .bb-journey-step::before {
+    top: -50%;
+    bottom: 50%;
+    left: 18px;
+    right: auto;
+    width: 2px;
+    height: auto;
+  }
+  .bb-journey-label { flex: 1; }
+}
+
+/* #13 — Recent Cleanups empty state: a gently swaying sprout. */
+.bb-cleanup-empty {
+  text-align: center;
+  padding: 26px 16px 20px;
+}
+.bb-cleanup-sprout {
+  display: inline-block;
+  font-size: 34px;
+  transform-origin: 50% 90%;
+  animation: bb-sway 4s ease-in-out infinite;
+}
+@keyframes bb-sway {
+  0%, 100% { transform: rotate(-6deg); }
+  50% { transform: rotate(6deg); }
+}
+.bb-cleanup-empty-line {
+  margin: 10px 0 2px;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #14110f;
+}
+.bb-cleanup-empty-sub {
+  margin: 0;
+  font-size: 13px;
+  color: #8a847c;
+}
+
+/* #17 — footer credit line with a heartbeat every ~6s. */
+.bb-footer-made {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.bb-footer-heart {
+  display: inline-block;
+  font-size: 12px;
+  transform-origin: center;
+  animation: bb-heartbeat 6s ease-in-out infinite;
+}
+@keyframes bb-heartbeat {
+  0%, 12%, 100% { transform: scale(1); }
+  4% { transform: scale(1.35); }
+  8% { transform: scale(1.15); }
+}
+
+/* #18 — Community Momentum: contribution-stats-style strip. */
+.bb-momentum {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+@media (max-width: 720px) {
+  .bb-momentum { grid-template-columns: 1fr 1fr; }
+}
+.bb-momentum-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 18px 18px 16px;
+  border: 1px solid #e7e3dc;
+  border-radius: 16px;
+  background: #fff;
+  transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+.bb-momentum-cell:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 32px rgba(20, 17, 15, 0.08);
+}
+.bb-momentum-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  color: var(--tone, #009336);
+  background: color-mix(in srgb, var(--tone, #009336) 12%, transparent);
+  margin-bottom: 6px;
+}
+.bb-momentum-val {
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #14110f;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+.bb-momentum-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #3a3630;
+  line-height: 1.25;
+}
+.bb-momentum-sub {
+  font-size: 12px;
+  font-weight: 600;
+  color: #8a847c;
+}
+
+/* #19 — Community Pulse feed. */
+.bb-dash-eyebrow-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.bb-pulse-wrap { position: relative; }
+.bb-pulse {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid #e7e3dc;
+  border-radius: 16px;
+  background: #fff;
+  overflow: hidden;
+}
+.bb-pulse-group {
+  padding: 14px 18px;
+  border-top: 1px solid #f0eee9;
+  transition: background-color 0.15s ease;
+}
+.bb-pulse-group:first-child { border-top: none; }
+.bb-pulse-group:hover {
+  background: #fafaf8;
+  box-shadow: inset 3px 0 0 var(--green);
+}
+.bb-pulse-group:hover .bb-pulse-place svg { fill: rgba(0, 147, 54, 0.16); }
+.bb-pulse-group:hover .bb-pulse-place { font-weight: 800; }
+.bb-reveal:not(.bb-in) .bb-pulse-group { opacity: 0; }
+.bb-reveal.bb-in .bb-pulse-group {
+  animation: bb-row-up 0.5s var(--ease) both;
+  animation-delay: calc(var(--i, 0) * 70ms);
+}
+.bb-pulse-place {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #14110f;
+}
+.bb-pulse-place svg { color: #009336; flex: none; }
+.bb-pulse-events {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0 0 0 20px;
+}
+.bb-pulse-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 0;
+  font-size: 13px;
+  color: #55504a;
+}
+.bb-pulse-emoji { font-size: 14px; line-height: 1; flex: none; }
+.bb-pulse-label { flex: 1; min-width: 0; }
+.bb-pulse-pill {
+  flex: none;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+.bb-pulse-pill.is-reported { background: rgba(227, 30, 47, 0.12); color: #c01524; }
+.bb-pulse-pill.is-verified { background: rgba(245, 158, 11, 0.16); color: #b46c05; }
+.bb-pulse-pill.is-cleanup { background: rgba(59, 130, 246, 0.14); color: #2563eb; }
+.bb-pulse-pill.is-resolved { background: rgba(35, 194, 102, 0.16); color: #1f9d57; }
+.bb-pulse-time {
+  flex: none;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #8a847c;
+  white-space: nowrap;
+}
+.bb-pulse-empty {
+  padding: 22px;
+  border: 1px dashed #d7d2c8;
+  border-radius: 16px;
+  text-align: center;
+  color: #8a847c;
+  font-size: 14px;
+}
+.bb-pulse-empty-cta {
+  margin-top: 12px;
+  padding: 11px 22px;
+  border: none;
+  border-radius: 999px;
+  background: var(--action, #e31e2f);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* Resolved-metric info tooltip. */
+.bb-tip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  color: #a7a199;
+  cursor: help;
+  vertical-align: middle;
+}
+.bb-tip:hover,
+.bb-tip:focus-visible {
+  color: #009336;
+  outline: none;
+}
+.bb-tip-bubble {
+  position: absolute;
+  top: calc(100% + 9px);
+  left: 50%;
+  transform: translateX(-50%) translateY(-4px);
+  width: max-content;
+  max-width: 230px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: #14110f;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  z-index: 20;
+}
+.bb-tip-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-bottom-color: #14110f;
+}
+.bb-tip:hover .bb-tip-bubble,
+.bb-tip:focus-visible .bb-tip-bubble {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* "Latest cleanup · ✨ Community confirmed" — inline within the metric label. */
+.bb-dash-confirmed {
+  font-weight: 700;
+  color: #1f9d57;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bb-dash-hero-img-inner {
+    animation: none;
+    transform: scale(1.04);
+  }
+  .bb-dash-hero-img-inner::after { display: none; }
+  .bb-live-dot { animation: bb-pulse 2s var(--ease) infinite; }
+  .bb-footer-heart,
+  .bb-cleanup-sprout { animation: none; }
+  .bb-spotlight-empty-cta:hover::after { animation: none; }
+  .bb-spotlight-line { opacity: 1; animation: none; }
+  .bb-reveal.bb-in .bb-hotspots > li,
+  .bb-reveal.bb-in .bb-pulse-group,
+  .bb-journey.is-in .bb-journey-step,
+  .bb-dash-donut-legend.is-in li {
+    animation: none;
+    opacity: 1;
+  }
+  .bb-reveal:not(.bb-in) .bb-hotspots > li,
+  .bb-reveal:not(.bb-in) .bb-pulse-group { opacity: 1; }
+  .bb-journey-step { opacity: 1; }
+  .bb-journey-step.is-current .bb-journey-node { animation: none; }
+  .bb-spark { animation: none; opacity: 0; }
+  .bb-hotspots-preview.is-anchored { animation: none; }
+  .bb-hotspots-preview .bb-map-thumb-pin::after { animation: none; display: none; }
 }

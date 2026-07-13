@@ -1,9 +1,11 @@
 import { nearestMunicipality } from '../municipalities'
 import {
+  CATEGORY_EMOJI,
   CATEGORY_LABELS,
   CATEGORY_ORDER,
   OPEN_STATUSES,
   SOURCE_ORDER,
+  communityConfirmed,
   displayBucket,
   type Category,
   type Report,
@@ -103,6 +105,7 @@ export interface RecentCleanup {
   beforePhotos?: string[]
   afterPhotos?: string[]
   confirmations?: number // stillHere + cleared on this report
+  confirmed?: boolean // the crowd (not just an LGU) verified the cleanup
 }
 
 /** An area accumulating open (uncleared) reports — the "where to focus" list. */
@@ -277,6 +280,7 @@ export function computeDashboard(reports: Report[], now: number): DashboardStats
       lng: latest.lng,
       category: latest.category,
       when: resolvedTime(latest),
+      confirmed: communityConfirmed(latest),
     }
   }
 
@@ -647,6 +651,9 @@ export interface AreaDetail {
   confirmations: number // community confirmations (stillHere + cleared) area-wide
   watching: number // residents confirming open reports are "still here"
   lastCleanup: number | null // most recent resolved report (ms)
+  firstReport: number | null // the very first report in this area (ms)
+  reportsThisMonth: number // reports created in the last 30 days
+  spark: number[] // report counts across the last 30 days, oldest → newest
 }
 
 /** Detailed rollup for a single area's open reports — powers the drawer. */
@@ -673,6 +680,18 @@ export function computeAreaDetail(
     ? Math.max(...resolved.map((r) => resolvedTime(r)))
     : null
 
+  const allTimes = local.map((r) => new Date(r.createdAt).getTime())
+  const firstReport = allTimes.length ? Math.min(...allTimes) : null
+  const reportsThisMonth = allTimes.filter((t) => t >= now - 30 * DAY_MS).length
+  // Activity sparkline: report counts bucketed across the last 30 days.
+  const BUCKETS = 10
+  const spark = Array.from({ length: BUCKETS }, () => 0)
+  for (const t of allTimes) {
+    const frac = (now - t) / (30 * DAY_MS)
+    if (frac < 0 || frac > 1) continue
+    spark[Math.min(BUCKETS - 1, Math.floor((1 - frac) * BUCKETS))]++
+  }
+
   return {
     name: placeName,
     open: open.length,
@@ -689,6 +708,9 @@ export function computeAreaDetail(
     confirmations: local.reduce((n, r) => n + r.stillHere + r.cleared, 0),
     watching: open.reduce((n, r) => n + r.stillHere, 0),
     lastCleanup,
+    firstReport,
+    reportsThisMonth,
+    spark,
   }
 }
 
@@ -846,4 +868,106 @@ export function impactTotals(reports: Report[]): ImpactTotals {
     communities,
     confirmations: reports.reduce((n, r) => n + r.stillHere + r.cleared, 0),
   }
+}
+
+const WEEK_MS = 7 * DAY_MS
+
+/** "This week" community momentum — every figure is derived from real reports
+ *  and their real timestamps, so an empty week honestly reads as zeros. */
+export interface Momentum {
+  reports: number // reports created in the last 7 days
+  confirmations: number // community confirmations on those new reports
+  photos: number // after / evidence photos added in the last 7 days
+  cleaned: number // distinct places resolved in the last 7 days
+}
+
+export function communityMomentum(reports: Report[], now: number): Momentum {
+  const since = now - WEEK_MS
+  let created = 0
+  let confirmations = 0
+  let photos = 0
+  const cleanedPlaces = new Set<string>()
+
+  for (const r of reports) {
+    const createdMs = new Date(r.createdAt).getTime()
+    if (createdMs >= since) {
+      created++
+      confirmations += r.stillHere + r.cleared
+    }
+    // Evidence + "after" photos carry their own timestamps.
+    if (r.afterUploadedAt && new Date(r.afterUploadedAt).getTime() >= since) photos++
+    for (const p of r.updatePhotos ?? []) {
+      if (new Date(p.at).getTime() >= since) photos++
+    }
+    if (isResolved(r) && resolvedTime(r) >= since) cleanedPlaces.add(lguOf(r))
+  }
+
+  return { reports: created, confirmations, photos, cleaned: cleanedPlaces.size }
+}
+
+/** Which kind of moment a Community Pulse entry captures. */
+export type ActivityKind = 'reported' | 'verified' | 'cleanup' | 'resolved'
+
+/** One entry in the "Community Pulse" feed — community activity, never a
+ *  person. Each event is a real, timestamped moment in a report's life. */
+export interface ActivityEvent {
+  id: string
+  place: string
+  lat: number
+  lng: number
+  kind: ActivityKind
+  emoji: string
+  label: string // what happened, e.g. "Household Waste reported"
+  at: number // ms timestamp
+}
+
+/** The most recent community activity across all reports, newest first. No
+ *  names — only what happened, where, and when. */
+export function recentActivity(reports: Report[], now: number, limit = 6): ActivityEvent[] {
+  const events: ActivityEvent[] = []
+  for (const r of reports) {
+    const base = { place: lguOf(r), lat: r.lat, lng: r.lng }
+    events.push({
+      ...base,
+      id: `${r.id}-new`,
+      kind: 'reported',
+      emoji: CATEGORY_EMOJI[r.category],
+      label: `${CATEGORY_LABELS[r.category]} reported`,
+      at: new Date(r.createdAt).getTime(),
+    })
+    for (const [i, p] of (r.updatePhotos ?? []).entries()) {
+      events.push({
+        ...base,
+        id: `${r.id}-photo-${i}`,
+        kind: 'verified',
+        emoji: '👥',
+        label: 'Community verification',
+        at: new Date(p.at).getTime(),
+      })
+    }
+    if (r.afterUploadedAt) {
+      events.push({
+        ...base,
+        id: `${r.id}-after`,
+        kind: 'cleanup',
+        emoji: '📸',
+        label: 'Cleanup photo submitted',
+        at: new Date(r.afterUploadedAt).getTime(),
+      })
+    }
+    if (isResolved(r)) {
+      events.push({
+        ...base,
+        id: `${r.id}-resolved`,
+        kind: 'resolved',
+        emoji: '✅',
+        label: 'Area resolved',
+        at: resolvedTime(r),
+      })
+    }
+  }
+  return events
+    .filter((e) => e.at <= now)
+    .sort((a, b) => b.at - a.at)
+    .slice(0, limit)
 }

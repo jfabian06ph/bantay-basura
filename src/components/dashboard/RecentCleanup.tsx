@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { X, ArrowLeft, ArrowRight } from 'lucide-react'
-import { Card, Empty } from './primitives'
+import { Card } from './primitives'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '../ui/dialog'
 import { relativeTime, type RecentCleanup as Cleanup } from '../../lib/stats'
 import { CATEGORY_LABELS } from '../../types'
@@ -169,7 +169,11 @@ export default function RecentCleanup({ cleanups, now }: Props) {
           )}
         </>
       ) : (
-        <Empty label="No cleanups recorded yet. Be the first to resolve a flag." />
+        <div className="bb-cleanup-empty">
+          <span className="bb-cleanup-sprout" aria-hidden>🌱</span>
+          <p className="bb-cleanup-empty-line">Waiting for the first cleanup…</p>
+          <p className="bb-cleanup-empty-sub">Be the first to resolve a flag.</p>
+        </div>
       )}
 
       <Dialog
