@@ -217,7 +217,7 @@ export default function About({ activeCount, reports, now, onNavigate }: Props) 
       <section className="bb-about-close">
         <div className="bb-page">
           <h2 className="bb-about-close-title">
-            Mas malinis na komunidad hindi nagsisimula sa gobyerno.
+            Ang pagbabago ay hindi laging nagsisimula sa pamahalaan.
             <br />
             <span>Nagsisimula ito sa isang taong may malasakit.</span>
           </h2>
