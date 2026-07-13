@@ -298,6 +298,15 @@
 .bb-map .leaflet-container {
   background: var(--map-bg);
 }
+/* Glide between zoom levels with a soft ease-out instead of Leaflet's snappier
+   default — the map feels like it settles into place. */
+.bb-map .leaflet-zoom-anim .leaflet-zoom-animated {
+  transition: transform 0.32s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+/* Tiles cross-fade in as they load, so new detail appears rather than pops. */
+.bb-map .leaflet-tile {
+  transition: opacity 0.35s ease-in-out;
+}
 
 /* Fly-forward-through-clouds moment during a fly-to (search / locate / jump). */
 .bb-fly-clouds {
@@ -536,6 +545,31 @@
 .bb-pin-dot:hover {
   animation-play-state: paused;
   transform: scale(1.25);
+}
+/* The pin for the currently-open report: thicker ring + a pulsing halo so it's
+   obvious which marker the panel belongs to. Halo uses box-shadow (never
+   transform) so Leaflet's marker positioning is untouched. */
+.bb-pin.is-selected .bb-pin-dot {
+  border-width: 3px;
+  /* Pulsate the dot AND emit a halo ring together, so the open report's pin is
+     unmistakable. Both live in one keyframe so transform stays conflict-free. */
+  animation:
+    bb-marker-spawn 0.34s cubic-bezier(0.34, 1.56, 0.64, 1) both,
+    bb-pin-selected 1.5s ease-in-out 0.34s infinite;
+}
+@keyframes bb-pin-selected {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 3px 10px rgba(2, 8, 23, 0.55), 0 0 0 0 rgba(255, 255, 255, 0.55);
+  }
+  70% {
+    transform: scale(1.18);
+    box-shadow: 0 3px 10px rgba(2, 8, 23, 0.55), 0 0 0 13px rgba(255, 255, 255, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 3px 10px rgba(2, 8, 23, 0.55), 0 0 0 0 rgba(255, 255, 255, 0);
+  }
 }
 @keyframes bb-pin-breathe {
   0%,
@@ -4476,13 +4510,15 @@
 .bb-rsheet-badge {
   align-self: flex-start;
   max-width: 100%;
-  font-size: 12px;
+  font-size: 10.5px;
   font-weight: 800;
-  padding: 4px 11px;
-  border-radius: 999px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.25;
+  padding: 3px 9px;
+  border-radius: 8px;
+  /* Wrap long labels ("Cleanup Submitted") instead of clipping them in the
+     narrow 1/3-width status cell. */
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .bb-rsheet-section {
   margin-bottom: 14px;
@@ -4745,6 +4781,13 @@
   padding: 16px 18px 24px;
   display: flex;
   flex-direction: column;
+  /* Even rhythm between sections instead of ad-hoc per-card margins, so the
+     panel reads as one progressive top-to-bottom flow. Section order is set
+     explicitly (inline `order`) to: Summary → Status → Your Action → Timeline. */
+  gap: 20px;
+}
+.bb-panel-body > * {
+  margin-bottom: 0;
 }
 .bb-panel-head {
   display: flex;
@@ -4989,8 +5032,9 @@
 }
 .bb-photo-place {
   display: inline-flex;
-  align-items: center;
-  gap: 5px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
   max-width: 100%;
   min-width: 0;
   color: #fff;
@@ -4999,17 +5043,28 @@
   letter-spacing: -0.01em;
   text-shadow: 0 1px 6px rgba(2, 8, 23, 0.7);
 }
+/* The title row: pin + place name. */
+.bb-photo-place-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  max-width: 100%;
+}
 .bb-photo-place-icon {
   flex: none;
 }
-.bb-photo-place-text {
+.bb-photo-place-name {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* Reported-time + distance, flush-left with the title row (not hanging-indented
+   under the place name). */
 .bb-photo-dist {
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 12.5px;
   font-weight: 600;
 }
 /* Status + reported-time lozenges sit on their own line below the place, so
@@ -5155,6 +5210,16 @@
   align-items: center;
   gap: 10px;
   min-height: 34px;
+  /* Fill in step-by-step when the panel opens. */
+  animation: bb-tl-in 0.42s var(--ease, ease) both;
+}
+.bb-tl-item:nth-child(1) { animation-delay: 0.04s; }
+.bb-tl-item:nth-child(2) { animation-delay: 0.13s; }
+.bb-tl-item:nth-child(3) { animation-delay: 0.22s; }
+.bb-tl-item:nth-child(4) { animation-delay: 0.31s; }
+@keyframes bb-tl-in {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: none; }
 }
 .bb-tl-marker {
   position: relative;
@@ -5175,6 +5240,14 @@
 .bb-tl-item.is-done .bb-tl-dot {
   background: var(--green);
   box-shadow: 0 0 0 2px rgba(35, 194, 102, 0.35);
+  /* The green step pops as it fills — the "checkmark lands" beat. */
+  animation: bb-tl-dot-pop 0.44s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation-delay: inherit;
+}
+@keyframes bb-tl-dot-pop {
+  0% { transform: scale(0.3); }
+  60% { transform: scale(1.3); }
+  100% { transform: scale(1); }
 }
 .bb-tl-line {
   position: absolute;
@@ -5989,10 +6062,10 @@
 .bb-activity-item {
   position: relative;
   display: grid;
-  grid-template-columns: 26px 1fr auto;
+  grid-template-columns: 26px 1fr;
   align-items: start;
   gap: 10px;
-  min-height: 34px;
+  min-height: 40px;
 }
 .bb-activity-marker {
   position: relative;
@@ -6018,22 +6091,26 @@
   margin: 2px 0;
   background: rgba(255, 255, 255, 0.12);
 }
+/* Social-feed entry: a small muted timestamp above the event text. */
+.bb-activity-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-bottom: 8px;
+}
+.bb-activity-time {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-mute, #7c8aa0);
+}
 .bb-activity-text {
   font-size: 13px;
   color: #cdd8e8;
   line-height: 1.35;
-  padding-top: 4px;
 }
 .bb-activity-text b {
   color: #fff;
   font-weight: 800;
-}
-.bb-activity-date {
-  font-size: 11.5px;
-  font-weight: 700;
-  color: var(--text-mute, #7c8aa0);
-  padding-top: 5px;
-  white-space: nowrap;
 }
 /* A maximizable evidence snapshot sitting under a timeline entry. */
 .bb-activity-thumb {
@@ -6278,14 +6355,6 @@
   letter-spacing: -0.02em;
   color: var(--resolved, #22c55e);
   font-variant-numeric: tabular-nums;
-}
-/* Shown instead of a percentage until there are enough confirmations. */
-.bb-consensus-pending {
-  display: block;
-  margin-top: 7px;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: var(--text-dim);
 }
 
 /* ---- "Add a photo?" prompt after Looks clean ---- */

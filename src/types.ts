@@ -148,7 +148,7 @@ export const STATUS_LABELS: Record<ReportStatus, string> = {
 /** Marker/legend colors per status. */
 export const STATUS_COLORS: Record<ReportStatus, string> = {
   pending: '#e31e2f', // red
-  in_review: '#f59e0b', // amber
+  in_review: '#f97316', // orange (one consistent orange — never yellow/amber)
   resolved: '#22c55e', // green
 }
 
@@ -175,16 +175,77 @@ export function confirmationsNeeded(r: Report): number {
 }
 
 /**
- * The pin's *displayed* color — official status wins, but a pending spot greens
- * (via amber) as neighbors confirm it's clean. This is the 🔴→🟡→🟢 morph; it
- * never changes the official status used by stats, filters, or the legend.
+ * The pin's displayed color — the EXACT badge color for the report's derived
+ * status, so a pin can never be a different color than the details:
+ * 🔴 Pending → 🟠 Verified → 🔵 Cleanup Submitted → 🟢 Resolved. The DB `status`
+ * and Ops stay separate.
  */
 export function pinColor(r: Report): string {
-  if (r.status === 'resolved') return STATUS_COLORS.resolved
-  if (r.status === 'in_review') return STATUS_COLORS.in_review
-  if (communityConfirmed(r)) return STATUS_COLORS.resolved
-  if (r.cleared > 0 && r.cleared > r.stillHere) return STATUS_COLORS.in_review
-  return STATUS_COLORS.pending
+  return displayStatus(r).color
+}
+
+export type DisplayStatusKey =
+  | 'pending'
+  | 'in_review'
+  | 'cleanup'
+  | 'resolved'
+  | 'published'
+
+export interface DisplayStatus {
+  key: DisplayStatusKey
+  label: string
+  color: string
+}
+
+// One standardized status palette: red / orange / blue / green (no yellow).
+const CLEANUP_COLOR = '#3b82f6' // blue — a cleanup was submitted, awaiting validation
+
+/**
+ * The status shown in the report panel, DERIVED from the report's real state so
+ * the badge can never contradict the timeline: a report with a submitted
+ * after-photo reads as "Cleanup Submitted", not "Pending". Display-only — the DB
+ * `status` (pending/in_review/resolved) still drives filters, stats, and ops.
+ *
+ *   Pending           new report, awaiting confirmations               (red)
+ *   Verified          community confirmed it's a real issue, or LGU     (orange)
+ *                     acknowledged — confirmed, but not fixed
+ *   Cleanup Submitted an after-photo was submitted, awaiting validation (blue)
+ *   Resolved          community confirms the cleanup, or LGU resolves   (green)
+ *   Evidence Available  resolved AND cleanup photo is public — a         (green)
+ *                     resolved enhancement, not a separate state
+ */
+export function displayStatus(r: Report): DisplayStatus {
+  if (r.status === 'resolved') {
+    return hasAfterPhoto(r)
+      ? { key: 'published', label: 'Evidence Available', color: STATUS_COLORS.resolved }
+      : { key: 'resolved', label: 'Resolved', color: STATUS_COLORS.resolved }
+  }
+  // Crowd has confirmed the spot is clean, even before an LGU marks it resolved.
+  if (communityConfirmed(r)) {
+    return { key: 'resolved', label: 'Resolved', color: STATUS_COLORS.resolved }
+  }
+  // A cleanup photo was submitted, but the cleanup isn't validated yet.
+  if (hasAfterPhoto(r)) {
+    return { key: 'cleanup', label: 'Cleanup Submitted', color: CLEANUP_COLOR }
+  }
+  // Verified real — an LGU acknowledged it, or enough residents confirmed it.
+  if (r.status === 'in_review' || r.stillHere >= CLEAN_THRESHOLD) {
+    return { key: 'in_review', label: 'Verified', color: STATUS_COLORS.in_review }
+  }
+  return { key: 'pending', label: 'Pending', color: STATUS_COLORS.pending }
+}
+
+/**
+ * Collapse the five display states into the three filter/stat buckets so the
+ * public map's pins, badge, "Cleaned" filter, counts, and timeline all agree
+ * (a community-confirmed cleanup reads as resolved everywhere). The DB `status`
+ * and the Ops Center remain the authoritative record, separate from this.
+ */
+export function displayBucket(r: Report): ReportStatus {
+  const key = displayStatus(r).key
+  if (key === 'resolved' || key === 'published') return 'resolved'
+  if (key === 'in_review' || key === 'cleanup') return 'in_review'
+  return 'pending'
 }
 
 export const SOURCE_LABELS: Record<ReportSource, string> = {

@@ -17,11 +17,31 @@ const loadVoteLog = (): Record<string, number> => {
 export const recentlyVoted = (id: string): boolean =>
   Date.now() - (loadVoteLog()[id] ?? 0) < VOTE_COOLDOWN_MS
 
-export const recordVote = (id: string): void => {
+// Which way a device voted on a report — so the locked state can echo it back
+// ("You voted 'Looks clean'") rather than a generic "you've weighed in".
+const VOTE_KIND_KEY = 'bb-vote-kind'
+type VoteKind = 'stillHere' | 'cleared'
+
+const loadKindLog = (): Record<string, VoteKind> => {
+  try {
+    return JSON.parse(localStorage.getItem(VOTE_KIND_KEY) || '{}')
+  } catch {
+    return {}
+  }
+}
+
+export const lastVoteKind = (id: string): VoteKind | null => loadKindLog()[id] ?? null
+
+export const recordVote = (id: string, kind?: VoteKind): void => {
   try {
     const log = loadVoteLog()
     log[id] = Date.now()
     localStorage.setItem(VOTE_KEY, JSON.stringify(log))
+    if (kind) {
+      const kinds = loadKindLog()
+      kinds[id] = kind
+      localStorage.setItem(VOTE_KIND_KEY, JSON.stringify(kinds))
+    }
   } catch {
     /* ignore */
   }

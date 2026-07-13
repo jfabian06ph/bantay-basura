@@ -187,12 +187,14 @@ function ReportPin({
   userPos,
   onConfirm,
   onSelect,
+  selected,
 }: {
   report: Report
   now: number
   userPos: UserLocation | null
   onConfirm: (id: string, kind: 'stillHere' | 'cleared') => void
   onSelect?: (r: Report) => void
+  selected?: boolean
 }) {
   const dist = userPos ? formatDistance(distanceMeters(userPos, report)) : null
   const color = STATUS_COLORS[report.status]
@@ -200,7 +202,8 @@ function ReportPin({
   return (
     <Marker
       position={[report.lat, report.lng]}
-      icon={pinIcon(report)}
+      icon={pinIcon(report, selected)}
+      zIndexOffset={selected ? 1000 : 0}
       eventHandlers={onSelect ? { click: () => onSelect(report) } : undefined}
     >
       <Tooltip direction="top" offset={[0, -10]} opacity={1} className="bb-tip">
@@ -259,10 +262,11 @@ interface ClusterProps {
   userPos: UserLocation | null
   onConfirm: (id: string, kind: 'stillHere' | 'cleared') => void
   onSelect?: (r: Report) => void
+  selectedId?: string | null
 }
 
 /** Clusters reports with supercluster; renders bubbles zoomed-out, pins zoomed-in. */
-function ClusterLayer({ reports, now, userPos, onConfirm, onSelect }: ClusterProps) {
+function ClusterLayer({ reports, now, userPos, onConfirm, onSelect, selectedId }: ClusterProps) {
   const map = useMap()
   const [view, setView] = useState<{ bbox: [number, number, number, number]; zoom: number } | null>(null)
 
@@ -357,6 +361,7 @@ function ClusterLayer({ reports, now, userPos, onConfirm, onSelect }: ClusterPro
             userPos={userPos}
             onConfirm={onConfirm}
             onSelect={onSelect}
+            selected={report.id === selectedId}
           />
         )
       })}
@@ -505,6 +510,8 @@ interface Props {
   placing: boolean
   /** When set, tapping a pin selects it (bottom sheet) instead of a popup. */
   onSelect?: (r: Report) => void
+  /** The currently open report's id — its pin renders prominent. */
+  selectedId?: string | null
   /** Called on load + after each pan/zoom with the visible map area. */
   onViewport?: (v: MapViewport) => void
   /** Filter controls — omitted by the internal ops map, which shows all reports. */
@@ -532,6 +539,7 @@ export default function MapView({
   mapRef,
   placing,
   onSelect,
+  selectedId,
   onViewport,
   statusFilter = 'all',
   onStatusFilter,
@@ -621,6 +629,17 @@ export default function MapView({
         zoom={9}
         className={`bb-map ${placing ? 'bb-map-placing' : ''}`}
         zoomControl={false}
+        // Smooth AND responsive: zoomSnap 0 lets trackpad pinch/scroll glide
+        // between levels (no whole-step jumps), while a light wheel threshold
+        // keeps it from feeling heavy on a MacBook trackpad.
+        zoomSnap={0}
+        zoomDelta={0.6}
+        // Trackpad-light: a small pinch/scroll moves a full zoom level. Lower =
+        // easier. 25 is intentionally sensitive for MacBook trackpads.
+        wheelPxPerZoomLevel={25}
+        wheelDebounceTime={8}
+        zoomAnimation
+        markerZoomAnimation
       >
         <TileLayer
           key={basemap}
@@ -653,6 +672,7 @@ export default function MapView({
           userPos={userPos}
           onConfirm={onConfirm}
           onSelect={onSelect}
+          selectedId={selectedId}
         />
       </MapContainer>
 
