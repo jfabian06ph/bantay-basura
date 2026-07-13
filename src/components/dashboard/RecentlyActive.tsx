@@ -1,90 +1,80 @@
 import { useMemo, useRef, useState } from 'react'
-import { MapPin, ArrowRight } from 'lucide-react'
+import { MapPin, ArrowRight, FileText, Users, Camera, CheckCircle2, Activity, type LucideIcon } from 'lucide-react'
 import Reveal from '../Reveal'
 import MapThumb from './MapThumb'
 import { recentActivity, relativeTime, type ActivityEvent, type ActivityKind } from '../../lib/stats'
 import type { Report } from '../../types'
 
+/** Lucide icon per pulse event kind — replaces the raw emoji glyphs. */
+const ACTIVITY_ICON: Record<ActivityKind, LucideIcon> = {
+  reported: FileText,
+  verified: Users,
+  cleanup: Camera,
+  resolved: CheckCircle2,
+}
+
+function ActivityIcon({ kind, size = 16 }: { kind: ActivityKind; size?: number }) {
+  const Icon = ACTIVITY_ICON[kind]
+  return <Icon size={size} aria-hidden />
+}
+
 interface Props {
   reports: Report[]
   now: number
   onReport?: () => void
+  onViewAll?: () => void
   onViewOnMap?: (lat: number, lng: number, zoom: number) => void
-}
-
-/** Generic per-kind icon + noun for the popup's municipality summary. */
-const KIND_EMOJI: Record<ActivityKind, string> = {
-  reported: '📝',
-  verified: '👥',
-  cleanup: '📸',
-  resolved: '✅',
-}
-function kindNoun(kind: ActivityKind, n: number): string {
-  const plural = n === 1 ? '' : 's'
-  switch (kind) {
-    case 'reported':
-      return `new report${plural}`
-    case 'verified':
-      return `community confirmation${plural}`
-    case 'cleanup':
-      return `cleanup photo${plural}`
-    case 'resolved':
-      return n === 1 ? 'area resolved' : 'areas resolved'
-  }
-}
-
-interface Group {
-  place: string
-  lat: number
-  lng: number
-  events: ActivityEvent[]
-}
-
-/** Count a group's events by kind, in display order. */
-function summarize(g: Group): { kind: ActivityKind; n: number }[] {
-  const order: ActivityKind[] = ['reported', 'verified', 'cleanup', 'resolved']
-  const counts = new Map<ActivityKind, number>()
-  for (const e of g.events) counts.set(e.kind, (counts.get(e.kind) ?? 0) + 1)
-  return order.filter((k) => counts.has(k)).map((k) => ({ kind: k, n: counts.get(k)! }))
-}
-
-/** Collapse consecutive same-place events into one place group. */
-function group(events: ActivityEvent[]): Group[] {
-  const groups: Group[] = []
-  for (const e of events) {
-    const last = groups[groups.length - 1]
-    if (last && last.place === e.place) last.events.push(e)
-    else groups.push({ place: e.place, lat: e.lat, lng: e.lng, events: [e] })
-  }
-  return groups
+  /** Opens the report's detail panel on the map (preferred over onViewOnMap). */
+  onOpenReport?: (id: string) => void
 }
 
 /**
- * "Community Pulse" — a live feed of the latest community activity. No names,
- * ever: only what happened, where, and when. Consecutive events in the same
- * place are grouped. Hovering a group previews it on a mini map (continuity
- * with Areas Needing Attention). Hidden entirely until there's real activity.
+ * "Live Community Pulse" — a flat, newest-first activity stream (GitHub/Slack
+ * style). No names, no municipality grouping: each row is one event, one line
+ * plus a "place • time" meta line. Fixed height with internal scroll so the
+ * dashboard summarizes rather than sprawls. Hidden until there's real activity.
  */
-export default function RecentlyActive({ reports, now, onReport, onViewOnMap }: Props) {
-  const events = useMemo(() => recentActivity(reports, now, 6), [reports, now])
-  const groups = useMemo(() => group(events), [events])
+export default function RecentlyActive({
+  reports,
+  now,
+  onReport,
+  onViewAll,
+  onViewOnMap,
+  onOpenReport,
+}: Props) {
+  const events = useMemo(() => recentActivity(reports, now, 10), [reports, now])
+  const totalActivity = useMemo(() => recentActivity(reports, now, 9999).length, [reports, now])
 
-  // Row-anchored hover preview, matching Areas Needing Attention.
+  // Group the shown events by place, so the hover card can summarise an area
+  // rather than just echo the hovered row.
+  const byPlace = useMemo(() => {
+    const m = new Map<string, ActivityEvent[]>()
+    for (const e of events) {
+      const arr = m.get(e.place) ?? []
+      arr.push(e)
+      m.set(e.place, arr)
+    }
+    return m
+  }, [events])
+
+  // Row-anchored hover preview, same pattern as Areas / Community Highlights.
   const wrapRef = useRef<HTMLDivElement>(null)
   const hideTimer = useRef<number | undefined>(undefined)
   const showTimer = useRef<number | undefined>(undefined)
-  const [preview, setPreview] = useState<{ g: Group; top: number; left: number } | null>(null)
-  const showPreview = (g: Group | null, e?: React.MouseEvent) => {
+  const [preview, setPreview] = useState<{ e: ActivityEvent; top: number; left: number } | null>(
+    null,
+  )
+  const showPreview = (ev: ActivityEvent | null, e?: React.MouseEvent) => {
     if (hideTimer.current) window.clearTimeout(hideTimer.current)
     if (showTimer.current) window.clearTimeout(showTimer.current)
-    if (!g) {
+    if (!ev) {
       hideTimer.current = window.setTimeout(() => setPreview(null), 150)
       return
     }
     const wrap = wrapRef.current
     const el = e?.currentTarget as HTMLElement | undefined
     if (!wrap || !el) {
-      setPreview({ g, top: 0, left: 0 })
+      setPreview({ e: ev, top: 0, left: 0 })
       return
     }
     const wr = wrap.getBoundingClientRect()
@@ -92,7 +82,7 @@ export default function RecentlyActive({ reports, now, onReport, onViewOnMap }: 
     const half = 130
     const clientX = e ? e.clientX : rr.left + rr.width / 2
     const pos = {
-      g,
+      e: ev,
       top: rr.top - wr.top,
       left: Math.max(half, Math.min(wr.width - half, clientX - wr.left)),
     }
@@ -106,7 +96,7 @@ export default function RecentlyActive({ reports, now, onReport, onViewOnMap }: 
     return (
       <section className="bb-dash-section">
         <div className="bb-dash-eyebrow bb-dash-eyebrow-live">
-          <span className="bb-live-dot" /> Live Community Pulse
+          <Activity className="bb-live-pulse" size={16} aria-hidden /> Live Community Pulse
         </div>
         <div className="bb-pulse-empty">
           <p className="bb-pulse-empty-lede">Nothing new in the last 24 hours.</p>
@@ -125,67 +115,95 @@ export default function RecentlyActive({ reports, now, onReport, onViewOnMap }: 
     <section className="bb-dash-section">
       <div className="bb-dash-eyebrow bb-dash-eyebrow-live">
         <span className="bb-live-dot" /> Live Community Pulse
+        <span className="bb-pulse-updated">· Updated {relativeTime(events[0].at, now)}</span>
       </div>
-      <p className="bb-dash-section-lede">Live community activity, no names attached.</p>
+      <p className="bb-dash-section-lede">Recent community activity. Privacy protected.</p>
       <Reveal>
-        <div className="bb-pulse-wrap" ref={wrapRef} onMouseLeave={() => showPreview(null)}>
-          <ul className="bb-pulse">
-            {groups.map((g, gi) => (
-              <li
-                className="bb-pulse-group"
-                key={`${g.place}-${gi}`}
-                style={{ '--i': gi } as React.CSSProperties}
-                onMouseEnter={(e) => showPreview(g, e)}
-              >
-                <span className="bb-pulse-place">
-                  <MapPin size={14} aria-hidden />
-                  {g.place}
-                </span>
-                <ul className="bb-pulse-events">
-                  {g.events.map((e) => (
-                    <li className={`bb-pulse-item is-${e.kind}`} key={e.id}>
-                      <span className="bb-pulse-ico" aria-hidden>
-                        {e.emoji}
-                      </span>
-                      <span className="bb-pulse-main">
-                        <span className="bb-pulse-label">{e.label}</span>
-                        <span className="bb-pulse-when">{relativeTime(e.at, now)}</span>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </li>
-            ))}
-          </ul>
-
-          {preview && (
-            <button
-              className={`bb-hotspots-preview is-anchored ${onViewOnMap ? 'is-clickable' : ''}`}
-              style={{ top: preview.top, left: preview.left }}
-              onMouseEnter={keepPreview}
-              onMouseLeave={() => showPreview(null)}
-              onClick={onViewOnMap ? () => onViewOnMap(preview.g.lat, preview.g.lng, 13) : undefined}
-              aria-label={onViewOnMap ? `Open ${preview.g.place} on the map` : undefined}
-            >
-              <MapThumb lat={preview.g.lat} lng={preview.g.lng} size={92} zoom={13} />
-              <span className="bb-hotspots-preview-info">
-                <span className="bb-hotspots-preview-name">
-                  <MapPin size={13} /> {preview.g.place}
-                </span>
-                <span className="bb-hotspots-preview-sub">Recent activity</span>
-                <span className="bb-pulse-summary">
-                  {summarize(preview.g).map((s) => (
-                    <span key={s.kind}>
-                      {KIND_EMOJI[s.kind]} {s.n} {kindNoun(s.kind, s.n)}
-                    </span>
-                  ))}
-                </span>
-                {onViewOnMap && (
-                  <span className="bb-hotspots-preview-cta">
-                    Open on map <ArrowRight size={12} />
+        <div className="bb-pulse-card">
+          <div
+            className="bb-pulse-wrap"
+            ref={wrapRef}
+            onMouseLeave={() => showPreview(null)}
+          >
+            <ul className="bb-pulse-stream">
+              {events.map((e, i) => (
+                <li
+                  className={`bb-pulse-item is-${e.kind}`}
+                  key={e.id}
+                  style={{ '--i': i } as React.CSSProperties}
+                  onMouseEnter={(ev) => showPreview(e, ev)}
+                >
+                  <span className="bb-pulse-ico" aria-hidden>
+                    <ActivityIcon kind={e.kind} />
                   </span>
-                )}
-              </span>
+                  <span className="bb-pulse-main">
+                    <span className="bb-pulse-label">{e.label}</span>
+                    <span className="bb-pulse-meta">
+                      {e.place} · {relativeTime(e.at, now)}
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+
+            {preview && (
+              <button
+                className={`bb-hotspots-preview is-anchored ${
+                  onOpenReport || onViewOnMap ? 'is-clickable' : ''
+                }`}
+                style={{ top: preview.top, left: preview.left }}
+                onMouseEnter={keepPreview}
+                onMouseLeave={() => showPreview(null)}
+                onClick={
+                  onOpenReport
+                    ? () => onOpenReport(preview.e.reportId)
+                    : onViewOnMap
+                      ? () => onViewOnMap(preview.e.lat, preview.e.lng, 13)
+                      : undefined
+                }
+                aria-label={
+                  onOpenReport
+                    ? `Open the ${preview.e.place} report`
+                    : onViewOnMap
+                      ? `Open ${preview.e.place} on the map`
+                      : undefined
+                }
+              >
+                <MapThumb lat={preview.e.lat} lng={preview.e.lng} size={92} zoom={13} />
+                {(() => {
+                  const placeEvents = byPlace.get(preview.e.place) ?? [preview.e]
+                  const latest = placeEvents[0]
+                  return (
+                    <span className="bb-hotspots-preview-info">
+                      <span className="bb-hotspots-preview-name">
+                        <MapPin size={13} /> {preview.e.place}
+                      </span>
+                      <span className="bb-hotspots-preview-sub">
+                        {placeEvents.length} recent{' '}
+                        {placeEvents.length === 1 ? 'activity' : 'activities'}
+                      </span>
+                      <span className="bb-hotspots-preview-stat">
+                        Latest: <ActivityIcon kind={latest.kind} size={12} /> {latest.label}
+                      </span>
+                      {(onOpenReport || onViewOnMap) && (
+                        <span className="bb-hotspots-preview-cta">
+                          {onOpenReport ? 'View report' : 'Open on map'}{' '}
+                          <ArrowRight size={12} />
+                        </span>
+                      )}
+                    </span>
+                  )
+                })()}
+              </button>
+            )}
+          </div>
+
+          {onViewAll && (
+            <button className="bb-pulse-all" onClick={onViewAll}>
+              {totalActivity > events.length
+                ? `See all ${totalActivity} activities`
+                : 'See the full activity feed'}{' '}
+              <ArrowRight size={14} />
             </button>
           )}
         </div>
