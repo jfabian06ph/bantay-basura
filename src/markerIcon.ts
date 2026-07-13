@@ -9,11 +9,13 @@ const PIN_SIZE = 17
  * A small circular map pin colored by status — clean and professional,
  * in the style of Google / Apple / ArcGIS maps.
  */
-export function pinIcon(report: Report): L.DivIcon {
-  const size = PIN_SIZE
+export function pinIcon(report: Report, selected = false): L.DivIcon {
+  // The selected pin is larger with a pulsing halo (see .bb-pin.is-selected) so
+  // it's unmistakable which marker the open report panel belongs to.
+  const size = selected ? 26 : PIN_SIZE
   const color = pinColor(report)
   return L.divIcon({
-    className: 'bb-pin',
+    className: `bb-pin${selected ? ' is-selected' : ''}`,
     html: `<span class="bb-pin-dot" style="width:${size}px;height:${size}px;background:${color}"></span>`,
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],

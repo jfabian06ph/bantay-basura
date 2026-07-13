@@ -191,6 +191,7 @@ export default function MapCanvas({
         mapRef={mapRef}
         placing={placing}
         onSelect={onSelectReport}
+        selectedId={selectedReport?.id ?? null}
         onViewport={onViewport}
         statusFilter={statusFilter}
         onStatusFilter={onStatusFilter}

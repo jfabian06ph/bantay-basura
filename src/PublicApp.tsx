@@ -15,6 +15,7 @@ import { isBackendConnected, loadReports, subscribeReportChanges } from './supab
 import { isAuthored } from './lib/votes'
 import { useUserLocation } from './hooks/useUserLocation'
 import { useReportFlow } from './hooks/useReportFlow'
+import { displayBucket } from './types'
 import type { LatLng, Report, ReportStatus } from './types'
 import type { View } from './content/pages'
 import { isDevMode } from './lib/devMode'
@@ -240,9 +241,12 @@ export default function PublicApp({ onSignIn, ready = true }: Props) {
     let pending = 0
     let review = 0
     let done = 0
+    // Bucket by the community-aware display status (not the raw DB status), so
+    // the counts match the pins, badges, and the "Cleaned" filter.
     for (const r of viewReports) {
-      if (r.status === 'resolved') done++
-      else if (r.status === 'in_review') review++
+      const bucket = displayBucket(r)
+      if (bucket === 'resolved') done++
+      else if (bucket === 'in_review') review++
       else pending++
     }
     return { pending, review, done, active: pending + review }
@@ -250,7 +254,10 @@ export default function PublicApp({ onSignIn, ready = true }: Props) {
 
   // Reports drawn on the map respect the legend filter; stats stay full.
   const mapReports = useMemo(
-    () => (statusFilter === 'all' ? reports : reports.filter((r) => r.status === statusFilter)),
+    () =>
+      statusFilter === 'all'
+        ? reports
+        : reports.filter((r) => displayBucket(r) === statusFilter),
     [reports, statusFilter],
   )
 

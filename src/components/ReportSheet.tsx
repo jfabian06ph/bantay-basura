@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Camera, Pencil, ChevronLeft, ChevronRight, Check, Plus, X, Flag, Crosshair } from 'lucide-react'
 import type { Category, Report } from '../types'
 import { CATEGORY_LABELS, CATEGORY_DESC, CATEGORY_ORDER } from '../types'
@@ -46,6 +46,16 @@ function Section({ title, children }: { title: string; children: React.ReactNode
         {title}
       </p>
       {children}
+    </div>
+  )
+}
+
+/** A gentle privacy/safety reminder, shown on the photo + description steps. */
+function SafetyNote({ children }: { children: ReactNode }) {
+  return (
+    <div className="mt-3 flex flex-col gap-1 rounded-2xl border border-[rgba(35,194,102,.16)] bg-[rgba(35,194,102,.08)] px-3.5 py-3 text-xs leading-snug text-[#cbeed9]">
+      <span className="font-bold">🔒 Keep everyone safe</span>
+      <span className="font-medium">{children}</span>
     </div>
   )
 }
@@ -338,9 +348,13 @@ export default function ReportSheet({
               )}
               <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
                 Photos help neighbors and LGUs verify the report faster. Add up to {MAX_PHOTOS}.
-                Photos are checked before they appear publicly. Please upload only images
-                related to the reported waste issue.
+                They are checked before they appear publicly.
               </p>
+              <SafetyNote>
+                Focus your photo on the waste. Please avoid showing faces, house numbers,
+                vehicle plates, or other personal details. Reports are publicly visible on
+                the community map.
+              </SafetyNote>
             </Section>
           )}
 
@@ -388,6 +402,11 @@ export default function ReportSheet({
                   onChange={(e) => setNote(e.target.value)}
                   className="min-h-[92px] w-full resize-none rounded-[18px] border border-white/10 bg-[#33445f] p-4 text-sm text-white outline-none placeholder:text-[#8f9db2] focus-visible:ring-[3px] focus-visible:ring-ring/50"
                 />
+                <SafetyNote>
+                  Describe the waste, not people or exact addresses. Please avoid including
+                  house numbers, names, phone numbers, or other personal information. Reports
+                  are publicly visible on the community map.
+                </SafetyNote>
               </Section>
             </div>
           )}

@@ -44,7 +44,6 @@ export default function FloatingControls({
 
       {selectedReport ? (
         <div className="bb-cta bb-cta-verify">
-          <span className="bb-cta-label">Community Report</span>
           <Button size="lg" className="bb-cta-btn bb-cta-btn-verify" onClick={onVerify}>
             <ShieldCheck className="size-4" /> Verify this report
           </Button>
