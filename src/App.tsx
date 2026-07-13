@@ -5,6 +5,7 @@ import PublicApp from './PublicApp'
 import OperationsCenter from './ops/OperationsCenter'
 import SignIn from './components/SignIn'
 import Splash, { shouldShowSplash } from './components/Splash'
+import { usePath, navigate, isOpsPath } from './router'
 import './App.css'
 
 /**
@@ -23,24 +24,32 @@ function RotateGate() {
   )
 }
 
-/** Chooses between the public civic site and the authenticated ops console. */
+/**
+ * Routes between the public civic site and the authenticated ops console.
+ * `/ops` is the console's own URL: signed in → the console; signed out → the
+ * operator sign-in (cancel returns to the public site). Everything else is the
+ * public site, whose "LGU Operations" button navigates to `/ops`.
+ */
 function Root({ ready }: { ready: boolean }) {
   const { operator } = useAuth()
-  const [signInOpen, setSignInOpen] = useState(false)
+  const path = usePath()
 
-  if (operator) return <OperationsCenter />
+  if (isOpsPath(path)) {
+    if (operator) return <OperationsCenter />
+    // Signed out at /ops → sign-in page. On success the operator state flips and
+    // this same route renders the console; cancel drops back to the public site.
+    return <SignIn onClose={() => navigate('/')} onSuccess={() => {}} />
+  }
 
-  return (
-    <>
-      <PublicApp onSignIn={() => setSignInOpen(true)} ready={ready} />
-      {signInOpen && <SignIn onClose={() => setSignInOpen(false)} />}
-    </>
-  )
+  return <PublicApp onSignIn={() => navigate('/ops')} ready={ready} />
 }
 
 export default function App() {
   // Evaluate once, before first paint, so the map never flashes behind it.
-  const [splash, setSplash] = useState(shouldShowSplash)
+  // The civic intro is for the public site — skip it when landing on /ops.
+  const [splash, setSplash] = useState(
+    () => !isOpsPath(window.location.pathname) && shouldShowSplash(),
+  )
   // The map surface is "revealed" once the splash is gone — the cue to play the
   // map overlays' entrance animations (they'd otherwise run hidden behind it).
   return (

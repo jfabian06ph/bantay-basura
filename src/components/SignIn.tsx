@@ -5,10 +5,12 @@ import { useAuth } from '../auth/AuthProvider'
 
 interface Props {
   onClose: () => void
+  /** Called instead of onClose after a successful sign-in (defaults to onClose). */
+  onSuccess?: () => void
 }
 
 /** Operator sign-in. On success the app switches to the Operations Center. */
-export default function SignIn({ onClose }: Props) {
+export default function SignIn({ onClose, onSuccess }: Props) {
   const { signIn, isDemo, error } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -19,7 +21,7 @@ export default function SignIn({ onClose }: Props) {
     setBusy(true)
     const ok = await signIn(email, password)
     setBusy(false)
-    if (ok) onClose()
+    if (ok) (onSuccess ?? onClose)()
   }
 
   return (

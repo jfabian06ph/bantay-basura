@@ -13,6 +13,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { useAuth } from '../auth/AuthProvider'
+import { navigate } from '../router'
 import { useOpsFavicon } from './useOpsFavicon'
 import { OPS_SECTIONS, type OpsSectionKey } from './types'
 import {
@@ -123,7 +124,13 @@ export default function OperationsCenter() {
         </nav>
 
         <div className="ops-sidebar-foot">
-          <button className="ops-signout" onClick={signOut}>
+          <button
+            className="ops-signout"
+            onClick={() => {
+              signOut()
+              navigate('/')
+            }}
+          >
             <LogOut className="size-[18px]" />
             <span>Sign out</span>
           </button>
