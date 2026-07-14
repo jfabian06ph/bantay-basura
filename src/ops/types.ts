@@ -70,6 +70,7 @@ export const OPS_SECTIONS = [
   { key: 'teams', label: 'Response Teams', icon: 'Users' },
   { key: 'analytics', label: 'Analytics', icon: 'BarChart3' },
   { key: 'residents', label: 'Residents', icon: 'Contact' },
+  { key: 'feedback', label: 'Feedback', icon: 'MessageSquare' },
   { key: 'admin', label: 'Data / Admin', icon: 'Database' },
   { key: 'settings', label: 'Settings', icon: 'Settings' },
 ] as const

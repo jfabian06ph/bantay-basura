@@ -750,3 +750,112 @@
   color: #b45309;
   background: #fef3c7;
 }
+
+/* ---- Feedback section ---- */
+.ops-fb-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.ops-fb-fchip {
+  border: 1px solid var(--ops-line, #e2e6eb);
+  background: #fff;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #52606d;
+  cursor: pointer;
+}
+.ops-fb-fchip.is-active {
+  border-color: #1f9d57;
+  background: color-mix(in srgb, #1f9d57 8%, #fff);
+  color: #157a42;
+}
+.ops-fb-list {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ops-fb-item {
+  border: 1px solid var(--ops-line, #e2e6eb);
+  border-left: 3px solid #cbd2d9;
+  border-radius: 12px;
+  padding: 14px 16px;
+  background: #fff;
+}
+.ops-fb-new {
+  border-left-color: #e0619a;
+}
+.ops-fb-triaged {
+  border-left-color: #f5b84b;
+}
+.ops-fb-resolved {
+  border-left-color: #1f9d57;
+  opacity: 0.8;
+}
+.ops-fb-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ops-fb-cat {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #323f4b;
+}
+.ops-fb-badge {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #eef1f4;
+  color: #52606d;
+}
+.ops-fb-badge-new {
+  background: #fce7f0;
+  color: #b03574;
+}
+.ops-fb-badge-triaged {
+  background: #fdf1dc;
+  color: #a5720f;
+}
+.ops-fb-badge-resolved {
+  background: #e3f6ea;
+  color: #157a42;
+}
+.ops-fb-time {
+  margin-left: auto;
+  font-size: 12px;
+}
+.ops-fb-msg {
+  margin: 10px 0 0;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: #1f2933;
+  white-space: pre-wrap;
+}
+.ops-fb-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: #52606d;
+}
+.ops-fb-ua {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ops-fb-actions {
+  margin-top: 12px;
+}

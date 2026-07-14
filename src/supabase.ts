@@ -322,3 +322,53 @@ export async function insertFeedback(input: FeedbackInput): Promise<boolean> {
   }
   return true
 }
+
+/** A feedback row as shown in the Ops Center (camelCase). */
+export interface FeedbackRow {
+  id: string
+  createdAt: string
+  message: string
+  category: string | null
+  page: string | null
+  appEnv: string | null
+  userAgent: string | null
+  viewport: string | null
+  status: string
+}
+
+/** List feedback submissions (newest first). Requires an authenticated
+ *  operator session — anon reads are blocked by RLS and return []. */
+export async function listFeedback(): Promise<FeedbackRow[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase
+    .from('feedback')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(300)
+  if (error || !data) {
+    console.warn('[bantay-basura] failed to load feedback:', error)
+    return []
+  }
+  return data.map((row) => ({
+    id: row.id,
+    createdAt: row.created_at,
+    message: row.message,
+    category: row.category,
+    page: row.page,
+    appEnv: row.app_env,
+    userAgent: row.user_agent,
+    viewport: row.viewport,
+    status: row.status,
+  }))
+}
+
+/** Update a feedback row's triage status (new | triaged | resolved). */
+export async function setFeedbackStatus(id: string, status: string): Promise<boolean> {
+  if (!supabase) return false
+  const { error } = await supabase.from('feedback').update({ status }).eq('id', id)
+  if (error) {
+    console.warn('[bantay-basura] failed to update feedback status:', error)
+    return false
+  }
+  return true
+}

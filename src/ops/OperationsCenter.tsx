@@ -8,6 +8,7 @@ import {
   BarChart3,
   Contact,
   Database,
+  MessageSquare,
   Settings as SettingsIcon,
   LogOut,
   type LucideIcon,
@@ -32,6 +33,7 @@ import ResponseTeams from './sections/ResponseTeams'
 import Analytics from './sections/Analytics'
 import Residents from './sections/Residents'
 import AdminData from './sections/AdminData'
+import Feedback from './sections/Feedback'
 import SettingsSection from './sections/Settings'
 import './ops.css'
 
@@ -44,6 +46,7 @@ const ICONS: Record<string, LucideIcon> = {
   BarChart3,
   Contact,
   Database,
+  MessageSquare,
   Settings: SettingsIcon,
 }
 
@@ -162,6 +165,7 @@ export default function OperationsCenter() {
           {section === 'teams' && <ResponseTeams data={data} />}
           {section === 'analytics' && <Analytics data={data} now={NOW} />}
           {section === 'residents' && <Residents data={data} />}
+          {section === 'feedback' && <Feedback />}
           {section === 'admin' && <AdminData data={data} />}
           {section === 'settings' && <SettingsSection />}
         </main>
