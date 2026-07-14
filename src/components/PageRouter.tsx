@@ -2,6 +2,7 @@ import About from './About'
 import Dashboard from './Dashboard'
 import Impact from './Impact'
 import HowItWorks from './HowItWorks'
+import Resources from './Resources'
 import InfoPage from './InfoPage'
 import { PAGES, type InfoView, type View } from '../content/pages'
 import type { Report } from '../types'
@@ -78,6 +79,11 @@ export default function PageRouter({
   // "How It Works" — the scroll-told story of a single report.
   if (view === 'how') {
     return <HowItWorks onNavigate={navigate} />
+  }
+
+  // "Resources" — the community tool library (linked from the footer).
+  if (view === 'resources') {
+    return <Resources onNavigate={navigate} />
   }
 
   if (view === 'map') return null

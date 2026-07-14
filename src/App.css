@@ -739,7 +739,7 @@
   background: rgba(255, 255, 255, 0.1);
 }
 .bb-control-round.bb-locate-on {
-  background: #1d4ed8;
+  background: #111d32;
 }
 .bb-control-round.bb-locate-busy {
   animation: bb-spin 0.9s linear infinite;
@@ -3280,6 +3280,7 @@
   color: #33302c;
   cursor: pointer;
   text-align: left;
+  text-decoration: none;
 }
 .bb-footer-link:hover {
   color: var(--red);
@@ -3318,6 +3319,130 @@
   .bb-footer-top {
     grid-template-columns: 1fr 1fr;
     gap: 24px;
+  }
+}
+
+/* ---- Footer "coming after beta" modal (Open Data API, etc.) ---- */
+.bb-footer-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+.bb-footer-modal-scrim {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background: rgba(10, 14, 11, 0.55);
+  backdrop-filter: blur(3px);
+  cursor: pointer;
+  animation: bb-footer-modal-fade 0.2s ease;
+}
+.bb-footer-modal-card {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  padding: 38px 32px 30px;
+  border-radius: 22px;
+  background: #fff;
+  text-align: center;
+  box-shadow: 0 30px 80px rgba(10, 14, 11, 0.35);
+  animation: bb-footer-modal-pop 0.28s cubic-bezier(0.34, 1.4, 0.5, 1);
+}
+.bb-footer-modal-x {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: none;
+  font-size: 24px;
+  line-height: 1;
+  color: #a8a29a;
+  cursor: pointer;
+  border-radius: 999px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.bb-footer-modal-x:hover {
+  background: #f2f0ea;
+  color: #14110f;
+}
+.bb-footer-modal-emoji {
+  font-size: 46px;
+  line-height: 1;
+}
+.bb-footer-modal-title {
+  margin: 14px 0 0;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #14110f;
+}
+.bb-footer-modal-soon {
+  margin: 6px 0 0;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #1f9d57;
+}
+.bb-footer-modal-body {
+  margin: 14px auto 0;
+  max-width: 320px;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: #5f5a54;
+}
+.bb-footer-modal-body + .bb-footer-modal-body {
+  margin-top: 10px;
+}
+.bb-footer-modal-after {
+  margin: 20px 0 0;
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #a8a29a;
+}
+.bb-footer-modal-btn {
+  margin-top: 24px;
+  padding: 12px 28px;
+  border: none;
+  border-radius: 999px;
+  background: #1f9d57;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 12px 28px rgba(31, 157, 87, 0.32);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.bb-footer-modal-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 34px rgba(31, 157, 87, 0.4);
+}
+.bb-footer-modal-btn:active {
+  transform: scale(0.97);
+}
+@keyframes bb-footer-modal-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes bb-footer-modal-pop {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bb-footer-modal-scrim,
+  .bb-footer-modal-card {
+    animation: none;
   }
 }
 

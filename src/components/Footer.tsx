@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react'
+
 interface Props {
   onNavigate: (view: string) => void
   /** Hide the full-bleed "See what's happening near you" band (e.g. on pages
@@ -8,6 +10,10 @@ interface Props {
 interface Link {
   label: string
   to?: string
+  /** External link (e.g. mailto:) — rendered as an anchor. */
+  href?: string
+  /** Opens the "coming after beta" modal instead of navigating. */
+  modal?: boolean
 }
 
 const COLUMNS: { title: string; links: Link[] }[] = [
@@ -16,27 +22,40 @@ const COLUMNS: { title: string; links: Link[] }[] = [
     links: [
       { label: 'How Reports Work', to: 'how' },
       { label: 'Transparency', to: 'transparency' },
-      { label: 'Open Data API' },
-      { label: 'Resources' },
+      { label: 'Open Data API', modal: true },
+      { label: 'Resources', to: 'resources' },
     ],
   },
   {
     title: 'Get Involved',
     links: [
-      { label: 'Volunteer' },
-      { label: 'Become a Partner', to: 'partners' },
-      { label: 'Contact us' },
+      {
+        label: 'Become a Founding Tester',
+        href: 'mailto:hello@bantaybasura.ph?subject=Becoming%20a%20Founding%20Tester',
+      },
+      {
+        label: 'Share Feedback',
+        href: 'mailto:hello@bantaybasura.ph?subject=Bantay%20Basura%20Feedback',
+      },
+      { label: 'Email Us', href: 'mailto:hello@bantaybasura.ph' },
     ],
-  },
-  {
-    title: 'Legal',
-    links: [{ label: 'Privacy' }, { label: 'Terms' }],
   },
 ]
 
 const PARTNERS = ['🏛️ DENR', '🏛️ DILG', '🏛️ LGUs', '🌱 NGOs', '👥 Volunteers']
 
 export default function Footer({ onNavigate, hideCta }: Props) {
+  const [openData, setOpenData] = useState(false)
+
+  useEffect(() => {
+    if (!openData) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpenData(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [openData])
+
   return (
     <>
       {/* Full-bleed coastal CTA — closes out most pages (hidden where the page
@@ -76,16 +95,25 @@ export default function Footer({ onNavigate, hideCta }: Props) {
         {COLUMNS.map((col) => (
           <div className="bb-footer-col" key={col.title}>
             <h4>{col.title}</h4>
-            {col.links.map((l) => (
-              <button
-                key={l.label}
-                className="bb-footer-link"
-                onClick={() => l.to && onNavigate(l.to)}
-                title={l.to ? undefined : 'Coming soon'}
-              >
-                {l.label}
-              </button>
-            ))}
+            {col.links.map((l) =>
+              l.href ? (
+                <a key={l.label} className="bb-footer-link" href={l.href}>
+                  {l.label}
+                </a>
+              ) : (
+                <button
+                  key={l.label}
+                  className="bb-footer-link"
+                  onClick={() => {
+                    if (l.modal) setOpenData(true)
+                    else if (l.to) onNavigate(l.to)
+                  }}
+                  title={l.to || l.modal ? undefined : 'Coming soon'}
+                >
+                  {l.label}
+                </button>
+              ),
+            )}
           </div>
         ))}
 
@@ -116,6 +144,39 @@ export default function Footer({ onNavigate, hideCta }: Props) {
       </div>
       </div>
     </footer>
+
+    {openData && (
+      <div className="bb-footer-modal" role="dialog" aria-modal="true" aria-label="Open Data API">
+        <button
+          className="bb-footer-modal-scrim"
+          aria-label="Close"
+          onClick={() => setOpenData(false)}
+        />
+        <div className="bb-footer-modal-card">
+          <button
+            className="bb-footer-modal-x"
+            onClick={() => setOpenData(false)}
+            aria-label="Close"
+          >
+            ×
+          </button>
+          <span className="bb-footer-modal-emoji" aria-hidden>
+            🚧
+          </span>
+          <h3 className="bb-footer-modal-title">Open Data API</h3>
+          <p className="bb-footer-modal-soon">Coming Soon</p>
+          <p className="bb-footer-modal-body">Every report helps the community.</p>
+          <p className="bb-footer-modal-body">
+            Soon, developers and researchers will be able to access anonymized public data to build
+            dashboards, studies, and civic tools.
+          </p>
+          <p className="bb-footer-modal-after">Coming after Beta.</p>
+          <button className="bb-footer-modal-btn" onClick={() => setOpenData(false)}>
+            Got it
+          </button>
+        </div>
+      </div>
+    )}
     </>
   )
 }

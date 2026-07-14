@@ -1,0 +1,177 @@
+/* ============================================================
+   Community Resources — editorial page, matches the site's light
+   identity. Scoped under .bb-resources.
+   ============================================================ */
+.bb-res-hero {
+  padding: clamp(64px, 12vh, 120px) 0 8px;
+}
+.bb-res-eyebrow {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #1f9d57;
+}
+.bb-res-title {
+  margin: 12px 0 0;
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #14110f;
+}
+.bb-res-lede {
+  margin: 18px 0 0;
+  max-width: 640px;
+  font-size: 17px;
+  line-height: 1.6;
+  color: #5f5a54;
+}
+
+.bb-res-block {
+  padding: clamp(36px, 6vh, 64px) 0;
+}
+.bb-res-h2 {
+  margin: 0 0 20px;
+  font-size: clamp(1.3rem, 3vw, 1.7rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #14110f;
+}
+
+/* Resource list */
+.bb-res-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.bb-res-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border: 1px solid #e7e3dc;
+  border-radius: 16px;
+  background: #fff;
+}
+.bb-res-item.is-ready {
+  border-color: color-mix(in srgb, #1f9d57 35%, #e7e3dc);
+  background: color-mix(in srgb, #1f9d57 5%, #fff);
+}
+.bb-res-item-ico {
+  font-size: 20px;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+.bb-res-item-label {
+  font-size: 15.5px;
+  font-weight: 700;
+  color: #14110f;
+}
+.bb-res-item-tag {
+  margin-left: auto;
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #a8a29a;
+}
+.bb-res-item.is-ready .bb-res-item-tag {
+  color: #1f9d57;
+}
+
+/* Idea / contact prompt */
+.bb-res-idea {
+  margin-top: 28px;
+  padding: 30px 28px;
+  border-radius: 20px;
+  background: #f4f2ec;
+  text-align: center;
+}
+.bb-res-idea-q {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #14110f;
+}
+.bb-res-idea-sub {
+  margin: 4px 0 0;
+  font-size: 14.5px;
+  color: #5f5a54;
+}
+.bb-res-idea-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  margin-top: 16px;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 999px;
+  background: #1f9d57;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 12px 28px rgba(31, 157, 87, 0.3);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.bb-res-idea-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 34px rgba(31, 157, 87, 0.4);
+}
+.bb-res-idea-cta:active {
+  transform: scale(0.97);
+}
+
+/* Contribute (dark, community-built) */
+.bb-res-contribute {
+  margin-bottom: clamp(48px, 10vh, 110px);
+  padding: clamp(32px, 5vh, 48px);
+  border-radius: 24px;
+  background: linear-gradient(160deg, #0f5132, #0b1a12);
+  color: #fff;
+  text-align: center;
+}
+.bb-res-contribute-ico {
+  display: inline-grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #7ee2a6;
+}
+.bb-res-contribute .bb-res-h2 {
+  margin: 14px 0 0;
+  color: #fff;
+}
+.bb-res-contribute-lede {
+  margin: 12px auto 0;
+  max-width: 460px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.75);
+}
+.bb-res-tags {
+  list-style: none;
+  margin: 22px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+.bb-res-tags li {
+  padding: 9px 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #eafff3;
+}
