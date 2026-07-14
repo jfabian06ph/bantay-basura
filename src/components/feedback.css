@@ -5,13 +5,14 @@
    ============================================================ */
 .bb-fb {
   position: fixed;
-  left: 16px;
-  /* Line up with the map controls / filters cluster (bottom: 150px). */
-  bottom: 150px;
+  /* Right edge, tucked just below the map controls cluster (which sits at
+     right:14px / bottom:150px) so it never overlaps the zoom/filter buttons. */
+  right: 14px;
+  bottom: 96px;
   z-index: 2400;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: flex-end;
   gap: 12px;
 }
 
