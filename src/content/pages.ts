@@ -16,6 +16,7 @@ export type View =
   | 'partners'
   | 'about'
   | 'resources'
+  | 'privacy'
 
 export interface NavItem {
   key: View
@@ -42,7 +43,7 @@ export interface PageContent {
 }
 
 /** Views that render as a generic editorial `InfoPage`. */
-export type InfoView = Exclude<View, 'map' | 'about' | 'transparency' | 'resources'>
+export type InfoView = Exclude<View, 'map' | 'about' | 'transparency' | 'resources' | 'privacy'>
 
 export const PAGES: Record<InfoView, PageContent> = {
   reports: {

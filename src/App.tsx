@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { RotateCcw } from 'lucide-react'
+import { Analytics } from '@vercel/analytics/react'
 import { AuthProvider, useAuth } from './auth/AuthProvider'
 import PublicApp from './PublicApp'
 import OperationsCenter from './ops/OperationsCenter'
@@ -61,6 +62,7 @@ export default function App() {
       <FeedbackWidget />
       <UpdateToast />
       <RotateGate />
+      <Analytics />
     </AuthProvider>
   )
 }

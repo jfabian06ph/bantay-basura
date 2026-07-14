@@ -133,7 +133,12 @@ export default function Footer({ onNavigate, hideCta }: Props) {
 
       <div className="bb-page bb-footer-inner">
       <div className="bb-footer-bottom">
-        <span>© 2026 Bantay Basura</span>
+        <span>
+          © 2026 Bantay Basura ·{' '}
+          <button className="bb-footer-privacy" onClick={() => onNavigate('privacy')}>
+            Privacy
+          </button>
+        </span>
         <span className="bb-footer-made">
           Built by volunteers. Powered by communities.
           <span className="bb-footer-heart" aria-hidden>❤️</span>
