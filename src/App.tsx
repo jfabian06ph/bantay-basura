@@ -5,6 +5,7 @@ import PublicApp from './PublicApp'
 import OperationsCenter from './ops/OperationsCenter'
 import SignIn from './components/SignIn'
 import Splash, { shouldShowSplash } from './components/Splash'
+import FeedbackWidget from './components/FeedbackWidget'
 import { usePath, navigate, isOpsPath } from './router'
 import './App.css'
 
@@ -56,6 +57,7 @@ export default function App() {
     <AuthProvider>
       <Root ready={!splash} />
       {splash && <Splash onDone={() => setSplash(false)} />}
+      <FeedbackWidget />
       <RotateGate />
     </AuthProvider>
   )
