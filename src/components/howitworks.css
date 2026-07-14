@@ -1,5 +1,5 @@
 /* ============================================================
-   How It Works — a scroll-told story. Light & editorial like the
+   How It Works, a scroll-told story. Light & editorial like the
    other content pages, but its own identity: a parallax hero and an
    animated lifecycle timeline. Scoped under .bb-hiw.
    ============================================================ */
@@ -201,7 +201,7 @@
   color: #fff;
   transform: scale(1.06);
 }
-/* A single ring pulse the moment the node lights up — a tiny "checkpoint". */
+/* A single ring pulse the moment the node lights up, a tiny "checkpoint". */
 .bb-hiw-node::after {
   content: '';
   position: absolute;
@@ -258,6 +258,76 @@
   font-size: 13px;
   line-height: 1.5;
   color: var(--hiw-mute);
+}
+.bb-hiw-intro {
+  max-width: 520px;
+  margin: -16px auto 8px;
+  text-align: center;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--hiw-dim);
+}
+
+/* ---------- Journey illustration (minimal line drawing) ---------- */
+.bb-hiw-journey {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  max-width: 620px;
+  margin: 34px auto 52px;
+  transition: opacity 0.5s cubic-bezier(0.22, 0.61, 0.36, 1),
+    transform 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+/* Tucks away on deep scroll-down, slides back on scroll-up (opacity/transform
+   only, so the reserved space stays and the scroll position never jumps). */
+.bb-hiw-journey.is-hidden {
+  opacity: 0;
+  transform: translateY(-16px) scale(0.96);
+  pointer-events: none;
+}
+.bb-hiw-journey-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  opacity: 0;
+  transform: translateY(10px) scale(0.9);
+  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.34, 1.4, 0.5, 1);
+}
+.bb-hiw-journey.is-in .bb-hiw-journey-node {
+  opacity: 1;
+  transform: none;
+}
+.bb-hiw-journey-icon {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  border: 1.5px solid color-mix(in srgb, var(--hiw-green) 30%, var(--hiw-line));
+  background: #fff;
+  color: var(--hiw-green);
+}
+.bb-hiw-journey-label {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--hiw-dim);
+}
+/* The dotted path draws left-to-right, connecting the icons. */
+.bb-hiw-journey-link {
+  flex: 1 1 auto;
+  min-width: 18px;
+  height: 0;
+  margin: 29px 8px 0;
+  border-top: 2px dotted color-mix(in srgb, var(--hiw-green) 50%, var(--hiw-line));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s ease;
+}
+.bb-hiw-journey.is-in .bb-hiw-journey-link {
+  transform: scaleX(1);
 }
 /* Build-itself sequence: text staggers in, then the card pops once the line
    has reached this node. */
@@ -317,30 +387,6 @@
 }
 
 /* Step visuals */
-.bb-hiw-photo {
-  margin: 0;
-  border-radius: 16px;
-  overflow: hidden;
-  border: 1px solid var(--hiw-line);
-  box-shadow: 0 12px 30px rgba(20, 17, 15, 0.08);
-  max-width: 360px;
-}
-.bb-hiw-photo img {
-  display: block;
-  width: 100%;
-  height: 200px;
-  object-fit: cover;
-}
-.bb-hiw-photo figcaption {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 14px;
-  background: var(--hiw-card);
-  font-size: 12.5px;
-  font-weight: 700;
-  color: var(--hiw-dim);
-}
 .bb-hiw-phone {
   max-width: 320px;
   padding: 16px;
@@ -390,28 +436,48 @@
 }
 .bb-hiw-verify {
   display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 340px;
   padding: 18px 20px;
   border-radius: 16px;
   border: 1px solid var(--hiw-line);
   background: var(--hiw-card);
   box-shadow: 0 12px 30px rgba(20, 17, 15, 0.06);
 }
-.bb-hiw-avatars {
+.bb-hiw-verify-head {
   display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--hiw-ink);
 }
-.bb-hiw-av {
-  width: 34px;
-  height: 34px;
+.bb-hiw-verify-head svg {
+  color: var(--hiw-green);
+}
+/* Anonymous confirmation dots, the community agreeing, never named. */
+.bb-hiw-dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.bb-hiw-dot {
+  width: 16px;
+  height: 16px;
   border-radius: 999px;
-  border: 2px solid #fff;
-  margin-left: -10px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  background: var(--hiw-green);
+  box-shadow: 0 1px 2px rgba(31, 157, 87, 0.35);
+  transform: scale(0);
 }
-.bb-hiw-av:first-child {
-  margin-left: 0;
+.bb-hiw-step.is-in .bb-hiw-dot {
+  animation: bb-hiw-dot-in 0.4s cubic-bezier(0.34, 1.5, 0.5, 1) forwards;
+}
+@keyframes bb-hiw-dot-in {
+  to {
+    transform: scale(1);
+  }
 }
 .bb-hiw-verify-text {
   display: flex;
@@ -420,6 +486,9 @@
   font-size: 15px;
   color: var(--hiw-ink);
 }
+.bb-hiw-verify-text b {
+  font-weight: 800;
+}
 .bb-hiw-verified {
   display: inline-flex;
   align-items: center;
@@ -427,25 +496,6 @@
   font-size: 12.5px;
   font-weight: 800;
   color: var(--hiw-green);
-}
-.bb-hiw-verify-stats {
-  display: flex;
-  gap: 24px;
-  width: 100%;
-  margin-top: 4px;
-  padding-top: 14px;
-  border-top: 1px solid var(--hiw-line);
-}
-.bb-hiw-verify-stats b {
-  font-size: 18px;
-  font-weight: 800;
-  color: var(--hiw-ink);
-}
-.bb-hiw-verify-stats span {
-  display: block;
-  margin-top: 1px;
-  font-size: 11.5px;
-  color: var(--hiw-mute);
 }
 .bb-hiw-notify {
   display: flex;
@@ -491,83 +541,56 @@
   margin-left: auto;
   color: var(--hiw-mute);
 }
-.bb-hiw-cleanup {
-  max-width: 420px;
-}
-.bb-hiw-cleanup-stats {
+.bb-hiw-result {
   display: flex;
-  gap: 10px;
-  margin-top: 14px;
-}
-.bb-hiw-cleanup-stats > div {
-  flex: 1;
-  padding: 12px;
-  border-radius: 12px;
+  flex-direction: column;
+  max-width: 300px;
+  padding: 4px 16px;
+  border-radius: 16px;
   border: 1px solid var(--hiw-line);
   background: var(--hiw-card);
-  text-align: center;
+  box-shadow: 0 12px 30px rgba(20, 17, 15, 0.06);
 }
-.bb-hiw-cleanup-stats b {
+.bb-hiw-result-row {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 4px;
-  font-size: 18px;
-  font-weight: 800;
+  gap: 10px;
+  padding: 12px 0;
+  font-size: 14px;
+  font-weight: 700;
   color: var(--hiw-ink);
 }
-.bb-hiw-cleanup-stats .bb-hiw-done {
-  color: var(--hiw-green);
-  font-size: 15px;
-}
-.bb-hiw-cleanup-stats span {
-  display: block;
-  margin-top: 2px;
-  font-size: 11.5px;
-  color: var(--hiw-mute);
-}
-.bb-hiw-flow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-.bb-hiw-flow-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--hiw-green) 10%, #fff);
-  border: 1px solid color-mix(in srgb, var(--hiw-green) 24%, transparent);
-  font-size: 13px;
-  font-weight: 800;
-  color: #157a42;
-}
-.bb-hiw-flow-item svg {
-  color: var(--hiw-mute);
+.bb-hiw-result-row:not(:last-child) {
+  border-bottom: 1px solid var(--hiw-line);
 }
 /* The payoff: the checks tick in one after another when the last beat arrives. */
-.bb-hiw-flow-item .bb-hiw-flow-check {
-  color: var(--hiw-green);
+.bb-hiw-result-check {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: var(--hiw-green);
+  color: #fff;
   transform: scale(0);
   transition: transform 0.4s cubic-bezier(0.34, 1.5, 0.5, 1);
 }
-.bb-hiw-step.is-in .bb-hiw-flow-item:nth-child(1) .bb-hiw-flow-check {
+.bb-hiw-step.is-in .bb-hiw-result-row:nth-child(1) .bb-hiw-result-check {
   transform: scale(1);
   transition-delay: 0.6s;
 }
-.bb-hiw-step.is-in .bb-hiw-flow-item:nth-child(2) .bb-hiw-flow-check {
+.bb-hiw-step.is-in .bb-hiw-result-row:nth-child(2) .bb-hiw-result-check {
   transform: scale(1);
-  transition-delay: 0.85s;
+  transition-delay: 0.82s;
 }
-.bb-hiw-step.is-in .bb-hiw-flow-item:nth-child(3) .bb-hiw-flow-check {
+.bb-hiw-step.is-in .bb-hiw-result-row:nth-child(3) .bb-hiw-result-check {
   transform: scale(1);
-  transition-delay: 1.1s;
+  transition-delay: 1.04s;
 }
-.bb-hiw-step.is-in .bb-hiw-flow-item:nth-child(4) .bb-hiw-flow-check {
+.bb-hiw-step.is-in .bb-hiw-result-row:nth-child(4) .bb-hiw-result-check {
   transform: scale(1);
-  transition-delay: 1.35s;
+  transition-delay: 1.26s;
 }
 
 /* ---------- Philosophy ---------- */
@@ -584,6 +607,8 @@
   position: relative;
   padding-left: 28px;
 }
+/* The green line "draws" itself downward, then glows, the spine the
+   Bantay Basura steps peak out from. */
 .bb-hiw-philo-col.is-new::before {
   content: '';
   position: absolute;
@@ -593,12 +618,27 @@
   width: 3px;
   border-radius: 3px;
   background: var(--hiw-green);
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform 0.9s cubic-bezier(0.22, 0.61, 0.36, 1),
+    box-shadow 0.6s ease 0.7s;
+}
+.bb-hiw-philo.is-in .bb-hiw-philo-col.is-new::before {
+  transform: scaleY(1);
+  box-shadow: 0 0 18px rgba(31, 157, 87, 0.5);
 }
 .bb-hiw-philo-k {
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.14em;
   text-transform: uppercase;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.bb-hiw-philo.is-in .bb-hiw-philo-k {
+  opacity: 1;
+  transform: none;
 }
 .bb-hiw-philo-col.is-old .bb-hiw-philo-k {
   color: var(--hiw-mute);
@@ -617,10 +657,128 @@
   letter-spacing: -0.03em;
   line-height: 1.3;
 }
+/* The dull grey spine draws slower and never glows, a dead-end path. */
+.bb-hiw-philo-col.is-old {
+  position: relative;
+  padding-left: 28px;
+}
+.bb-hiw-philo-col.is-old::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 3px;
+  border-radius: 3px;
+  background: #d7d2c9;
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform 1s cubic-bezier(0.4, 0, 0.6, 1);
+}
+.bb-hiw-philo.is-in .bb-hiw-philo-col.is-old::before {
+  transform: scaleY(1);
+}
+/* The words drop in and settle flat. */
 .bb-hiw-philo-col.is-old li {
   color: #bcb6ab;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.3, 0.7, 0.4, 1);
 }
+.bb-hiw-philo.is-in .bb-hiw-philo-col.is-old li {
+  opacity: 1;
+  transform: none;
+}
+.bb-hiw-philo.is-in .bb-hiw-philo-col.is-old li:nth-child(1) {
+  transition-delay: 0.05s;
+}
+/* "Wait." breathes forever, stuck. */
+.bb-hiw-philo.is-in .bb-hiw-philo-col.is-old li:nth-child(2) {
+  transition-delay: 0.13s;
+  animation: bb-hiw-wait 2.6s ease-in-out 0.9s infinite;
+}
+@keyframes bb-hiw-wait {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+/* "Hope." settles faint, fading. */
+.bb-hiw-philo.is-in .bb-hiw-philo-col.is-old li:nth-child(3) {
+  transition-delay: 0.21s;
+  opacity: 0.5;
+}
+/* Each step peaks out from the line as the line reaches it. */
 .bb-hiw-philo-col.is-new li {
+  color: var(--hiw-ink);
+  opacity: 0;
+  transform: translateX(-16px);
+  transition: opacity 0.55s ease, transform 0.55s cubic-bezier(0.34, 1.45, 0.5, 1);
+}
+.bb-hiw-philo.is-in .bb-hiw-philo-col.is-new li {
+  opacity: 1;
+  transform: none;
+}
+.bb-hiw-philo.is-in .bb-hiw-philo-col.is-new li:nth-child(1) {
+  transition-delay: 0.28s;
+}
+.bb-hiw-philo.is-in .bb-hiw-philo-col.is-new li:nth-child(2) {
+  transition-delay: 0.42s;
+}
+.bb-hiw-philo.is-in .bb-hiw-philo-col.is-new li:nth-child(3) {
+  transition-delay: 0.56s;
+}
+.bb-hiw-philo.is-in .bb-hiw-philo-col.is-new li:nth-child(4) {
+  transition-delay: 0.7s;
+}
+.bb-hiw-philo.is-in .bb-hiw-philo-col.is-new li:nth-child(5) {
+  transition-delay: 0.84s;
+}
+/* The payoff lands last, in green. */
+.bb-hiw-philo-col.is-new li:last-child {
+  color: var(--hiw-green);
+}
+
+/* ---------- Green stamps: empty on purpose ---------- */
+.bb-hiw-stamps-sec {
+  background: #f4f2ec;
+}
+.bb-hiw-stamps-lede {
+  max-width: 560px;
+  margin: 0 auto 32px;
+  text-align: center;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--hiw-dim);
+}
+.bb-hiw-stamps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+.bb-hiw-stamp {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 10px;
+  padding: 28px 16px;
+  border-radius: 18px;
+  border: 1.5px dashed color-mix(in srgb, var(--hiw-green) 42%, var(--hiw-line));
+  background: #fbfdfb;
+}
+.bb-hiw-stamp-seed {
+  font-size: 26px;
+  line-height: 1;
+}
+.bb-hiw-stamp-label {
+  font-size: 13.5px;
+  font-weight: 800;
+  line-height: 1.35;
   color: var(--hiw-ink);
 }
 
@@ -765,14 +923,21 @@
 }
 .bb-hiw-faq-a > p {
   overflow: hidden;
+  /* Grid items default to min-height:auto, which floors the row at one line
+     of content and breaks the 0fr collapse. Allow it to shrink to nothing. */
+  min-height: 0;
   margin: 0;
   padding: 0 4px 18px;
   font-size: 14.5px;
   line-height: 1.6;
   color: var(--hiw-dim);
 }
+/* No bottom padding while closed, so the collapse lands cleanly at 0. */
+.bb-hiw-faq-item:not(.is-open) .bb-hiw-faq-a > p {
+  padding-bottom: 0;
+}
 
-/* ---------- Closing — deliberate silence, one thought, one action ---------- */
+/* ---------- Closing, deliberate silence, one thought, one action ---------- */
 .bb-hiw-close {
   padding: clamp(120px, 22vh, 220px) 24px;
   text-align: center;
@@ -793,6 +958,20 @@
   opacity: 1;
   transform: none;
 }
+.bb-hiw-close-sub {
+  margin: 16px 0 0;
+  font-size: clamp(1.1rem, 3vw, 1.5rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--hiw-green);
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.9s ease 0.3s, transform 0.9s ease 0.3s;
+}
+.bb-hiw-close.is-in .bb-hiw-close-sub {
+  opacity: 1;
+  transform: none;
+}
 .bb-hiw-close .bb-hiw-close-cta {
   opacity: 0;
 }
@@ -807,9 +986,31 @@
   .bb-hiw-why {
     grid-template-columns: 1fr;
   }
+  .bb-hiw-stamps {
+    grid-template-columns: 1fr 1fr;
+  }
   .bb-hiw-pillar-link {
     width: 2px;
     height: 24px;
+  }
+}
+
+@media (max-width: 560px) {
+  .bb-hiw-journey-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+  }
+  .bb-hiw-journey-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+  .bb-hiw-journey-link {
+    min-width: 8px;
+    margin: 23px 5px 0;
+  }
+  .bb-hiw-journey-label {
+    font-size: 10.5px;
   }
 }
 
@@ -822,12 +1023,28 @@
   .bb-hiw-step-text,
   .bb-hiw-visual,
   .bb-hiw-caption,
-  .bb-hiw-flow-check,
+  .bb-hiw-result-check,
+  .bb-hiw-journey-node,
+  .bb-hiw-journey-link,
   .bb-hiw-close-title,
+  .bb-hiw-close-sub,
   .bb-hiw-close-cta {
     opacity: 1 !important;
     transform: none !important;
     transition: none !important;
+  }
+  .bb-hiw-dot {
+    transform: none !important;
+    animation: none !important;
+  }
+  .bb-hiw-philo-k,
+  .bb-hiw-philo-col li,
+  .bb-hiw-philo-col.is-new::before,
+  .bb-hiw-philo-col.is-old::before {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
   }
   .bb-hiw-line::after {
     transition: none;

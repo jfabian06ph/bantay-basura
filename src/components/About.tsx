@@ -6,7 +6,6 @@ import {
   Flag,
 } from 'lucide-react'
 import Footer from './Footer'
-import BeforeAfter from './BeforeAfter'
 import CountUp from './CountUp'
 import { useReveal } from '../hooks/useReveal'
 import type { Report } from '../types'
@@ -112,16 +111,6 @@ export default function About({ activeCount, reports, now, onNavigate }: Props) 
           </p>
         </section>
       </div>
-
-      {/* ---------- Full-width before/after (rhythm break) ---------- */}
-      <section className="bb-about-ba">
-        <div className="bb-about-ba-inner">
-          <BeforeAfter before="/zambales-town.jpg" after="/zambales-coast.jpg" hint />
-          <p className="bb-about-ba-cap">
-            <strong>Visibility creates action.</strong> Before and after one community cleanup.
-          </p>
-        </div>
-      </section>
 
       <div className="bb-page">
         {/* ---------- What we believe ---------- */}
