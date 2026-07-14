@@ -291,3 +291,34 @@ export async function moderatePhotos(
   }
   return out
 }
+
+/** A QA feedback submission from a beta tester (in-app widget). */
+export interface FeedbackInput {
+  message: string
+  category: string
+  page: string
+  appEnv: string
+  userAgent: string
+  viewport: string
+}
+
+/**
+ * Persist a tester's feedback. Anonymous — no account required (RLS allows
+ * anon INSERT into `feedback`, but not SELECT). Returns true on success.
+ */
+export async function insertFeedback(input: FeedbackInput): Promise<boolean> {
+  if (!supabase) return false
+  const { error } = await supabase.from('feedback').insert({
+    message: input.message,
+    category: input.category,
+    page: input.page,
+    app_env: input.appEnv,
+    user_agent: input.userAgent,
+    viewport: input.viewport,
+  })
+  if (error) {
+    console.warn('[bantay-basura] failed to submit feedback:', error)
+    return false
+  }
+  return true
+}
