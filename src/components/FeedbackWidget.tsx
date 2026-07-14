@@ -116,12 +116,12 @@ export default function FeedbackWidget() {
       )}
 
       <button
-        className={`bb-fb-fab ${open ? 'is-open' : ''}`}
+        className={`bb-control bb-control-round bb-fb-fab ${open ? 'is-open' : ''}`}
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? 'Close feedback' : 'Send feedback'}
+        title="Send feedback"
       >
         {open ? <X className="size-5" /> : <MessageSquarePlus className="size-5" />}
-        {!open && <span className="bb-fb-fab-label">Feedback</span>}
       </button>
     </div>
   )

@@ -18,7 +18,10 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // 'prompt' so a new deploy surfaces an in-app "Refresh" toast instead of
+      // silently swapping on the next-next load (which read as "no change" to
+      // testers). The toast lives in src/components/UpdateToast.tsx.
+      registerType: 'prompt',
       includeAssets: ['logo-mark-192.png', 'logo-mark-512.png'],
       manifest: {
         name: 'Bantay Basura',

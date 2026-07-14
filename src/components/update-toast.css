@@ -1,0 +1,68 @@
+/* "New version available" toast — top-center, above everything. */
+.bb-update {
+  position: fixed;
+  top: 76px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3200;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100vw - 32px);
+  padding: 10px 10px 10px 16px;
+  border-radius: 999px;
+  background: #111d32;
+  color: #ecf2fa;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 14px 34px rgba(10, 14, 24, 0.4);
+  font-size: 13.5px;
+  font-weight: 700;
+  animation: bb-update-in 0.3s cubic-bezier(0.34, 1.4, 0.5, 1);
+}
+@keyframes bb-update-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -12px);
+  }
+}
+.bb-update-ico {
+  color: #7ee2a6;
+  flex: 0 0 auto;
+}
+.bb-update-text {
+  white-space: nowrap;
+}
+.bb-update-btn {
+  border: none;
+  border-radius: 999px;
+  background: #1f9d57;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 8px 16px;
+  cursor: pointer;
+}
+.bb-update-btn:hover {
+  filter: brightness(1.06);
+}
+.bb-update-x {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: none;
+  color: #9fb0c8;
+  cursor: pointer;
+  border-radius: 999px;
+  flex: 0 0 auto;
+}
+.bb-update-x:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bb-update {
+    animation: none;
+  }
+}

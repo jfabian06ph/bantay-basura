@@ -5,10 +5,11 @@
    ============================================================ */
 .bb-fb {
   position: fixed;
-  /* Right edge, tucked just below the map controls cluster (which sits at
-     right:14px / bottom:150px) so it never overlaps the zoom/filter buttons. */
+  /* Right edge, extending the map controls column downward: sits just below
+     the zoom (cluster is right:14px / bottom:150px) so it reads as part of the
+     same line of round controls. */
   right: 14px;
-  bottom: 96px;
+  bottom: 92px;
   z-index: 2400;
   display: flex;
   flex-direction: column;
@@ -16,36 +17,15 @@
   gap: 12px;
 }
 
+/* FAB reuses .bb-control-round for a pixel-match with zoom / filter / layers. */
 .bb-fb-fab {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 16px;
-  border: none;
-  border-radius: 999px;
-  background: #111d32;
-  color: #ecf2fa;
-  font-size: 13px;
-  font-weight: 800;
-  cursor: pointer;
-  box-shadow: 0 10px 26px rgba(10, 14, 24, 0.35);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.15s ease, filter 0.15s ease;
 }
 .bb-fb-fab:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 16px 34px rgba(10, 14, 24, 0.45);
+  filter: brightness(1.12);
 }
 .bb-fb-fab:active {
-  transform: scale(0.96);
-}
-.bb-fb-fab.is-open {
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  justify-content: center;
-}
-.bb-fb-fab-label {
-  line-height: 1;
+  transform: scale(0.94);
 }
 
 .bb-fb-panel {
