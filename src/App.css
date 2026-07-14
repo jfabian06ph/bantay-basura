@@ -6861,6 +6861,42 @@
   letter-spacing: 0.01em;
   color: var(--text-mute, #7f8ca3);
 }
+/* Mobile: the welcome/empty card was nearly full-width — trim it down. */
+@media (max-width: 560px) {
+  .bb-map-empty {
+    padding: 16px;
+  }
+  .bb-map-empty-card,
+  .bb-map-empty-welcome {
+    max-width: 270px;
+    padding: 20px 20px 18px;
+    border-radius: 18px;
+  }
+  .bb-map-empty-icon {
+    width: 44px;
+    height: 44px;
+    margin-bottom: 6px;
+  }
+  .bb-map-empty-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+  .bb-map-empty-title {
+    font-size: 14.5px;
+  }
+  .bb-map-empty-sub {
+    font-size: 12.5px;
+    margin-bottom: 12px;
+  }
+  .bb-map-empty-btn {
+    padding: 10px 20px;
+    font-size: 13.5px;
+  }
+  .bb-map-empty-note {
+    margin-top: 10px;
+    font-size: 10.5px;
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .bb-pin-dot,

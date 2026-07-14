@@ -6,7 +6,8 @@
 .bb-fb {
   position: fixed;
   left: 16px;
-  bottom: 16px;
+  /* Line up with the map controls / filters cluster (bottom: 150px). */
+  bottom: 150px;
   z-index: 2400;
   display: flex;
   flex-direction: column;
